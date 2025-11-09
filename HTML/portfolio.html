@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="../CSS/sidebar.css">
+  <link rel="stylesheet" href="https://cdn.boxicons.com/fonts/basic/boxicons.min.css">
+  <title>Team Project</title>
+</head>
+<body>
+  <div class="sidebar">
+    <div class="logo_content">
+      <div class="logo">
+        <img src="../HTML/images/stackflow_light.png" alt="logo">
+        <div class="logo_name">StackFlow</div>
+      </div>
+      <i class='bx bx-menu' id="btn"></i> 
+    </div>
+    <ul class="nav_list">
+      <li>
+        <i class='bx bx-search' id="search"></i> 
+        <input type="text" placeholder="Search...">
+        <span class="tooltip">Search</span>
+      </li>
+      <li>
+        <a href="/HTML/stack.html">
+          <i class='bx bx-layers' id="stack"></i>
+          <span class="links_name">Stack</span>
+        </a>
+        <span class="tooltip">Stack</span>
+      </li>
+      <li>
+        <a href="#">
+          <i class='bx bx-dashboard'></i> 
+          <span class="links_name">Dashboard</span>
+        </a>
+        <span class="tooltip">Dashboard</span>
+      </li>
+      <li>
+        <a href="#">
+          <i class='bx bx-clipboard-detail'></i> 
+          <span class="links_name">Question</span>
+        </a>
+        <span class="tooltip">Question</span>
+      </li>
+      <li>
+        <a href="../HTML/teamproject.html">
+          <i class='bx bx-message'></i> 
+          <span class="links_name">Team Project</span>
+        </a>
+        <span class="tooltip">Team Project</span>
+      </li>
+      <li>
+        <a href="../HTML/portfolio.html">
+          <i class='bx bx-folder'></i> 
+          <span class="links_name">Portfolio</span>
+        </a>
+        <span class="tooltip">Portfolio</span>
+      </li>
+      <li>
+        <a href="../HTML/mainpage.html">
+          <i class='bx bx-home'></i> 
+          <span class="links_name">Home</span>
+        </a>
+        <span class="tooltip">Home</span>
+      </li>
+      <li id="adminMenu" style="display: none;">
+        <a href="../HTML/admin.html">
+          <i class='bx bx-user-check'></i>
+          <span class="links_name">Administration</span>
+        </a>
+        <span class="tooltip">Administration</span>
+      </li>
+      <li>
+        <a href="#">
+          <i class='bx bx-cog'></i> 
+          <span class="links_name">Settings</span>
+        </a>
+        <span class="tooltip">Settings</span>
+      </li>
+    </ul>
+    <div class="profile_content">
+      <div class="profile">
+        <div class="profile_details">
+          <img src="../HTML/images/profile.png" alt=""> 
+          <div class="name_job">
+            <div class="name"></div>
+            <div class="job"></div>
+          </div>
+        </div>
+        <i class='bx bx-arrow-in-right-square-half' id="log_in"></i> 
+        <i class='bx bx-arrow-out-left-square-half' id="log_out"></i> 
+      </div>
+    </div>
+  </div>
+  <div class="home_content">
+    <div class="text">포트폴리오</div>
+  </div>
+
+  <script src="../JAVASCRIPT/sidebar.js"></script>
+</body>
+</html>

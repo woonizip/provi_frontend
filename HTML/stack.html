@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="../CSS/sidebar.css">
+  <link rel="stylesheet" href="../CSS/stack.css">
+  <link rel="stylesheet" href="https://cdn.boxicons.com/fonts/basic/boxicons.min.css">
+  <title>PROVI</title>
+</head>
+<body>
+  <div class="sidebar">
+    <div class="logo_content">
+      <div class="logo">
+        <img src="../HTML/images/stackflow_light.png" alt="logo">
+        <div class="logo_name">Provi</div>
+      </div>
+      <i class='bx bx-menu' id="btn"></i> 
+    </div>
+    <ul class="nav_list">
+      <li>
+        <i class='bx bx-search' id="search"></i> 
+        <input type="text" placeholder="Search...">
+        <span class="tooltip">Search</span>
+      </li>
+      <li>
+        <a href="../HTML/stack.html">
+          <i class='bx bx-layers' id="stack"></i>
+          <span class="links_name">Stack</span>
+        </a>
+        <span class="tooltip">Stack</span>
+      </li>
+      <li>
+        <a href="#">
+          <i class='bx bx-dashboard'></i> 
+          <span class="links_name">Dashboard</span>
+        </a>
+        <span class="tooltip">Dashboard</span>
+      </li>
+      <li>
+        <a href="#">
+          <i class='bx bx-clipboard-detail'></i> 
+          <span class="links_name">Question</span>
+        </a>
+        <span class="tooltip">Question</span>
+      </li>
+      <li>
+        <a href="../HTML/teamproject.html">
+          <i class='bx bx-message'></i> 
+          <span class="links_name">Team Project</span>
+        </a>
+        <span class="tooltip">Team Project</span>
+      </li>
+      <li>
+        <a href="../HTML/portfolio.html">
+          <i class='bx bx-folder'></i> 
+          <span class="links_name">Portfolio</span>
+        </a>
+        <span class="tooltip">Portfolio</span>
+      </li>
+      <li>
+        <a href="../HTML/mainpage.html">
+          <i class='bx bx-home'></i> 
+          <span class="links_name">Home</span>
+        </a>
+        <span class="tooltip">Home</span>
+      </li>
+      <li id="adminMenu" style="display: none;">
+        <a href="../HTML/admin.html">
+          <i class='bx bx-user-check'></i>
+          <span class="links_name">Administration</span>
+        </a>
+        <span class="tooltip">Administration</span>
+      </li>
+      <li>
+        <a href="#">
+          <i class='bx bx-cog'></i> 
+          <span class="links_name">Settings</span>
+        </a>
+        <span class="tooltip">Settings</span>
+      </li>
+    </ul>
+    <div class="profile_content">
+      <div class="profile">
+        <div class="profile_details">
+          <img src="../HTML/images/profile.png" alt=""> 
+          <div class="name_job">
+            <div class="name"></div>
+            <div class="job"></div>
+          </div>
+        </div>
+        <i class='bx bx-arrow-in-right-square-half' id="log_in"></i> 
+        <i class='bx bx-arrow-out-left-square-half' id="log_out"></i> 
+      </div>
+    </div>
+  </div>
+  <div class="home_content">
+    <main class="wrap">
+    <header class="header">
+      <div class="page-logo" aria-hidden="true"></div>
+      <h1>AI 기반 개발자 스택 추천</h1>
+    </header>
+    <p class="lead">당신의 상황에 맞는 방식으로 시작하세요.</p>
+
+    <section class="grid" aria-label="진입 방식 선택">
+      <!-- 질문형 -->
+      <article class="card" role="button" tabindex="0"
+              aria-label="질문형 추천으로 이동"
+              data-target="quiz.html">
+        <div>
+          <div class="title"><span class="emoji">🧐</span>나는 어떤 직군이 맞을지 모르겠어요</div>
+          <p class="desc">질문을 통해 당신의 성향 기반으로 구체적인 직군과 스택을 제시해줘요.</p>
+        </div>
+        <button class="cta" aria-hidden="true">질문형으로 시작</button>
+        <div class="hint"></div>
+      </article>
+
+      <!-- 대화형 -->
+      <article class="card" role="button" tabindex="0"
+              aria-label="대화형 추천으로 이동"
+              data-target="chat.html">
+        <div>
+          <div class="title"><span class="emoji">👨‍💻</span>내가 원하는 직군을 알아요</div>
+          <p class="desc">직군·언어·프레임워크를 대화로 말하면 실시간으로 조합이 반영돼요.</p>
+        </div>
+        <button class="cta" aria-hidden="true">대화형으로 시작</button>
+        <div class="hint"></div>
+      </article>
+    </section>
+    
+    <section class="examples">
+      <p>💡 예시: “프론트엔드 개발자에게 추천되는 스택”</p>
+      <div class="stack-tags">
+        <span>React</span>
+        <span>TypeScript</span>
+        <span>Angular</span>
+        <span>Next.js</span>
+        <span>TailwindCSS</span>
+      </div>
+    </section>
+  </main>
+  </div>
+
+  <script src="../JAVASCRIPT/sidebar.js"></script>
+  <script src="../JAVASCRIPT/stack.js"></script>
+</body>
+</html>

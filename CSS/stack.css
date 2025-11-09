@@ -1,0 +1,197 @@
+:root{
+  --bg:#f6f7fb;           /* 아주 밝은 회백 */
+  --card:#e7ecf5;         /* 살짝 짙은 회회청(중간톤) */
+  --text:#0f172a;
+  --card-text:#0f172a;    /* 카드 글씨 = 일반 텍스트(검은 남청) */
+  --line:#d6deea;
+  --brand:#2563eb; --brand-hover:#1d4ed8;
+  --radius:18px;
+  --shadow:0 14px 32px rgba(15,23,42,.07);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #0E1425;       /* 본문: 어두운 남보라 */
+    --card: #CBD4E0;     /* 카드: 밝게 유지 */
+    --text: #f8fafc;
+    --card-text: var(--bg);
+    --brand: #3b82f6;
+    --brand-hover: #60a5fa;
+    --shadow: 0 16px 40px rgba(0,0,0,0.4);
+  }
+}
+
+/* 기본 구조 */
+* { box-sizing: border-box; }
+html, body { height: 100%; margin: 0; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: system-ui, -apple-system, Segoe UI, Roboto,
+    'Noto Sans KR', 'Apple SD Gothic Neo', '맑은 고딕', sans-serif;
+  /* display: flex; */
+  /* align-items: center; */
+  /* justify-content: center; */
+}
+
+.home_content {
+  display: flex;
+  /* align-items: flex-start; */
+  align-items: center;
+  justify-content: center;
+  overflow: auto;
+  padding-top: 24px;
+}
+
+.wrap {
+  width: min(980px, 92vw);
+  padding: 28px 18px;
+  margin: 0 auto;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  margin-bottom: 22px;
+}
+
+.page-logo {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  background: var(--brand);
+}
+
+h1 {
+  font-size: clamp(22px, 2.6vw, 32px);
+  margin: 0;
+  text-align: center;
+}
+
+.lead {
+  color: var(--text);
+  text-align: center;
+  opacity: 0.8;
+  margin: 8px 0 26px;
+}
+
+/* 카드 그리드 */
+.grid {
+  display: grid;
+  gap: 16px;
+  align-items: stretch;
+}
+
+@media (min-width: 820px) {
+  .grid { 
+    grid-template-columns: 1fr 1fr; 
+  }
+}
+
+/* 카드 */
+.card {
+  background: var(--card);
+  border-radius: var(--radius);
+  /* box-shadow: var(--shadow); */
+  box-shadow: 0 12px 30px rgba(0,0,0,.35), 0 0 0 1px rgba(255,255,255,.04) inset;
+  border: 1px solid var(--line);
+  padding: 22px;
+  min-height: 180px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  color: var(--card-text); /* ✅ 카드 글씨는 배경색과 동일하게 */
+  transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+  cursor: pointer;
+  outline: none;
+}
+
+.card:hover,
+.card:focus-visible {
+  transform: translateY(-3px);
+  box-shadow: 0 20px 45px rgba(37, 99, 235, 0.3);
+}
+
+/* 카드 내부 */
+.title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 800;
+  font-size: 20px;
+}
+
+.emoji {
+  font-size: 26px;
+}
+
+.desc {
+  opacity: 0.85;
+  margin: 6px 0 14px;
+}
+
+.cta {
+  /* align-self: flex-start; */
+  align-self: center;
+  padding: 10px 14px;
+  border-radius: 12px;
+  background: var(--brand);
+  color: #fff;
+  font-weight: 800;
+  border: none;
+  transition: background 0.2s ease, transform 0.15s ease;
+}
+
+.cta:hover {
+  background: var(--brand-hover);
+  transform: translateY(-1px);
+}
+
+.hint {
+  font-size: 12px;
+  opacity: 0.6;
+  margin-top: 8px;
+}
+
+/* 키보드 포커스 링 */
+/* .card:focus-visible{ 
+  box-shadow:0 0 0 3px color-mix(in srgb, var(--brand) 60%, transparent), var(--shadow)
+ } */
+  
+  .examples {
+  margin-top: 36px;
+  text-align: center;
+  color: #9CA3AF;
+  font-size: 0.9rem;
+  animation: fadeIn 0.8s ease;
+}
+
+.stack-tags {
+  margin-top: 10px;
+}
+
+.stack-tags span {
+  display: inline-block;
+  background: rgba(255, 255, 255, 0.08);
+  color: #E6EBF5;
+  padding: 6px 12px;
+  border-radius: 12px;
+  margin: 4px;
+  font-weight: 500;
+  font-size: 0.85rem;
+  letter-spacing: 0.2px;
+  transition: all 0.2s ease;
+}
+
+.stack-tags span:hover {
+  background: rgba(59, 130, 246, 0.25); /* 블루 톤 hover */
+  transform: translateY(-2px);
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}

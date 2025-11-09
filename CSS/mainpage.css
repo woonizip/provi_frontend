@@ -1,0 +1,197 @@
+ * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'Noto Sans KR', sans-serif;
+    }
+
+    body {
+      background-color: #fff;
+      color: #333;
+      line-height: 1.6;
+    }
+
+    .navbar {
+      background-color: #0B1F3A;
+      display: flex;
+      /* justify-content: flex-end; */
+      justify-content: center;
+      padding: 1.2rem 4rem;
+      gap: 2rem;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+      font-weight: 500;
+      font-size: 0.95rem;
+      color: #fff;
+    }
+
+    .navbar a {
+      text-decoration: none;
+      color: white;
+      transition: color 0.3s;
+    }
+
+    .navbar a:hover {
+      color: #3366cc;
+    }
+    
+    .navbar #authArea {
+      display: inline-flex;
+      align-items: center;
+      gap: 20px;
+    }
+    
+    .navbar #authArea a {
+      text-decoration: none;
+      color: inherit;
+      transition: color 0.3s;
+    }
+    
+    .navbar #authArea a:hover {
+      color: #3366cc;
+    }
+
+    .user-area {
+      display: flex;
+      /* align-items: center; */
+      justify-content: center;
+      gap: 0.8rem;
+    }
+
+    .user-area .welcome-text {
+      color: white;
+      font-weight: 600;
+      font-size: 0.95rem;
+    }
+
+    .user-area .logout-btn {
+      padding: 0.35rem 0.8rem;
+      border: none;
+      border-radius: 0.4rem;
+      background-color: white;
+      color: #0B1F3A;
+      font-size: 0.85rem;
+      cursor: pointer;
+      transition: backgroud 0.2s ease;
+      justify-content: center;
+    }
+
+    .user-area .logout-btn:hover {
+      background-color: #0B1F3A;
+      color: white;
+    }
+
+    .hero {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 4rem 6rem 3rem;
+      background-color: #fafbfe;
+      gap: 20rem;
+    }
+
+    .hero-text {
+      max-width: 480px;
+    }
+
+    .hero h1 {
+      font-size: 2.2rem;
+      font-weight: 700;
+      color: #222;
+      margin-bottom: 1rem;
+    }
+
+    .hero p {
+      font-size: 1rem;
+      color: #555;
+      margin-bottom: 2rem;
+    }
+
+    .hero button {
+      background-color: #3366cc;
+      color: white;
+      border: none;
+      padding: 0.75rem 2rem;
+      border-radius: 0.5rem;
+      font-size: 1rem;
+      cursor: pointer;
+    }
+
+    .hero img {
+      width: 320px;
+    }
+
+    .guide-section {
+      padding: 3rem 4rem;
+      text-align: center;
+    }
+
+    .guide-section h2 {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: #111;
+      margin-bottom: 2rem;
+    }
+
+    .guides {
+      display: flex;
+      justify-content: center;
+      gap: 2rem;
+      flex-wrap: wrap;
+    }
+
+    .guide {
+      background-color: #f9fbff;
+      padding: 2rem 1.5rem;
+      border-radius: 1rem;
+      width: 260px;
+      box-shadow: 0 5px 20px rgba(0,0,0,0.04);
+      position: relative;
+      cursor: pointer;
+      transition: transform 0.2s ease;
+    }
+
+    .guide:hover {
+      transform: translateY(-4px);
+    }
+
+    .guide:after {
+      content: '→';
+      font-size: 1.25rem;
+      color: #3B82F6;
+      position: absolute;
+      right: 1rem;
+      bottom: 1rem;
+      transition: transform 0.2s ease;
+    }
+
+    .guide:hover::after {
+      transform: translateX(4px);
+    }
+
+    .guide img {
+      width: 40px;
+      margin-bottom: 1rem;
+    }
+
+    .guide h3 {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: #222;
+      margin-bottom: 0.5rem;
+    }
+
+    .guide p {
+      font-size: 0.9rem;
+      color: #666;
+    }
+
+    a.no-underline {
+      text-decoration: none;
+    }
+
+    footer {
+      text-align: center;
+      padding: 2rem;
+      font-size: 0.85rem;
+      color: #aaa;
+    }
