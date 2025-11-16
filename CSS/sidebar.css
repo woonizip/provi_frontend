@@ -280,6 +280,9 @@
     width: calc(100% - 78px);
     left: 78px;
     transition: all 0.5s ease;
+    display: flex;
+    align-items: center;      /* 세로 중앙 */
+    justify-content: center;  /* 가로 중앙 */
   }
 
   .home_content .text {

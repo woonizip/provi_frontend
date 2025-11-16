@@ -41,7 +41,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
 // 로그인 아이콘 클릭 시 로그인 페이지로 이동
   logInIcon.addEventListener("click", () => {
-    window.location.href = "../HTML/signin_copy.html";
+    window.location.href = "../HTML/signin.html";
   });
 
 // 로그아웃 아이콘 클릭 시 처리

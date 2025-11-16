@@ -96,49 +96,49 @@
   </div>
   <div class="home_content">
     <main class="wrap">
-    <header class="header">
-      <div class="page-logo" aria-hidden="true"></div>
-      <h1>AI 기반 개발자 스택 추천</h1>
-    </header>
-    <p class="lead">당신의 상황에 맞는 방식으로 시작하세요.</p>
+      <header class="header">
+        <div class="page-logo" aria-hidden="true"></div>
+        <h1>AI 기반 개발자 스택 추천</h1>
+      </header>
 
-    <section class="grid" aria-label="진입 방식 선택">
-      <!-- 질문형 -->
-      <article class="card" role="button" tabindex="0"
-              aria-label="질문형 추천으로 이동"
-              data-target="quiz.html">
-        <div>
-          <div class="title"><span class="emoji">🧐</span>나는 어떤 직군이 맞을지 모르겠어요</div>
-          <p class="desc">질문을 통해 당신의 성향 기반으로 구체적인 직군과 스택을 제시해줘요.</p>
-        </div>
-        <button class="cta" aria-hidden="true">질문형으로 시작</button>
-        <div class="hint"></div>
-      </article>
+      <p class="lead">
+        PROVI가 당신의 <strong>현재 상황 · 목표 · 관심 분야</strong>를 바탕으로<br>
+        적합한 개발자 직군과 기술 스택을 추천해드려요.
+      </p>
 
-      <!-- 대화형 -->
-      <article class="card" role="button" tabindex="0"
-              aria-label="대화형 추천으로 이동"
-              data-target="chat.html">
-        <div>
-          <div class="title"><span class="emoji">👨‍💻</span>내가 원하는 직군을 알아요</div>
-          <p class="desc">직군·언어·프레임워크를 대화로 말하면 실시간으로 조합이 반영돼요.</p>
+      <!-- 시작 안내 & 버튼 영역 -->
+      <section class="start-section" aria-label="스택 추천 설문 시작">
+        <p class="start-desc">
+          설문은 먼저 <strong>공통 질문</strong>을 진행한 뒤,<br>
+          마지막에 아래 3가지 중 하나를 선택하게 됩니다.
+        </p>
+        <ul class="start-flow">
+          <ol>① 선택한 직군에 대해 <strong>세부 질문</strong>까지 이어서 받기</ol>
+          <ol>② 공통 답변을 바탕으로 <strong>대화형 추천</strong>으로 전환</ol>
+          <ol>③ <strong>공통 질문만으로</strong> 바로 결과 받아보기</ol>
+        </ul>
+
+        <button class="start-btn" type="button" onclick="location.href='quiz.html'">
+          설문 시작하기
+        </button>
+
+        <p class="start-hint">
+          * 설문 도중 언제든 뒤로 돌아가 답변을 수정할 수 있어요.
+        </p>
+      </section>
+
+      <!-- 예시 스택 영역 (기존 유지) -->
+      <section class="examples">
+        <p>💡 예시: “프론트엔드 개발자에게 추천되는 스택”</p>
+        <div class="stack-tags">
+          <span>React</span>
+          <span>TypeScript</span>
+          <span>Angular</span>
+          <span>Next.js</span>
+          <span>TailwindCSS</span>
         </div>
-        <button class="cta" aria-hidden="true">대화형으로 시작</button>
-        <div class="hint"></div>
-      </article>
-    </section>
-    
-    <section class="examples">
-      <p>💡 예시: “프론트엔드 개발자에게 추천되는 스택”</p>
-      <div class="stack-tags">
-        <span>React</span>
-        <span>TypeScript</span>
-        <span>Angular</span>
-        <span>Next.js</span>
-        <span>TailwindCSS</span>
-      </div>
-    </section>
-  </main>
+      </section>
+    </main>
   </div>
 
   <script src="../JAVASCRIPT/sidebar.js"></script>
