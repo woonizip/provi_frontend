@@ -51,7 +51,7 @@ html, body {
   margin: 0;
 }
 
-/* ★ 배경 : quiz/chat 라이트/다크랑 같은 계열 */
+/* 배경 */
 body {
   font-family: 'Noto Sans KR', system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
   color: var(--result-text);
@@ -283,8 +283,7 @@ body {
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  transition: background 0.15s ease, color 0.15s ease,
-              box-shadow 0.15s ease, transform 0.1s ease;
+  transition: background 0.15s ease, color 0.15s ease, box-shadow 0.15s ease, transform 0.1s ease;
 }
 
 /* 주 버튼 */
