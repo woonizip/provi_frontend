@@ -1,4 +1,5 @@
 :root {
+  /* 라이트 모드 기본 색상 */
   --quiz-body-bg: #f3f4f7;
   --quiz-text: #111827;
   --quiz-container-bg: #ffffff;
@@ -17,34 +18,13 @@
   --quiz-progress-bar: #2563eb;
 }
 
-/* 다크 모드 색상 */
-@media (prefers-color-scheme: dark) {
-  :root {
-    --quiz-body-bg: #0b1320;
-    --quiz-text: #e2e6ee;
-    --quiz-container-bg: #121a2a;
-    --quiz-border: #1f2937;
-
-    --quiz-option-bg: #1b2436;
-    --quiz-option-border: #2f3b52;
-    --quiz-option-hover-bg: #22314d;
-    --quiz-option-selected-bg: #203864;
-    --quiz-option-selected-border: #4e8cff;
-
-    --quiz-button-bg: #4e8cff;
-    --quiz-button-hover-bg: #3a72cc;
-
-    --quiz-progress-bg: #1b2436;
-    --quiz-progress-bar: #4e8cff;
-  }
-}
-
 /* 기본 구조 */
 * {
   box-sizing: border-box;
 }
 
-html, body {
+html,
+body {
   height: 100%;
   margin: 0;
 }
@@ -54,7 +34,14 @@ body {
   color: var(--quiz-text);
   margin: 0;
   min-height: 100vh;
-  background: radial-gradient(circle at 0% 0%, #e0edff 0%, #f3f4f7 40%, #eef2ff 80%, #e5e7eb 100%); background-attachment: fixed;
+  background: radial-gradient(
+    circle at 0% 0%,
+    rgba(173, 216, 255, 0.45) 0%,    /* 연파랑 */
+    rgba(220, 230, 255, 0.35) 40%,   /* 더 연한 파랑 */
+    rgba(240, 245, 255, 0.25) 70%,   /* 거의 흰색 */
+    rgba(255, 255, 255, 1) 100%      /* 완전 흰색 */
+  );
+  background-attachment: fixed;
 }
 
 /* 사이드바 오른쪽 영역 정렬 */
@@ -69,11 +56,11 @@ body {
 .quiz_container {
   margin: 2rem auto;
   background-color: var(--quiz-container-bg);
-  border-radius: 14px;
+  border-radius: 24px;
   padding: 1.5rem 1.8rem 1.6rem;
   width: 50%;
   max-width: 700px;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.12);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
   border: 1px solid var(--quiz-border);
 }
 
@@ -180,7 +167,7 @@ h2 {
   height: 8px;
   background: var(--quiz-progress-bar);
   width: 0%;
-  transition: width .25s ease;
+  transition: width 0.25s ease;
   border-radius: 999px;
 }
 
@@ -212,7 +199,9 @@ h2 {
   font-size: 0.95rem;
 }
 
-/* (아이콘/타이틀 헤더 부분) */
+/* ===== 분기 선택 화면 (공통 질문 끝난 뒤) ===== */
+
+/* 헤더 부분 */
 .branch-header {
   display: flex;
   align-items: center;
@@ -227,7 +216,7 @@ h2 {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(37,99,235,0.08);
+  background: rgba(37, 99, 235, 0.08);
   font-size: 1rem;
 }
 
@@ -314,7 +303,7 @@ h2 {
 .branch-hint {
   margin: 0.2rem 0 0;
   font-size: 0.8rem;
-  color: rgba(107,114,128,0.9);
+  color: rgba(107, 114, 128, 0.9);
 }
 
 .branch-back {
@@ -333,14 +322,70 @@ h2 {
   color: #374151;
 }
 
-/* ===== 다크 모드 튜닝 ===== */
+/* ===== 다크 모드 (chat.css 톤 맞춤) ===== */
 @media (prefers-color-scheme: dark) {
+  :root {
+    /* 전체 배경 – chat과 동일 계열 */
+    --quiz-body-bg: #0b1625;
+
+    /* 텍스트 */
+    --quiz-text: #e5e7eb;
+
+    /* 컨테이너(Glass) */
+    --quiz-container-bg: rgba(15, 23, 42, 0.82);
+    --quiz-border: rgba(148, 163, 184, 0.35);
+
+    /* 옵션(선택지) – chat의 남색 계열 */
+    --quiz-option-bg: rgba(17, 24, 39, 0.88);
+    --quiz-option-border: rgba(148, 163, 184, 0.25);
+    --quiz-option-hover-bg: rgba(78, 140, 255, 0.15);
+    --quiz-option-selected-bg: rgba(78, 140, 255, 0.22);
+    --quiz-option-selected-border: #4e8cff;
+
+    /* 버튼 – chat 동일 */
+    --quiz-button-bg: #4e8cff;
+    --quiz-button-hover-bg: #3a72cc;
+
+    /* 진행바 */
+    --quiz-progress-bg: #111827;
+    --quiz-progress-bar: #4e8cff;
+  }
+
   body {
-    background: #0E1425;
+    background:
+      radial-gradient(circle at 0% 0%,
+        rgba(37, 99, 235, 0.35) 0%,
+        rgba(15, 23, 42, 0.96) 42%,
+        rgba(15, 23, 42, 1) 100%);
+    background-color: #0b1625; /* chat-bg */
+    background-attachment: fixed;
+    color: var(--quiz-text);
+  }
+
+  .quiz_container {
+    background: var(--quiz-container-bg);
+    border: 1px solid var(--quiz-border);
+    box-shadow: 0 22px 50px rgba(0, 0, 0, 0.55);
+    backdrop-filter: blur(14px);
+  }
+
+  .option {
+    background: var(--quiz-option-bg);
+    border: 1px solid var(--quiz-option-border);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.35);
+  }
+
+  .option:hover {
+    background: var(--quiz-option-hover-bg);
+  }
+
+  .option.selected {
+    background: var(--quiz-option-selected-bg);
+    border: 2px solid var(--quiz-option-selected-border);
   }
 
   .branch-icon {
-    background: rgba(78,140,255,0.18);
+    background: rgba(78, 140, 255, 0.18);
   }
 
   .branch-main {
@@ -348,7 +393,7 @@ h2 {
   }
 
   .branch-hint {
-    color: rgba(148,163,184,0.95);
+    color: rgba(148, 163, 184, 0.95);
   }
 
   .branch-back {
@@ -390,6 +435,6 @@ h2 {
   }
 
   .branch-btn--ghost:hover {
-    background: rgba(255,255,255,0.05);
+    background: rgba(255, 255, 255, 0.05);
   }
 }
