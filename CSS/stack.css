@@ -12,8 +12,8 @@
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --bg: #0E1425;       /* 본문: 어두운 남보라 */
-    --card: #CBD4E0;     /* 카드: 밝게 유지 */
+    --bg: #0E1425;       
+    --card: #CBD4E0;     
     --text: #f8fafc;
     --card-text: var(--bg);
     --brand: #3b82f6;
@@ -27,10 +27,19 @@
 html, body { height: 100%; margin: 0; }
 
 body {
-  background: var(--bg);
   color: var(--text);
   font-family: system-ui, -apple-system, Segoe UI, Roboto,
     'Noto Sans KR', 'Apple SD Gothic Neo', '맑은 고딕', sans-serif;
+
+  /* quiz.css와 동일한 라이트 모드 그라데이션 */
+  background: radial-gradient(
+    circle at 0% 0%,
+    rgba(173, 216, 255, 0.45) 0%,   /* 연파랑 */
+    rgba(220, 230, 255, 0.35) 40%,  /* 더 연한 파랑 */
+    rgba(240, 245, 255, 0.25) 70%,  /* 거의 흰색 */
+    rgba(255, 255, 255, 1) 100%     /* 완전 흰색 */
+  );
+  background-attachment: fixed;
 }
 
 .home_content {
@@ -77,14 +86,14 @@ h1 {
   line-height: 1.6;
 }
 
-/* 시작 안내 영역 (라이트 모드 기준) */
+/* 시작 안내 영역 */
 .start-section {
-  background: var(--card);             /* 라이트에서는 카드색 */
+  background: var(--card);
   border-radius: var(--radius);
   border: 1px solid var(--line);
   padding: 24px 22px 26px;
   text-align: center;
-  color: var(--card-text);             /* 진한 글씨 */
+  color: var(--card-text);
   box-shadow: var(--shadow);
   animation: fadeIn 0.5s ease;
 }
@@ -120,7 +129,7 @@ h1 {
   color: var(--brand);
 }
 
-/* 시작하기 버튼 — 공통 */
+/* 시작하기 버튼 */
 .start-btn {
   display: inline-flex;
   align-items: center;
@@ -128,7 +137,7 @@ h1 {
   margin-top: 4px;
   padding: 10px 18px;
   border-radius: 999px;
-  background: var(--brand);      /* 파란색 */
+  background: var(--brand);
   color: #fff;
   font-weight: 800;
   border: none;
@@ -155,6 +164,17 @@ h1 {
 
 /* 다크 모드 */
 @media (prefers-color-scheme: dark) {
+  body {
+    background:
+      radial-gradient(circle at 0% 0%,
+        rgba(37, 99, 235, 0.35) 0%,
+        rgba(15, 23, 42, 0.96) 42%,
+        rgba(15, 23, 42, 1) 100%);
+    background-color: #0b1625; /* chat-bg */
+    background-attachment: fixed;
+    color: var(--text);
+  }
+
   .start-section {
     background: rgba(255, 255, 255, 0.08);
     border-radius: var(--radius);
@@ -186,7 +206,7 @@ h1 {
   }
 }
 
-/* 예시 스택 영역 (라이트 모드) */
+/* 예시 스택 영역 */
 .examples {
   margin-top: 28px;
   text-align: center;
@@ -217,7 +237,7 @@ h1 {
   transform: translateY(-2px);
 }
 
-/* 다크 모드 */
+/* 다크 모드 예시 */
 @media (prefers-color-scheme: dark) {
 
   .examples {
@@ -236,10 +256,7 @@ h1 {
   }
 }
 
-
-
-
-/* 기본 페이드 인 */
+/* 페이드 인 */
 @keyframes fadeIn {
   from { opacity: 0; transform: translateY(10px); }
   to { opacity: 1; transform: translateY(0); }
