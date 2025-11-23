@@ -1159,7 +1159,8 @@ document.addEventListener("DOMContentLoaded", () => {
   document.getElementById("branch-end")?.addEventListener("click", () => {
     jobList = [];
     jobIdx = 0;
-    submitToServer(true);
+    const payload = buildPayload(true);
+    goToResultPage(true, payload);
   });
 
   // 4) 공통 질문으로 돌아가기
@@ -1310,6 +1311,13 @@ document.addEventListener("DOMContentLoaded", () => {
     document.getElementById('retryBtn')?.addEventListener('click', () => location.reload());
   }
 
+  function goToResultPage(commonOnly = false, payload) {
+    const payloadJson = JSON.stringify(payload);
+    sessionStorage.setItem("quizResultPayload", payloadJson);
+    sessionStorage.setItem("quizResultCommonOnly", commonOnly ? "1" : "0");
+    window.location.href = "result.html";
+  }
+
   nextBtn.addEventListener("click", () => {
     // 직군 안내 화면에서 '시작하기'
     if (stage === "job" && onJobIntro) {
@@ -1372,7 +1380,8 @@ document.addEventListener("DOMContentLoaded", () => {
         jobIdx += 1;
         render();
       } else {
-        submitToServer(false);
+        const payload = buildPayload(false);
+        goToResultPage(false, payload);
       }
     }
   });
