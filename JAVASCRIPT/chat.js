@@ -102,12 +102,14 @@ document.addEventListener("DOMContentLoaded", () => {
 
   async function sendToServer(userMessage) {
     // 서버로 보낼 payload 예시
+    const quizAnswersForBackend = (quizCommon && Array.isArray(quizCommon.answers)) ? quizCommon.answers : [];
+    
     const payload = {
       messages: [
         ...conversation,
         { role: "user", content: userMessage }
       ],
-      quizAnswers: quizCommon || null,
+      quizAnswers: quizAnswersForBackend,
       nickname
     };
 
@@ -126,7 +128,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   // ===== 폼 submit 핸들러 =====
-  chatForm.addEventListener("submit", async (e) => {
+  chatForm.addEventListener("submit", async (e) => {s
     e.preventDefault();
     const text = chatInput.value.trim();
     if (!text) return;
