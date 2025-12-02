@@ -19,3 +19,10 @@ document.querySelectorAll('.card').forEach(card=>{
 document.querySelector('[aria-label="질문형 추천으로 이동"]').dataset.target = '/stack/quiz';
 document.querySelector('[aria-label="대화형 추천으로 이동"]').dataset.target = '/stack/chat';
 */
+
+const branchEndBtn = document.getElementById("branch-end");
+if (branchEndBtn) {
+  branchEndBtn.addEventListener("click", function () {
+    sessionStorage.setItem("allowAnonymousResult", "true");
+  });
+}

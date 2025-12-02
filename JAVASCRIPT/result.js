@@ -234,3 +234,21 @@ document.addEventListener("DOMContentLoaded", async () => {
     window.location.reload();
   });
 });
+
+document.addEventListener("DOMContentLoaded", function () {
+  const nickname = sessionStorage.getItem("nickname");
+  const allowAnonymous = sessionStorage.getItem("allowAnonymousResult") === "true";
+
+  if (!nickname && !allowAnnoymous) {
+    const goLogin = confirm ("로그인 후 이용할 수 있는 서비스입니다. \n로그인 페이지로 이동하시겠습니까>");
+
+    if (goLogin) {
+      window.location.href = "../HTML/signin.html";
+    } else {
+        window.location.href = "../HTML/stack.html";
+    }
+    return;
+  }
+
+  sessionStorage.removeItem("allowAnonymousResult");
+})

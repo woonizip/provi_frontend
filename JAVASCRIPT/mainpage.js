@@ -1,4 +1,6 @@
+// 공통 설문(기술 스택 추천 시작하기) 버튼용
 function getRecommendation() {
+  // 공통 설문은 비로그인도 가능
   window.location.href = "../HTML/stack.html";
 }
 
@@ -12,7 +14,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
     const nickname = sessionStorage.getItem("nickname");
 
-    // 네비게이션 로그인/로그아웃 UI
+    // ✅ 네비게이션 로그인/로그아웃 UI
     if (nickname) {
       const authArea = document.createElement("div");
       authArea.id = "authArea";
@@ -28,11 +30,12 @@ document.addEventListener("DOMContentLoaded", function () {
       authArea.addEventListener("click", function (e) {
         if (e.target && e.target.id === "logout-link") {
           e.preventDefault();
-          sessionStorage.clear();
-          location.reload();
+          sessionStorage.clear();   // 세션 삭제
+          location.reload();        // 비로그인 상태로 리셋
         }
       });
     } else {
+      // 비로그인 상태
       if (authLink && authLink.tagName.toLowerCase() === "a") {
         authLink.textContent = "로그인/회원가입";
         authLink.href = "../HTML/signin.html";
@@ -41,23 +44,47 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 });
 
-// 로그인 필요한 기능 공통
+/* ---------------------------------------------
+   🔐 로그인 필요한 기능 공통 가드
+   - data-require-login="true" 붙은 요소 전부 대상
+   - 동적으로 생기는 버튼/링크까지 모두 막음
+   - 확인 → signin.html 이동, 취소 → 제자리
+---------------------------------------------- */
 document.addEventListener(
   "click",
   function (e) {
     const protectedEl = e.target.closest("[data-require-login='true']");
     if (!protectedEl) return;
 
+    // ✅ 공통 설문(기술 스택)은 비로그인 허용 → 예외 처리
+    const href =
+      protectedEl.getAttribute("href") ||
+      protectedEl.dataset.href ||
+      "";
+
+    if (href.includes("stack.html")) {
+      // 공통 설문은 로그인 체크 X
+      return;
+    }
+
     const nickname = sessionStorage.getItem("nickname");
 
     if (!nickname) {
       e.preventDefault();
       e.stopImmediatePropagation();
-      alert("로그인 후 이용할 수 있는 서비스입니다.");
 
-      // 이미 로그인 페이지면 또 보내지 않기
-      if (!location.pathname.endsWith("signin.html")) {
-        window.location.href = "../HTML/signin.html";
+      const goLogin = confirm(
+        "로그인 후 이용할 수 있는 서비스입니다.\n로그인 페이지로 이동하시겠습니까?"
+      );
+
+      if (goLogin) {
+        // 이미 로그인 페이지면 또 보낼 필요 없음
+        if (!location.pathname.endsWith("signin.html")) {
+          window.location.href = "../HTML/signin.html";
+        }
+      } else {
+        // 취소 → 아무 것도 안 하고 원래 화면 유지
+        return;
       }
     }
   },
