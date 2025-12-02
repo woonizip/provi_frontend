@@ -14,7 +14,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
     const nickname = sessionStorage.getItem("nickname");
 
-    // ✅ 네비게이션 로그인/로그아웃 UI
+    //네비게이션 로그인/로그아웃 UI
     if (nickname) {
       const authArea = document.createElement("div");
       authArea.id = "authArea";
@@ -73,15 +73,13 @@ document.addEventListener(
       );
 
       if (goLogin) {
-        // 이미 로그인 페이지면 또 보낼 필요 없음
         if (!location.pathname.endsWith("signin.html")) {
           window.location.href = "../HTML/signin.html";
         }
       } else {
-        // 취소 → 아무 것도 안 하고 원래 화면 유지
         return;
       }
     }
   },
-  true // 캡처 단계에서 먼저 가로채기
+  true
 );

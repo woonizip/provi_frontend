@@ -1328,7 +1328,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // 공통 / 직군 질문에서 유효성 검사
     const item = currentItem();
-    if (item && !isAnswered(item)) { 
+    if (item && !item.multiple &&!isAnswered(item)) { 
       alert("하나 이상 선택해주세요."); 
       return; 
     }
@@ -1426,4 +1426,37 @@ document.addEventListener("DOMContentLoaded", () => {
   // 초기 렌더
   prevBtn.disabled = true;
   render();
+});
+
+document.addEventListener("keydown", function (e) {
+  if (e.key !== "Enter") return;
+
+  const nextBtn = document.getElementById("nextBtn");
+  if (!nextBtn) return;
+
+  const tag = e.target.tagName.toLowerCase();
+  const type = (e.target.type || "").toLowerCase();
+
+  if (
+    tag === "textarea" ||
+    tag === "select" ||
+    (tag === "input" && type !== "button" && type !== "submit")
+  ) {
+    return;
+  }
+
+  if (
+    tag === "button" &&
+    e.target.id !== "nextBtn" && 
+    e.target.id !== "prevBtn"
+  ) {
+
+    setTimeout(() => {
+      nextBtn.click();
+    }, 0);
+    return;
+  }
+
+  e.preventDefault();
+  nextBtn.click();
 });
