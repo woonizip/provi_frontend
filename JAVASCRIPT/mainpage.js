@@ -44,19 +44,14 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 });
 
-/* ---------------------------------------------
-   🔐 로그인 필요한 기능 공통 가드
-   - data-require-login="true" 붙은 요소 전부 대상
-   - 동적으로 생기는 버튼/링크까지 모두 막음
-   - 확인 → signin.html 이동, 취소 → 제자리
----------------------------------------------- */
+//로그인 필요한 기능 공통 가드
 document.addEventListener(
   "click",
   function (e) {
     const protectedEl = e.target.closest("[data-require-login='true']");
     if (!protectedEl) return;
 
-    // ✅ 공통 설문(기술 스택)은 비로그인 허용 → 예외 처리
+    // 공통 설문(기술 스택)은 비로그인 허용 → 예외 처리
     const href =
       protectedEl.getAttribute("href") ||
       protectedEl.dataset.href ||
