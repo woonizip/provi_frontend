@@ -7,7 +7,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   // 1. quiz 공통 응답 불러오기
   let quizAnswers = null;
   try {
-    const raw = sessionStorage.getItem("quizCommonAnswers");
+    const raw = sessionStorage.getItem("quizResultAnswers");
     quizAnswers = raw ? JSON.parse(raw) : null;
   } catch (e) {
     console.warn("quizCommonAnswers 파싱 실패:", e);

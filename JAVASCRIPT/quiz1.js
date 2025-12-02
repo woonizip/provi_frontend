@@ -223,6 +223,18 @@ document.addEventListener("DOMContentLoaded", () => {
       ]
     },
 
+    // 17. 장기 목표
+    {
+      id: "careerGoal",
+      q: "장기적으로 어떤 커리어 방향을 원하시나요?",
+      a: [
+        "특정 분야의 전문 개발자로 성장하고 싶어요",
+        "여러 기술을 익힌 올라운더 개발자가 되고 싶어요",
+        "나만의 서비스를 만드는 창업형 개발자가 되고 싶어요",
+        "안정적인 기업에 취업해 커리어를 쌓고 싶어요"
+      ]
+    },
+    
     // 16. 개발 목적
     {
       id: "purpose",
@@ -238,18 +250,6 @@ document.addEventListener("DOMContentLoaded", () => {
         "자기 계발을 위해 새로운 기술을 배우고 싶어요"
       ],
       multiple: true
-    },
-
-    // 17. 장기 목표
-    {
-      id: "careerGoal",
-      q: "장기적으로 어떤 커리어 방향을 원하시나요?",
-      a: [
-        "특정 분야의 전문 개발자로 성장하고 싶어요",
-        "여러 기술을 익힌 올라운더 개발자가 되고 싶어요",
-        "나만의 서비스를 만드는 창업형 개발자가 되고 싶어요",
-        "안정적인 기업에 취업해 커리어를 쌓고 싶어요"
-      ]
     },
 
     // 18. 관심 있는 언어
@@ -1110,11 +1110,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
     <div class="branch-buttons">
       <button class="quiz-btn branch-btn branch-btn--neutral ${hasJobFollowUp ? "" : "branch-btn--disabled"}"
-              id="branch-detail" ${hasJobFollowUp ? "" : "disabled"}>
+              id="branch-detail" ${hasJobFollowUp ? "" : "disabled"} data-require-login="true">
         ${hasJobFollowUp ? "직군별 세부 질문 계속하기" : "직군별 질문 없음 (직군 미선택)"}
       </button>
 
-      <button class="quiz-btn branch-btn branch-btn--primary" id="branch-chat">
+      <button class="quiz-btn branch-btn branch-btn--primary" id="branch-chat" data-require-login="true">
         대화형으로 전환 (채팅으로 추천 받기)
       </button>
 

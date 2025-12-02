@@ -95,40 +95,40 @@
     </div>
   </div>
   <div class="home_content">
-    <main class="chat-wrap">
-      <header class="chat-header">
-        <div class="chat-title">
-          <span class="chat-badge">BETA</span>
-          <h1>대화형 스택 추천</h1>
-        </div>
-        <p class="chat-lead">
-          공통 설문에서 입력하신 내용을 바탕으로, <br>
-          PROVI와 채팅하면서 더 세밀한 추천을 받아보세요.
-        </p>
-        <section class="chat-summary" id="chatSummary"></section>
-      </header>
-      
-      <section class="chat-section" aria-label="대화형 스택 추천">
-        <div class="chat-window" id="chatWindow">
+    <div class="chat-layout">
+      <main class="chat-wrap">
+        <header class="chat-header">
+          <div class="chat-title">
+            <span class="chat-badge">BETA</span>
+            <h1>대화형 스택 추천</h1>
+          </div>
+          <p class="chat-lead">
+            공통 설문에서 입력하신 내용을 바탕으로, <br>
+            PROVI와 채팅하면서 더 세밀한 추천을 받아보세요.
+          </p>
+          <section class="chat-summary" id="chatSummary"></section>
+        </header>
+        
+        <section class="chat-section" aria-label="대화형 스택 추천">
+          <div class="chat-window" id="chatWindow"></div>
           
-        </div>
-        
-        <form class="chat-input-bar" id="chatForm">
-          <textarea
-            id="chatInput"
-            rows="1"
-            placeholder="궁금한 점이나 원하는 방향을 자유롭게 입력해 주세요. (예: '프론트엔드로 가고 싶은데 백엔드도 조금 배우고 싶어요')"
-          ></textarea>
-          <button type="submit" id="chatSendBtn">전송</button>
-        </form>
-        
-        <p class="chat-hint">
-          ⓘ 설문 응답을 기반으로 대화 내용이 반영됩니다. 새로 설문을 하고 싶다면
-          <a href="quiz.html">공통 설문부터 다시 진행</a>할 수 있어요.
-        </p>
-      </section>
-    </main>
-    <!-- <div class="text">스택 추천_대화형</div> -->
+          <form class="chat-input-bar" id="chatForm">
+            <textarea
+              id="chatInput"
+              rows="1"
+              placeholder="궁금한 점이나 원하는 방향을 자유롭게 입력해 주세요. (예: '프론트엔드로 가고 싶은데 백엔드도 조금 배우고 싶어요')"
+            ></textarea>
+            <button type="submit" id="chatSendBtn">전송</button>
+          </form>
+          
+          <p class="chat-hint">
+            ⓘ 설문 응답을 기반으로 대화 내용이 반영됩니다. 새로 설문을 하고 싶다면
+            <a href="quiz.html">공통 설문부터 다시 진행</a>할 수 있어요.
+          </p>
+        </section>
+      </main>
+      <aside class="profile-panel" id="profileDetail"></aside>
+    </div>
   </div>
 
   <script src="../JAVASCRIPT/sidebar.js"></script>

@@ -1,66 +1,169 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ko">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>PROVI</title>
-  <!-- <link rel="stylesheet" href="../CSS/mainpage.css"> -->
   <link rel="stylesheet" href="/CSS/mainpage.css">
-  <!-- <link rel="icon" href="../HTML/images/provi_bg_del.png"> -->
 </head>
 <body>
+  <!-- NAVBAR -->
   <div class="navbar">
-      <a href="../HTML/stack.html">기술 스택</a>
-      <a href="../teamproject.html">팀 프로젝트</a>
-      <a href="#">마이 페이지</a>
-      <span id="authArea">
-        <a href="../HTML/signin.html" id="auth-link">로그인/회원가입</a>
-      </span>
+    <div class="navbar-inner">
+      <div class="navbar-logo">PROVI</div>
+      <nav class="navbar-links">
+        <a href="../HTML/stack.html" data-require-login="true">기술 스택</a>
+        <a href="../teamproject.html" data-require-login="true">팀 프로젝트</a>
+        <a href="#">마이 페이지</a>
+        <a href="../HTML/signin.html">로그인/회원가입</a>
+      </nav>
+    </div>
   </div>
-  
-  <section class="hero">
-    <div class="hero-text">
-      <h1>추천하는<br>개발자 스택</h1>
-      <p>개발을 시작하고 싶은데 막막하신가요?<br>
-      당신에게 딱 맞는 개발 스택을 지금 추천해드립니다!<br>
-      기초부터 탄탄하게, 개발 실력을 키워보세요.</p>
-      <button onclick="location.href='stack.html'">시작하기</button>
-    </div>
-    <img src="images/proglan.png" alt="기술 스택 이미지">
-  </section>
 
-  <section class="guide-section">
-    <h2>학습 가이드라인</h2>
-    <div class="guides">
-      <div class="guide">
-        <img src="https://img.icons8.com/ios-filled/50/3366cc/task.png" alt="로드맵">
-        <h3>로드맵 제공</h3>
-        <p>개발자로서 나아가야 할 뚜렷한 경로를 제시합니다.</p>
+  <main class="landing-wrapper">
+    <!-- HERO SECTION -->
+    <section class="hero">
+      <div class="hero-inner">
+        <!-- 왼쪽 텍스트 영역 -->
+        <div class="hero-main">
+          <div class="hero-badge">AI 기반 개발자 스택 추천 · PROVI</div>
+
+          <h1>
+            추천하는<br>
+            <span>개발자 스택</span>을<br>
+            한 번에 확인하세요.
+          </h1>
+
+          <p class="hero-sub">
+            개발을 시작하고 싶은데 막막하신가요?<br>
+            공통 설문을 기반으로 당신에게 딱 맞는 개발 스택과<br>
+            단계별 학습 로드맵을 PROVI가 제안해 드립니다.
+          </p>
+
+          <div class="hero-actions">
+            <button class="btn-primary" onclick="location.href='stack.html'">
+              기술 스택 추천 시작하기
+            </button>
+          </div>
+
+          <div class="hero-note">
+            <span>· 무료 · 회원가입 후 바로 이용 가능</span>
+            <span class="dot"></span>
+            <span>공통 설문 기준 맞춤 분석</span>
+          </div>
+        </div>
+
+        <!-- 오른쪽 PREVIEW 카드 -->
+        <div class="hero-preview">
+          <div class="preview-card">
+            <div class="preview-header">
+              <span class="preview-title">PROVI Preview</span>
+              <span class="preview-status">
+                <span class="status-dot"></span>
+                실시간 분석 중
+              </span>
+            </div>
+
+            <div class="preview-role">프론트엔드 웹 개발자</div>
+            <p class="preview-desc">
+              화면(UI) 구현과 사용자 경험에 강점이 있는 프로필이에요.
+            </p>
+
+            <div class="preview-tags">
+              <span class="tag">HTML/CSS</span>
+              <span class="tag">JavaScript</span>
+              <span class="tag">React</span>
+              <span class="tag">Git</span>
+              <span class="tag">Notion / Jira</span>
+            </div>
+
+            <ul class="preview-list">
+              <li>웹 기초 문법 &amp; DOM 조작 이해</li>
+              <li>React로 인터랙티브 화면 구현</li>
+              <li>협업 도구를 활용한 팀 프로젝트 경험</li>
+            </ul>
+
+            <p class="preview-foot">
+              지금 설문을 시작하면, 이런 식의 결과를 받아볼 수 있어요.
+            </p>
+          </div>
+        </div>
       </div>
-      <div class="guide">
-        <img src="https://img.icons8.com/ios-filled/50/3366cc/search--v1.png" alt="검색">
-        <h3>학습 자료 검색</h3>
-        <p>필요한 기술 주제에 대한 자료와 분류 리소스를 찾아보세요.</p>
+    </section>
+
+    <!-- GUIDE SECTION -->
+    <section class="guide-section">
+      <header class="guide-header">
+        <h2>PROVI가 함께하는 개발자 성장 여정</h2>
+        <p>
+          진로 탐색부터 실전 프로젝트, 취업 준비까지.<br>
+          한 번의 설문으로 이어지는 전체 흐름을 PROVI가 안내합니다.
+        </p>
+      </header>
+
+      <div class="guides">
+        <div class="guide">
+          <div class="guide-icon">🧭</div>
+          <h3>맞춤 기술 스택 추천</h3>
+          <p>현재 상황과 목표에 맞는 직군과 기술 스택을 추천해 드립니다.</p>
+        </div>
+
+        <div class="guide">
+          <div class="guide-icon">🛤</div>
+          <h3>단계별 학습 로드맵</h3>
+          <p>무엇을 어떤 순서로 공부해야 할지, 단계별 로드맵으로 정리해 드려요.</p>
+        </div>
+
+        <div class="guide">
+          <div class="guide-icon">📚</div>
+          <h3>학습 자료 검색</h3>
+          <p>각 단계에서 찾아보면 좋은 키워드와 학습 주제를 함께 제시합니다.</p>
+        </div>
+
+        <div class="guide">
+          <div class="guide-icon">🧪</div>
+          <h3>실전 프로젝트 가이드</h3>
+          <p>개인·팀 프로젝트에서 어떤 기능부터 구현할지 방향을 제안합니다.</p>
+        </div>
+
+        <div class="guide">
+          <a href="../HTML/portfolio.html" class="no-underline">
+            <div class="guide-icon">📝</div>
+            <h3>내 포트폴리오 생성</h3>
+            <p>프로젝트와 로드맵을 기반으로 나만의 포트폴리오를 정리해 보세요.</p>
+          </a>
+        </div>
+
+        <div class="guide">
+          <div class="guide-icon">🎯</div>
+          <h3>면접 예상 질문</h3>
+          <p>희망 직군에 맞춰 준비하면 좋은 기술·경험 질문들을 정리해 드립니다.</p>
+        </div>
       </div>
-      <div class="guide">
-        <img src="https://img.icons8.com/ios-filled/50/3366cc/checked--v1.png" alt="진행">
-        <h3>진행 상황 추적</h3>
-        <p>학습 경지표 추적하고 목표 달성을 달성하세요.</p>
+    </section>
+
+    <!-- CTA SECTION -->
+    <section class="cta-section">
+      <div class="cta-inner">
+        <div class="cta-text">
+          <h2>지금, 나에게 맞는 개발자 길을 확인해 볼까요?</h2>
+          <p>
+            단 5~10분 정도의 설문으로 진로 방향과 기술 스택을 한 번에 정리해 보세요.<br>
+            이후에는 PROVI와 함께 대화형 추천까지 이어서 받아볼 수 있습니다.
+          </p>
+        </div>
+        <div class="cta-actions">
+          <button class="btn-primary" onclick="location.href='stack.html'">
+            공통 설문 시작하기
+          </button>
+          <button class="btn-ghost" onclick="location.href='../HTML/result.html'">
+            이전에 받은 결과 보기
+          </button>
+        </div>
       </div>
-      <div class="guide">
-        <a href="../HTML/portfolio.html" class="no-underline">
-          <img src="https://img.icons8.com/ios-filled/50/3366cc/open-resume.png" alt="생성">
-          <h3>내 포트폴리오 생성</h3>
-          <p>나만의 포트폴리오 페이지를 만들고 공유해보세요.</p>
-        </a>
-      </div>
-      <div class="guide">
-        <img src="https://img.icons8.com/ios-filled/50/3366cc/questions.png" alt="질문">
-        <h3>면접 예상 질문</h3>
-        <p>개발자로 취직할 수 있는 질문을 확인해보세요.</p>
-      </div>
-    </div>
-  </section>
+    </section>
+  </main>
+
   <script src="../JAVASCRIPT/mainpage.js"></script>
 </body>
 </html>

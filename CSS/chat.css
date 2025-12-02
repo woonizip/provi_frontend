@@ -1,6 +1,4 @@
-/* =========================
-  색상 토큰 (기본 = 라이트 모드)
-   ========================= */
+/* 색상 토큰 (기본 = 라이트 모드)*/
 :root {
   /* 공통 텍스트/브랜드 */
   --chat-text: #111827;
@@ -42,16 +40,13 @@
   --chat-user-text: #ffffff;
 }
 
-/* =========================
-  기본 구조 (공통)
-   ========================= */
+/* 기본 구조 (공통) */
 
 * {
   box-sizing: border-box;
 }
 
-html,
-body {
+html, body {
   height: 100%;
   margin: 0;
 }
@@ -71,6 +66,16 @@ body {
   color: var(--chat-text);
 }
 
+.chat-layout {
+  display: flex;
+  gap: 20px;
+  align-items: stretch;
+  justify-content: center;
+  width: min(1400px, calc(100vw - 120px));
+  /* max-height: calc(100vh - 64px); */
+  max-height: 100%;
+}
+
 /* sidebar.css override */
 .home_content {
   display: flex;
@@ -83,17 +88,101 @@ body {
 
 /* 래퍼 카드 */
 .chat-wrap {
-  width: min(980px, 90vw);
-  max-height: 92vh;
+  /* width: min(1180px, 100vw - 72px); */
+  max-height: 100%;
   background: var(--chat-card-bg);
   border-radius: 24px;
-  padding: 22px 22px 18px;
+  padding: 26px 26px 20px;
   border: 1px solid var(--chat-card-border);
   box-shadow: var(--chat-card-shadow);
   backdrop-filter: blur(10px);
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 18px;
+  flex: 0 0 80%;
+  transition: flex-basis 0.25s ease, max-width 0.25s ease, transform 0.25s ease;
+  min-height: 900px;
+}
+
+.profile-panel {
+  flex: 0 0 0;
+  overflow: hidden;
+  background: var(--chat-summary-bg);
+  border-radius: 20px;
+  border: 1px solid var(--chat-summary-border);
+  padding: 14px 16px 12px;
+  color: var(--chat-summary-text);
+  font-size: 0.8rem;
+  display: flex;
+  flex-direction: column;
+  box-shadow: var(--chat-card-shadow);
+  opacity: 0;
+  transform: translateX(24px);
+  pointer-events: none;
+  transition: flex-basis 0.25s ease, opacity 0.25s ease, transform 0.25s ease;
+}
+
+.chat-layout.profile-open .chat-wrap {
+  flex: 0 0 80%;
+}
+
+.chat-layout.profile-open .profile-panel {
+  flex: 0 0 24%;
+  opacity: 1;
+  transform: translateX(0);
+  pointer-events: auto;
+}
+
+.profile-panel-title {
+  font-weight: 700;
+  font-size: 1rem;
+}
+
+.profile-panel-body {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(148, 163, 184, 0.32);
+  flex: 1;
+  overflow-y: auto;
+  max-height: calc(92vh - 80px);
+}
+
+.profile-detail-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.profile-row {
+  display: flex;
+  gap: 6px;
+  align-items: flex-start;
+}
+
+.profile-row-label {
+  min-width: 80px;
+  font-weight: 600;
+  opacity: 0.9;
+}
+
+.profile-row-value {
+  flex: 1;
+  line-height: 1.5;
+}
+
+@media (max-width: 1100px) {
+  .chat-layout {
+    flex-direction: column;
+    max-height: none;
+    width: min(980px, 96vw);
+  }
+
+  .profile-panel-body {
+    max-height: 260px;
+  }
 }
 
 /* 헤더 */
@@ -148,6 +237,37 @@ body {
   color: var(--chat-summary-text);
 }
 
+.chat-summary-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 4px;
+}
+
+.chat-summary-main {
+  display: grid;
+  gap: 4px;
+}
+
+.chat-summary-extra {
+  margin-top: 6px;
+  padding-top: 6px;
+  border-top: 1px solid rgba(148, 163, 184, 0.25);
+}
+
+.chat-summary-toggle {
+  border: none;
+  background: transparent;
+  color: var(--chat-summary-text);
+  font-size: 0.78rem;
+  cursor: pointer;
+  opacity: 0.8;
+}
+
+.chat-summary-toggle:hover {
+  opacity: 1;
+}
+
 .chat-summary-title {
   font-weight: 700;
   font-size: 0.82rem;
@@ -175,15 +295,15 @@ body {
 /* 채팅창 */
 .chat-window {
   flex: 1;
-  min-height: 260px;
-  max-height: 440px;
+  min-height: 0;
   background: var(--chat-window-bg);
   border-radius: 18px;
   padding: 14px 12px 10px;
   overflow-y: auto;
+  overflow-x: hidden;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 10px;
   border: 1px solid var(--chat-window-border);
 }
 
@@ -194,7 +314,8 @@ body {
   border-radius: 16px;
   font-size: 0.88rem;
   line-height: 1.55;
-  word-break: keep-all;
+  word-break: break-all;
+  overflow-wrap: anywhere;
 }
 
 .chat-bubble.bot {
@@ -241,7 +362,7 @@ body {
   line-height: 1.4;
   max-height: 120px;
 }
-s
+
 .chat-input-bar textarea::placeholder,
 .chat-form textarea::placeholder {
   color: rgba(148, 163, 184, 0.9);
@@ -311,9 +432,7 @@ s
   }
 }
 
-/* =========================
-  다크 모드 전용 오버라이드
-   ========================= */
+/* 다크 모드 전용 오버라이드 */
 @media (prefers-color-scheme: dark) {
   :root {
     --chat-text: #e5e7eb;
@@ -333,8 +452,8 @@ s
 
     --chat-window-bg: radial-gradient(
       circle at 0% 0%,
-      rgba(37, 99, 235, 0.18),
-      rgba(15, 23, 42, 0.85)
+      rgba(37, 99, 235, 0.35),
+      rgba(15, 23, 42, 0.96)
     );
     --chat-window-border: rgba(15, 23, 42, 0.9);
 

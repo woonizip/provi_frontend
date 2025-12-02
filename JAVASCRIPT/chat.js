@@ -1,14 +1,16 @@
 document.addEventListener("DOMContentLoaded", () => {
   const chatWindow = document.getElementById("chatWindow");
-  const chatForm   = document.getElementById("chatForm");
-  const chatInput  = document.getElementById("chatInput");
-  const sendBtn    = document.getElementById("chatSendBtn");
+  const chatForm = document.getElementById("chatForm");
+  const chatInput = document.getElementById("chatInput");
+  const sendBtn = document.getElementById("chatSendBtn");
   const summaryBox = document.getElementById("chatSummary");
+  const detailBox = document.getElementById("profileDetail");
+  const chatLayout = document.querySelector(".chat-layout");
 
-  // ✅ quiz1.js에서 저장해둔 공통 응답 불러오기
-  //   quiz1.js 에서 이미:
-  //   sessionStorage.setItem("quizCommonAnswers", JSON.stringify(payload));
-  //   로 저장하고 chat.html로 이동하고 있음
+  // quiz1.js에서 저장해둔 공통 응답 불러오기
+  // quiz1.js 에서 이미:
+  // sessionStorage.setItem("quizCommonAnswers", JSON.stringify(payload));
+  // 로 저장하고 chat.html로 이동하고 있음
   let quizCommon = null;
   try {
     const raw = sessionStorage.getItem("quizCommonAnswers");
@@ -19,7 +21,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   const nickname = (sessionStorage.getItem("nickname") || "").trim() || "사용자";
 
-  // ===== 설문 요약 렌더링 =====
+  // 설문 요약 렌더링
   function renderSummary() {
     if (!quizCommon || !Array.isArray(quizCommon.answers)) {
       summaryBox.innerHTML = `
@@ -29,6 +31,19 @@ document.addEventListener("DOMContentLoaded", () => {
           <div> 공통 질문 설문을 완료한 뒤, "대화형으로 전환"을 눌러주세요.</div>
         </div>
       `;
+
+      if (detailBox) {
+        detailBox.innerHTML = `
+          <div class="profile-panel-header">
+            <div class="profile-panel-title">${nickname}님의 개발 프로필</div>
+          </div>
+          <div class="profile-panel-body">
+            아직 공통 설문 응답이 없어요.<br>
+            설문을 완료하면 여기에서 자세한 프로필 정보를 확인할 수 있습니다.
+          </div>
+        `;
+        detailBox.classList.remove("open");
+      }
       return;
     }
 
@@ -38,35 +53,194 @@ document.addEventListener("DOMContentLoaded", () => {
       map[a.id] = a;
     });
 
-    const currentStatus = map["currentStatus"]?.value || "-";
-    const targetRole    = map["targetRole"]?.value || "미선택";
-    const purpose       = map["purpose"]?.value || "-";
-    const experience    = map["experience"]?.value || "-";
+    // const formatMulti = (id, fallback = "-") => {
+    //   const v = map[id]?.value;
+    //   if (Array.isArray(v)) return v.length ? v.join(" · ") : fallback;
+    //   if (typeof v === "string" && v.trim().length) return v;
+    //   return fallback;
+    // };
+
+    const getValue = (id) => {
+      const v = map[id]?.value;
+      if (Array.isArray(v)) return v.join(", ");
+      return v || "-";
+    };
+
+    const getMulti = (id, fallback = "-") => {
+      const v = map[id]?.value;
+      if (Array.isArray(v)) return v.length ? v.join(" · ") : fallback;
+      if (typeof v === "string" && v.trim().length) return v;
+      return fallback;
+    };
+
+    const currentStatus = getValue("currentStatus");
+    const targetRole = getValue("targetRole") || "미선택";
+    const experience = getValue("experience");
+    const knownLangs = getValue("knownLangs");
+    const background = getValue("background");
+    const projectExp = getValue("projectExp");
+    const frameworkExp = getValue("frameworkExp");
+    const interestDev = getValue("interestDevField");
+    const projectPref = getValue("projectPreference");
+    const toolExp = getValue("toolExp");
+    const learningStyle = getValue("learningStyle");
+    const devEnv = getValue("devEnvironment");
+    const teamStyle = getValue("teamStyle");
+    const studyTime = getValue("studyTime");
+    const shortTermGoal = getValue("shortTermGoal");
+    const purpose = getMulti("purpose");
+    const careerGoal = getValue("careerGoal");
+    const wishLangs = getValue("wishLangs");
 
     summaryBox.innerHTML = `
-      <div class="chat-summary-title">${nickname}님의 설문 요약</div>
+      <div class="chat-summary-header">
+        <div class="chat-summary-title">${nickname} 님의 설문 프로필 요약</div>
+        <button id="profileToggleBtn" class="chat-summary-toggle">자세히 보기 ▶</button>
+      </div>
+
       <div class="chat-summary-item">
         <div class="chat-summary-label">현재</div>
         <div>${currentStatus}</div>
       </div>
+      
       <div class="chat-summary-item">
         <div class="chat-summary-label">희망 직군</div>
         <div>${targetRole}</div>
       </div>
+
       <div class="chat-summary-item">
         <div class="chat-summary-label">경험</div>
         <div>${experience}</div>
       </div>
+
       <div class="chat-summary-item">
-        <div class="chat-summary-label">목적</div>
-        <div>${purpose}</div>
+        <div class="chat-summary-label">사용해본 언어</div>
+        <div>${knownLangs}</div>
       </div>
     `;
+
+    // if (!detailBox) return;
+
+    // const purpose = getValue("purpose");
+    // const shortTermGoal = getValue("shortTermGoal");
+
+    if (detailBox) {
+      detailBox.innerHTML = `
+        <div class="profile-panel-header">
+          <div class="profile-panel-title">${nickname}님의 질문 선택 답변 보기</div>
+        </div>
+
+        <div class="profile-panel-body">
+          <ul class="profile-detail-list">
+            <li class="profile-row">
+              <div class="profile-row-label">현재 상황</div>
+              <div class="profile-row-value">${currentStatus}</div>
+            </li>
+
+            <li class="profile-row">
+              <div class="profile-row-label">희망 직군</div>
+              <div class="profile-row-value">${targetRole}</div>
+            </li>
+
+            <li class="profile-row">
+              <div class="profile-row-label">경험 수준</div>
+              <div class="profile-row-value">${experience}</div>
+            </li>
+
+            <li class="profile-row">
+              <div class="profile-row-label">전공/배경</div>
+              <div class="profile-row-value">${background}</div>
+            </li>
+
+            <li class="profile-row">
+              <div class="profile-row-label">프로젝트 경험</div>
+              <div class="profile-row-value">${projectExp}</div>
+            </li>
+
+            <li class="profile-row">
+              <div class="profile-row-label">사용해본 스택</div>
+              <div class="profile-row-value">${frameworkExp}</div>
+            </li>
+
+            <li class="profile-row">
+              <div class="profile-row-label">관심 영역</div>
+              <div class="profile-row-value">${interestDev}</div>
+            </li>
+
+            <li class="profile-row">
+              <div class="profile-row-label">프로젝트 성향</div>
+              <div class="profile-row-value">${projectPref}</div>
+            </li>
+
+            <li class="profile-row">
+              <div class="profile-row-label">협업 도구</div>
+              <div class="profile-row-value">${toolExp}</div>
+            </li>
+
+            <li class="profile-row">
+              <div class="profile-row-label">학습 스타일</div>
+              <div class="profile-row-value">${learningStyle}</div>
+            </li>
+
+            <li class="profile-row">
+              <div class="profile-row-label">개발 환경</div>
+              <div class="profile-row-value">${devEnv}</div>
+            </li>
+
+            <li class="profile-row">
+              <div class="profile-row-label">팀/혼자</div>
+              <div class="profile-row-value">${teamStyle}</div>
+            </li>
+
+            <li class="profile-row">
+              <div class="profile-row-label">학습 가능 시간</div>
+              <div class="profile-row-value">${studyTime}</div>
+            </li>
+
+            <li class="profile-row">
+              <div class="profile-row-label">단기 목표</div>
+              <div class="profile-row-value">${shortTermGoal}</div>
+            </li>
+
+            <li class="profile-row">
+              <div class="profile-row-label">개발 목적</div>
+              <div class="profile-row-value">${purpose}</div>
+            </li>
+
+            <li class="profile-row">
+              <div class="profile-row-label">장기 목표</div>
+              <div class="profile-row-value">${careerGoal}</div>
+            </li>
+
+            <li class="profile-row">
+              <div class="profile-row-label">앞으로 배우고 싶은 언어</div>
+              <div class="profile-row-value">${wishLangs}</div>
+            </li>
+          </ul>
+        </div>
+      `;
+
+      detailBox.classList.remove("open");
+
+      if (detailBox) {
+        const toggleBtn = document.getElementById("profileToggleBtn");
+        if (toggleBtn && chatLayout) {
+          let isOpen = false;
+
+          toggleBtn.addEventListener("click", () => {
+            isOpen = !isOpen;
+
+            chatLayout.classList.toggle("profile-open", isOpen);
+            toggleBtn.textContent = isOpen ? "간단히 보기 ◀" : "자세히 보기 ▶";
+          });
+        }
+      }
+    }
   }
 
   renderSummary();
 
-  // ===== 말풍선 유틸 =====
+  // 말풍선 유틸
   function appendBubble(role, text) {
     const bubble = document.createElement("div");
     bubble.className = `chat-bubble ${role}`;
@@ -75,7 +249,7 @@ document.addEventListener("DOMContentLoaded", () => {
     chatWindow.scrollTop = chatWindow.scrollHeight;
   }
 
-  // ===== 초기 인사 메시지 =====
+  // 초기 인사 메시지
   let conversation = [];
 
   function initConversation() {
@@ -96,8 +270,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
   initConversation();
 
-  // ===== 백엔드 API 설정 =====
-  // 👉 실제 스프링/파이썬 서버에서 사용하는 엔드포인트에 맞게 수정
+  // 백엔드 API 설정
+  // 실제 스프링/파이썬 서버에서 사용하는 엔드포인트에 맞게 수정
   const CHAT_API_URL = "/api/chat";  // 필요시 "/api/quiz/chat" 등으로 변경
 
   async function sendToServer(userMessage) {
@@ -127,8 +301,8 @@ document.addEventListener("DOMContentLoaded", () => {
     return data.reply || JSON.stringify(data);
   }
 
-  // ===== 폼 submit 핸들러 =====
-  chatForm.addEventListener("submit", async (e) => {s
+  // 폼 submit 핸들러
+  chatForm.addEventListener("submit", async (e) => {
     e.preventDefault();
     const text = chatInput.value.trim();
     if (!text) return;
@@ -169,7 +343,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 
-  // ===== textarea 자동 높이 조절 =====
+  // textarea 자동 높이 조절
   chatInput.addEventListener("input", () => {
     chatInput.style.height = "auto";
     chatInput.style.height = chatInput.scrollHeight + "px";
