@@ -286,6 +286,7 @@ document.addEventListener("DOMContentLoaded", () => {
       quizAnswers: quizAnswersForBackend,
       nickname
     };
+    console.log(payload);
 
     const res = await fetch(CHAT_API_URL, {
       method: "POST",
