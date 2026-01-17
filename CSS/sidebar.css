@@ -24,6 +24,8 @@
     top: 0;
     left: 0;
     height: 100%;
+    z-index: 9999;
+    overflow: visible;
     width: 78px;
     background: #08182D;
     padding: 6px 14px;
@@ -346,3 +348,24 @@
       transition: all 0.3s ease;
     }
   }
+
+  /* 2) nav 항목/툴팁도 위로 올리기 */
+.sidebar .nav_list li {
+  position: relative;
+  overflow: visible;
+}
+
+/* 3) 툴팁(흰 박스)이 뒤로 깔리는 현상 해결 */
+.sidebar .nav_list li .tooltip {
+  position: absolute;   /* 기존이 absolute일 가능성 높음 */
+  z-index: 10000;       /* sidebar보다도 위 */
+  pointer-events: none; /* 마우스 충돌 방지(선택) */
+}
+
+/* 4) 메인 영역이 stacking context 만들어도 sidebar가 이기게 */
+.home_content,
+.page,
+.main {
+  position: relative;
+  z-index: 1;
+}

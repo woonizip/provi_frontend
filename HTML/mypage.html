@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+  <link rel="stylesheet" href="../CSS/sidebar.css">
+  <link rel="stylesheet" href="../CSS/mypage.css">
+  <link rel="stylesheet" href="https://cdn.boxicons.com/fonts/basic/boxicons.min.css">
+</head>
+<body>
+  <div class="sidebar">
+    <div class="logo_content">
+      <div class="logo">
+        <!-- <img src="../HTML/images/stackflow_light.png" alt="logo"> -->
+        <img src="../HTML/images/provi_delete.png" alt="logo">
+        <div class="logo_name">Provi</div>
+      </div>
+      <i class='bx bx-menu' id="btn"></i> 
+    </div>
+    <ul class="nav_list">
+      <li>
+        <i class='bx bx-search' id="search"></i> 
+        <input type="text" placeholder="Search...">
+        <span class="tooltip">Search</span>
+      </li>
+      <li>
+        <a href="../HTML/stack.html">
+          <i class='bx bx-layers' id="stack"></i>
+          <span class="links_name">Stack</span>
+        </a>
+        <span class="tooltip">Stack</span>
+      </li>
+      <li>
+        <a href="../HTML/mypage.html">
+          <i class='bx bx-dashboard'></i> 
+          <span class="links_name">Dashboard</span>
+        </a>
+        <span class="tooltip">Dashboard</span>
+      </li>
+      <li>
+        <a href="#">
+          <i class='bx bx-clipboard-detail'></i> 
+          <span class="links_name">Question</span>
+        </a>
+        <span class="tooltip">Question</span>
+      </li>
+      <li>
+        <a href="../HTML/teamproject.html">
+          <i class='bx bx-message'></i> 
+          <span class="links_name">Team Project</span>
+        </a>
+        <span class="tooltip">Team Project</span>
+      </li>
+      <li>
+        <a href="../HTML/portfolio.html">
+          <i class='bx bx-folder'></i> 
+          <span class="links_name">Portfolio</span>
+        </a>
+        <span class="tooltip">Portfolio</span>
+      </li>
+      <li>
+        <a href="../HTML/mainpage.html">
+          <i class='bx bx-home'></i> 
+          <span class="links_name">Home</span>
+        </a>
+        <span class="tooltip">Home</span>
+      </li>
+      <li id="adminMenu" style="display: none;">
+        <a href="../HTML/admin.html">
+          <i class='bx bx-user-check'></i>
+          <span class="links_name">AdminMenu</span>
+        </a>
+        <span class="tooltip">AdminMenu</span>
+      </li>
+      <li>
+        <a href="#">
+          <i class='bx bx-cog'></i> 
+          <span class="links_name">Settings</span>
+        </a>
+        <span class="tooltip">Settings</span>
+      </li>
+    </ul>
+    <div class="profile_content">
+      <div class="profile">
+        <div class="profile_details">
+          <img src="../HTML/images/profile.png" alt=""> 
+          <div class="name_job">
+            <div class="name"></div>
+            <div class="job"></div>
+          </div>
+        </div>
+        <i class='bx bx-arrow-in-right-square-half' id="log_in"></i> 
+        <i class='bx bx-arrow-out-left-square-half' id="log_out"></i> 
+      </div>
+    </div>
+  </div>
+
+    <main class="page">
+      <div class="container">
+        <header class="topbar">
+          <div class="hello-card glass">
+            <div class="hello-left">
+              <div class="hello-title">
+                <span class="hello-dot"></span>
+                <h1 class="text text-glow">마이페이지</h1>
+              </div>
+              <p class="hello-sub">
+                스택 추천 결과, 학습 로드맵, 팀 프로젝트, 진행 현황을 한 번에 관리하세요.
+              </p>
+
+              <div class="hero-line">
+                <div class="role-block">
+                  <div class="role-label">선택한 개발자 직군</div>
+                  <div class="role-value" id="devRoleText">-</div>
+                </div>
+
+                <div class="hero-actions">
+                  <button class="btn-primary" id="btnContinue">로드맵 이어하기</button>
+                  <button class="btn-ghost" id="btnRetake">추천 다시 받기</button>
+                </div>
+              </div>
+
+              <div class="tag-row" id="tagRow"></div>
+            </div>
+
+            <div class="hello-right">
+              <div class="mini-stat">
+                <div class="mini-stat-title">이번 주 목표</div>
+                <div class="mini-stat-value" id="weeklyGoalCount">0개</div>
+              </div>
+              <div class="mini-stat">
+                <div class="mini-stat-title">참여 프로젝트</div>
+                <div class="mini-stat-value" id="joinedProjectCount">0개</div>
+              </div>
+              <div class="mini-stat">
+                <div class="mini-stat-title">전체 진행률</div>
+                <div class="mini-stat-value" id="overallPercent">0%</div>
+              </div>
+            </div>
+          </div>
+        </header>
+
+        <section class="layout">
+          <section class="main-col">
+            <section class="card glass">
+              <div class="card-head">
+                <h2 class="card-title">본인 직군 학습 로드맵</h2>
+                <div class="pill" id="nextStepPill">다음 추천 단계: -</div>
+              </div>
+
+              <div class="roadmap" id="roadmap"></div>
+
+              <div class="hint">
+                단계별 진행률은 저장된 학습 기록 기준으로 산출됩니다.
+              </div>
+            </section>
+
+            <section class="card glass">
+              <div class="card-head">
+                <h2 class="card-title">참여한 팀 프로젝트</h2>
+                <div class="card-actions">
+                  <button class="btn-ghost" id="btnGoTeamProject">팀 프로젝트 보드로</button>
+                </div>
+              </div>
+
+              <div class="project-grid" id="joinedProjects"></div>
+
+              <div class="empty" id="joinedEmpty" style="display:none;">
+                <div class="empty-title">참여한 프로젝트가 없어요</div>
+                <div class="empty-desc">팀 프로젝트 페이지에서 “참여하기”를 눌러 참여해보세요.</div>
+              </div>
+            </section>
+
+            <section class="card glass">
+              <div class="card-head">
+                <h2 class="card-title">활동 기록</h2>
+                <div class="tabs">
+                  <button class="tab active" data-range="7">최근 7일</button>
+                  <button class="tab" data-range="30">최근 30일</button>
+                </div>
+              </div>
+
+              <div class="timeline" id="timeline"></div>
+              <div class="empty" id="timelineEmpty" style="display:none;">
+                <div class="empty-title">활동 기록이 아직 없어요</div>
+                <div class="empty-desc">로드맵에서 학습 항목을 완료하면 기록이 쌓입니다.</div>
+              </div>
+            </section>
+          </section>
+
+          <aside class="right-col">
+          <!-- Progress Widget -->
+            <section class="widget glass">
+              <div class="widget-head">
+                <h3 class="widget-title">진행도 및 학습 현황</h3>
+              </div>
+
+              <div class="ring-wrap">
+                <div class="ring" id="ring">
+                  <div class="ring-inner">
+                    <div class="ring-value" id="ringValue">0%</div>
+                    <div class="ring-sub">Completed</div>
+                  </div>
+                </div>
+                <div class="ring-meta">
+                  <div class="ring-meta-row">
+                    <span class="muted">현재 단계</span>
+                    <span class="strong" id="currentStepText">-</span>
+                  </div>
+                  <div class="ring-meta-row">
+                    <span class="muted">다음 단계</span>
+                    <span class="strong" id="nextStepText">-</span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="bars" id="skillBars"></div>
+            </section>
+
+            <!-- Weekly Goals -->
+            <section class="widget glass">
+              <div class="widget-head">
+                <h3 class="widget-title">맞춤 목표</h3>
+                <button class="chip-btn" id="btnResetGoals">재생성</button>
+              </div>
+
+              <div class="checklist" id="goals"></div>
+              <div class="hint">체크는 로컬에 저장됩니다.</div>
+            </section>
+
+            <!-- Feedback -->
+            <section class="widget glass">
+              <div class="widget-head">
+                <h3 class="widget-title">맞춤 피드백 및 목표</h3>
+              </div>
+
+              <div class="feedback" id="feedback"></div>
+            </section>
+
+            <!-- Compare -->
+            <section class="widget glass">
+              <div class="widget-head">
+                <h3 class="widget-title">비교 및 추천</h3>
+              </div>
+
+              <div class="compare" id="compare"></div>
+            </section>
+          </aside>
+        </section>
+      </div>
+    </main>
+
+  <script src="../JAVASCRIPT/sidebar.js"></script>
+  <script src="../JAVASCRIPT/mypage.js"></script>
+</body>
+</html>

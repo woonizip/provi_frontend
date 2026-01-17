@@ -1,110 +1,275 @@
 <!DOCTYPE html>
-<html lang="en">
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <link rel="stylesheet" href="../CSS/sidebar.css">
-  <link rel="stylesheet" href="../CSS/teamproject.css">
-  <link rel="stylesheet" href="https://cdn.boxicons.com/fonts/basic/boxicons.min.css">
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <!-- CSS -->
+  <link rel="stylesheet" href="../CSS/sidebar.css" />
+  <link rel="stylesheet" href="../CSS/teamproject.css" />
+  <link rel="stylesheet" href="https://cdn.boxicons.com/fonts/basic/boxicons.min.css" />
+
   <title>Team Project</title>
 </head>
+
 <body>
+  <!-- =========================
+       Sidebar
+  ========================== -->
   <div class="sidebar">
     <div class="logo_content">
       <div class="logo">
-        <img src="../HTML/images/stackflow_light.png" alt="logo">
+        <img src="../HTML/images/provi_delete.png" alt="logo" />
         <div class="logo_name">StackFlow</div>
       </div>
-      <i class='bx bx-menu' id="btn"></i> 
+      <i class="bx bx-menu" id="btn"></i>
     </div>
+
     <ul class="nav_list">
       <li>
-        <i class='bx bx-search' id="search"></i> 
-        <input type="text" placeholder="Search...">
+        <i class="bx bx-search" id="search"></i>
+        <input type="text" placeholder="Search..." />
         <span class="tooltip">Search</span>
       </li>
+
       <li>
         <a href="/HTML/stack.html">
-          <i class='bx bx-layers' id="stack"></i>
+          <i class="bx bx-layers" id="stack"></i>
           <span class="links_name">Stack</span>
         </a>
         <span class="tooltip">Stack</span>
       </li>
+
       <li>
-        <a href="#">
-          <i class='bx bx-dashboard'></i> 
+        <a href="../HTML/mypage.html">
+          <i class="bx bx-dashboard"></i>
           <span class="links_name">Dashboard</span>
         </a>
         <span class="tooltip">Dashboard</span>
       </li>
+
       <li>
         <a href="#">
-          <i class='bx bx-clipboard-detail'></i> 
+          <i class="bx bx-clipboard-detail"></i>
           <span class="links_name">Question</span>
         </a>
         <span class="tooltip">Question</span>
       </li>
+
       <li>
         <a href="../HTML/teamproject.html">
-          <i class='bx bx-message'></i> 
+          <i class="bx bx-message"></i>
           <span class="links_name">Team Project</span>
         </a>
         <span class="tooltip">Team Project</span>
       </li>
+
       <li>
         <a href="../HTML/portfolio.html">
-          <i class='bx bx-folder'></i> 
+          <i class="bx bx-folder"></i>
           <span class="links_name">Portfolio</span>
         </a>
         <span class="tooltip">Portfolio</span>
       </li>
+
       <li>
-        <a href="../HTML/mainpage1_copy.html">
-          <i class='bx bx-home'></i> 
+        <a href="../HTML/mainpage.html">
+          <i class="bx bx-home"></i>
           <span class="links_name">Home</span>
         </a>
         <span class="tooltip">Home</span>
       </li>
-      <li id="adminMenu" style="display: none;">
+
+      <li id="adminMenu" style="display:none;">
         <a href="../HTML/admin.html">
-          <i class='bx bx-user-check'></i>
+          <i class="bx bx-user-check"></i>
           <span class="links_name">Management</span>
         </a>
         <span class="tooltip">Management</span>
       </li>
+
       <li>
         <a href="#">
-          <i class='bx bx-cog'></i> 
+          <i class="bx bx-cog"></i>
           <span class="links_name">Settings</span>
         </a>
         <span class="tooltip">Settings</span>
       </li>
     </ul>
+
     <div class="profile_content">
       <div class="profile">
         <div class="profile_details">
-          <img src="../HTML/images/profile.png" alt=""> 
+          <img src="../HTML/images/profile.png" alt="" />
           <div class="name_job">
             <div class="name"></div>
             <div class="job"></div>
           </div>
         </div>
-        <i class='bx bx-arrow-in-right-square-half' id="log_in"></i> 
-        <i class='bx bx-arrow-out-left-square-half' id="log_out"></i> 
+        <i class="bx bx-arrow-in-right-square-half" id="log_in"></i>
+        <i class="bx bx-arrow-out-left-square-half" id="log_out"></i>
       </div>
     </div>
   </div>
+
+  <!-- =========================
+       Main Content
+  ========================== -->
   <div class="home_content">
     <section class="hero">
       <div class="hero-header">
-        <h1 class="text">팀 프로젝트</h1>
-        <button class="btn-create-project" id="createBtn">프로젝트 생성</button>
+        <div class="hero-title">
+          <h1 class="text text-glow">팀 프로젝트</h1>
+          <p class="subtext">팀 프로젝트를 생성하고 진행 상황을 관리하세요.</p>
+        </div>
+
+        <div class="hero-actions">
+          <button class="btn-ghost" id="myProjectsBtn" type="button">내가 참여한 팀 프로젝트 보기</button>
+          <button class="btn-create-project" id="createBtn" type="button">프로젝트 생성</button>
+        </div>
       </div>
+
+      <!-- Category / Subcategory -->
+      <section class="category-wrap">
+        <nav class="category-bar" id="categoryBar" aria-label="프로젝트 유형">
+          <button class="cat-btn active" data-cat="ALL" type="button">전체</button>
+          <button class="cat-btn" data-cat="WEB" type="button">웹</button>
+          <button class="cat-btn" data-cat="APP" type="button">앱</button>
+          <button class="cat-btn" data-cat="AI" type="button">AI/데이터</button>
+          <button class="cat-btn" data-cat="GAME" type="button">게임</button>
+          <button class="cat-btn" data-cat="SEC" type="button">보안</button>
+          <button class="cat-btn" data-cat="IOT" type="button">IoT/임베디드</button>
+          <button class="cat-btn" data-cat="BE" type="button">백엔드</button>
+          <button class="cat-btn" data-cat="DESIGN" type="button">프론트/디자인</button>
+          <button class="cat-btn" data-cat="ETC" type="button">기타</button>
+        </nav>
+
+        <nav class="subcat-bar" id="subCategoryBar" aria-label="진행/모집 상태">
+          <button class="subcat-btn active" data-sub="ALL" type="button">전체</button>
+          <button class="subcat-btn" data-sub="RECRUITING" type="button">모집중</button>
+          <button class="subcat-btn" data-sub="DEVELOPING" type="button">진행중</button>
+          <button class="subcat-btn" data-sub="PLANNING" type="button">기획중</button>
+          <button class="subcat-btn" data-sub="MAINTAIN" type="button">유지보수</button>
+          <button class="subcat-btn" data-sub="DONE" type="button">완료</button>
+        </nav>
+      </section>
     </section>
+
     <section class="project-area">
+      <div class="toolbar">
+        <div class="toolbar-left">
+          <span class="count-badge" id="countBadge">0 projects</span>
+        </div>
+
+        <div class="toolbar-right">
+          <!-- 검색 input: JS에서 id=projectSearch를 사용 -->
+          <input class="search-input" id="projectSearch" type="text" placeholder="프로젝트 검색..." />
+
+          <button class="btn-ghost" id="seedBtn" type="button">샘플 추가</button>
+          <button class="btn-ghost danger" id="clearBtn" type="button">전체 삭제</button>
+        </div>
+      </div>
+
       <div class="grid-container" id="grid"></div>
+
+      <div class="empty" id="emptyState" style="display:none;">
+        <div class="empty-title">아직 프로젝트가 없어요</div>
+        <div class="empty-desc">“프로젝트 생성” 버튼으로 시작해봐!</div>
+      </div>
     </section>
   </div>
 
+  <!-- =========================
+       Create Project Modal
+  ========================== -->
+  <div class="modal-backdrop" id="modalBackdrop" aria-hidden="true">
+    <div class="modal" role="dialog" aria-modal="true" aria-label="프로젝트 생성">
+      <div class="modal-header">
+        <div class="modal-title">프로젝트 생성</div>
+        <button class="icon-btn" id="modalCloseBtn" aria-label="닫기" type="button">
+          <i class="bx bx-x"></i>
+        </button>
+      </div>
+
+      <div class="modal-body">
+        <div class="field">
+          <label for="projectName">프로젝트 이름</label>
+          <input id="projectName" type="text" maxlength="40" placeholder="예) PROVI - Stack Recommender" />
+        </div>
+
+        <div class="field">
+          <label for="projectDesc">설명</label>
+          <textarea id="projectDesc" rows="4" maxlength="200" placeholder="프로젝트 목적/기능 요약 (최대 200자)"></textarea>
+        </div>
+
+        <div class="field">
+          <label for="projectTags">태그 (쉼표로 구분)</label>
+          <input id="projectTags" type="text" placeholder="React, Spring, FastAPI, PostgreSQL" />
+        </div>
+
+        <div class="field two">
+          <div>
+            <label for="projectStatus">상태</label>
+            <select id="projectStatus">
+              <option value="PLANNING">기획</option>
+              <option value="DEVELOPING" selected>진행중</option>
+              <option value="RECRUITING">모집중</option>
+              <option value="MAINTAIN">유지보수</option>
+              <option value="DONE">완료</option>
+            </select>
+          </div>
+
+          <div>
+            <label for="projectCategory">카테고리</label>
+            <select id="projectCategory">
+              <option value="WEB" selected>웹</option>
+              <option value="APP">앱</option>
+              <option value="AI">AI/데이터</option>
+              <option value="GAME">게임</option>
+              <option value="SEC">보안</option>
+              <option value="IOT">IoT/임베디드</option>
+              <option value="BE">백엔드</option>
+              <option value="DESIGN">프론트/디자인</option>
+              <option value="ETC">기타</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="field two">
+          <div>
+            <label for="projectRole">내 역할</label>
+            <select id="projectRole">
+              <option value="FE">프론트</option>
+              <option value="BE">백엔드</option>
+              <option value="AI">AI</option>
+              <option value="PM">기획/PM</option>
+              <option value="DESIGN">디자인</option>
+            </select>
+            <p class="hint">프로젝트 생성자는 팀장 권한이지만, “내 역할”은 직접 선택합니다.</p>
+          </div>
+
+          <div>
+            <label>필요 역할(모집)</label>
+            <div class="checkbox-grid" id="neededRolesWrap">
+              <label class="check"><input type="checkbox" value="FE" checked /> 프론트</label>
+              <label class="check"><input type="checkbox" value="BE" checked /> 백엔드</label>
+              <label class="check"><input type="checkbox" value="AI" checked /> AI</label>
+              <label class="check"><input type="checkbox" value="PM" /> 기획/PM</label>
+              <label class="check"><input type="checkbox" value="DESIGN" /> 디자인</label>
+            </div>
+            <p class="hint">체크한 역할이 “필요 역할”로 카드에 표시됩니다.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn-ghost" id="cancelBtn" type="button">취소</button>
+        <button class="btn-primary" id="saveBtn" type="button">저장</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- JS -->
   <script src="../JAVASCRIPT/sidebar.js"></script>
   <script src="../JAVASCRIPT/teamproject.js"></script>
   <script src="../JAVASCRIPT/mainpage.js"></script>
