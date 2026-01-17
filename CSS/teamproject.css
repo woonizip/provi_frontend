@@ -516,3 +516,28 @@ body {
   height: auto !important;
   min-height: 100vh;
 }
+
+/* =========================
+   Sidebar Safe Layout Patch
+========================= */
+
+/* sidebar 폭만큼 본문을 밀어줌 (닫힘 기준) */
+.home_content{
+  margin-left: 78px;              /* sidebar 닫힘 폭 */
+  width: calc(100% - 78px);
+  position: relative;
+  z-index: 1;
+}
+
+/* sidebar 열림(너 sidebar.js가 .open 또는 .active 쓰는지에 따라 둘 다 대응) */
+.sidebar.open ~ .home_content,
+.sidebar.active ~ .home_content{
+  margin-left: 250px;             /* sidebar 열림 폭 */
+  width: calc(100% - 250px);
+}
+
+/* 버튼/카드 클릭이 막히는 현상 방지 */
+.hero, .project-area, .toolbar, .grid-container{
+  position: relative;
+  z-index: 2;
+}

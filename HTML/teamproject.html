@@ -135,19 +135,19 @@
           <button class="cat-btn active" data-cat="ALL" type="button">전체</button>
           <button class="cat-btn" data-cat="WEB" type="button">웹</button>
           <button class="cat-btn" data-cat="APP" type="button">앱</button>
-          <button class="cat-btn" data-cat="AI" type="button">AI/데이터</button>
+          <button class="cat-btn" data-cat="AI_DATA" type="button">AI/데이터</button>
           <button class="cat-btn" data-cat="GAME" type="button">게임</button>
           <button class="cat-btn" data-cat="SEC" type="button">보안</button>
           <button class="cat-btn" data-cat="IOT" type="button">IoT/임베디드</button>
-          <button class="cat-btn" data-cat="BE" type="button">백엔드</button>
-          <button class="cat-btn" data-cat="DESIGN" type="button">프론트/디자인</button>
+          <button class="cat-btn" data-cat="BACKEND" type="button">백엔드</button>
+          <button class="cat-btn" data-cat="FRONTEND" type="button">프론트/디자인</button>
           <button class="cat-btn" data-cat="ETC" type="button">기타</button>
         </nav>
 
         <nav class="subcat-bar" id="subCategoryBar" aria-label="진행/모집 상태">
           <button class="subcat-btn active" data-sub="ALL" type="button">전체</button>
           <button class="subcat-btn" data-sub="RECRUITING" type="button">모집중</button>
-          <button class="subcat-btn" data-sub="DEVELOPING" type="button">진행중</button>
+          <button class="subcat-btn" data-sub="IN_PROGRESS" type="button">진행중</button>
           <button class="subcat-btn" data-sub="PLANNING" type="button">기획중</button>
           <button class="subcat-btn" data-sub="MAINTAIN" type="button">유지보수</button>
           <button class="subcat-btn" data-sub="DONE" type="button">완료</button>
@@ -209,10 +209,10 @@
 
         <div class="field two">
           <div>
-            <label for="projectStatus">상태</label>
-            <select id="projectStatus">
+            <label for="projectSubStatus">상태</label>
+            <select id="projectSubStatus">
               <option value="PLANNING">기획</option>
-              <option value="DEVELOPING" selected>진행중</option>
+              <option value="IN_PROGRESS" selected>진행중</option>
               <option value="RECRUITING">모집중</option>
               <option value="MAINTAIN">유지보수</option>
               <option value="DONE">완료</option>
@@ -237,15 +237,15 @@
 
         <div class="field two">
           <div>
-            <label for="projectRole">내 역할</label>
-            <select id="projectRole">
+            <label for="myRole">내 역할</label>
+            <select id="myRole">
               <option value="FE">프론트</option>
               <option value="BE">백엔드</option>
               <option value="AI">AI</option>
               <option value="PM">기획/PM</option>
               <option value="DESIGN">디자인</option>
             </select>
-            <p class="hint">프로젝트 생성자는 팀장 권한이지만, “내 역할”은 직접 선택합니다.</p>
+            <p class="hint">프로젝트 생성자는 팀장이 되며, 본인의 역할은 직접 선택합니다.</p>
           </div>
 
           <div>
@@ -264,7 +264,7 @@
 
       <div class="modal-footer">
         <button class="btn-ghost" id="cancelBtn" type="button">취소</button>
-        <button class="btn-primary" id="saveBtn" type="button">저장</button>
+        <button class="btn-primary" id="createProjectBtn" type="button">생성</button>
       </div>
     </div>
   </div>
