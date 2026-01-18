@@ -1,20 +1,27 @@
-const STORAGE_KEYS = {
-  PROJECTS: "sf_projects",
-};
-
 const $ = (id) => document.getElementById(id);
 
-// Elements
+/* =========================
+  API Endpoints (Spring Boot)
+========================= */
+const API = {
+  LIST: "/api/teamproject",                 // GET  : 전체 프로젝트 리스트
+  CREATE: "/api/teamproject",               // POST : 프로젝트 생성
+  JOIN: "/api/teamproject/join",            // POST : 프로젝트 참여
+  DELETE: (projectId) => `/api/teamproject/${projectId}`, // DELETE : 프로젝트 삭제
+};
+
+/* =========================
+  Elements
+========================= */
 const grid = $("grid");
 const createBtn = $("createBtn");
 const myProjectsBtn = $("myProjectsBtn");
-const seedBtn = $("seedBtn");
-const clearBtn = $("clearBtn");
+const seedBtn = $("seedBtn");      // 있으면 유지(원하면 제거 가능)
+const clearBtn = $("clearBtn");    // 있으면 유지(원하면 제거 가능)
 const countBadge = $("countBadge");
 const emptyState = $("emptyState");
 
 const projectSearch = $("projectSearch");
-
 const categoryBar = $("categoryBar");
 const subCategoryBar = $("subCategoryBar");
 
@@ -33,19 +40,18 @@ const neededRolesWrap = $("neededRolesWrap");
 
 const adminMenu = $("adminMenu");
 
+/* =========================
+  State
+========================= */
 let activeCategory = "ALL";
 let activeSubStatus = "ALL";
 let onlyMyProjects = false;
 
+let projectsCache = []; // API에서 받은 원본/정규화 데이터
+
 /* =========================
   Utils
 ========================= */
-function nowISO() {
-  return new Date().toISOString();
-}
-function uid() {
-  return Math.random().toString(16).slice(2) + "_" + Date.now().toString(16);
-}
 function escapeHtml(str) {
   return String(str ?? "")
     .replaceAll("&", "&amp;")
@@ -90,6 +96,7 @@ function categoryLabel(v) {
     default: return v;
   }
 }
+
 function subStatusLabel(v) {
   switch (v) {
     case "RECRUITING": return "모집중";
@@ -100,257 +107,134 @@ function subStatusLabel(v) {
     default: return v;
   }
 }
+
 function roleLabel(v) {
   switch (v) {
-    case "FE": return "프론트엔드";
+    case "FE": return "프론트엔드(UI)";
     case "BE": return "백엔드";
-    case "AI": return "AI/데이터";
+    case "API": return "API/연동";
+    case "DATA": return "DB/데이터";
+    case "AI": return "AI/추천";
+    case "QA": return "테스트/품질";
     case "PM": return "기획/PM";
-    case "SEC": return "보안";
-    case "IOT": return "IoT";
-    case "GAME": return "게임";
-    case "DESIGN": return "디자인";
     default: return v;
   }
 }
+
 function roleListLabel(arr) {
   if (!Array.isArray(arr) || arr.length === 0) return "-";
   return arr.map(roleLabel).join(", ");
 }
 
 /* =========================
-  Auth (SESSION STORAGE 기반)
+  Auth (sessionStorage)
+  - 네 signin.js와 동일: nickname만 사용
 ========================= */
-function readSessionUser() {
-  // 로그인 안 된 상태면 null
-  const id = sessionStorage.getItem("loggedInUser");
-  if (!id) return null;
-
-  const nickname = sessionStorage.getItem("nickname") || "";
-  const job = sessionStorage.getItem("job") || "Developer";
-  const isAdmin = sessionStorage.getItem("isAdmin") === "true";
-
-  return {
-    id,
-    nickname,
-    name: nickname, // 기존 코드 호환용 alias
-    job,
-    isAdmin,
-  };
+function getNickname() {
+  return (sessionStorage.getItem("nickname") || "").trim();
 }
 
-function getUserKey(user) {
-  // 고유키는 id만 사용
-  return user?.id ? String(user.id).trim() : null;
-}
-
-function getUserDisplayName(user) {
-  // 표시명은 nickname만 사용
-  const n = user?.nickname || user?.name;
-  const s = n ? String(n).trim() : "";
-  return s || "";
-}
-
-/* =========================
-  Storage
-========================= */
-function readProjects() {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEYS.PROJECTS);
-    const data = raw ? JSON.parse(raw) : [];
-    return Array.isArray(data) ? data : [];
-  } catch {
-    return [];
+function requireLoginOrRedirect() {
+  const nickname = getNickname();
+  if (!nickname) {
+    alert("로그인 후 이용할 수 있는 서비스입니다.");
+    window.location.href = "../HTML/signin.html";
+    return false;
   }
-}
-function writeProjects(projects) {
-  localStorage.setItem(STORAGE_KEYS.PROJECTS, JSON.stringify(projects));
-}
-function addProject(p) {
-  const projects = readProjects();
-  projects.unshift(p);
-  writeProjects(projects);
-}
-function updateProject(id, patch) {
-  const projects = readProjects().map((p) => (p.id === id ? { ...p, ...patch } : p));
-  writeProjects(projects);
-}
-function deleteProject(id) {
-  const projects = readProjects().filter((p) => p.id !== id);
-  writeProjects(projects);
+  return true;
 }
 
 /* =========================
-  Normalize Project
+  Project Normalize
 ========================= */
 function normalizeProject(p) {
-  const members = Array.isArray(p.members) ? p.members : [];
+  const members = Array.isArray(p.members) ? p.members : (Array.isArray(p.memberList) ? p.memberList : []);
+  const neededRoles = Array.isArray(p.neededRoles) ? p.neededRoles : (Array.isArray(p.needRoles) ? p.needRoles : []);
 
-  const leaderFromMembers = members.find((m) => m?.isLeader)?.userName;
+  // 팀장 닉네임 후보들
+  const leaderName =
+    p.leaderName ??
+    p.leader ??
+    p.createdByNickname ??
+    p.createdBy ??
+    p.ownerNickname ??
+    (members.find((m) => m?.isLeader)?.userName) ??
+    "Unknown";
 
   return {
-    id: p.id,
+    id: p.id ?? p.projectId,
     title: p.title ?? p.name ?? "Untitled",
     content: p.content ?? p.description ?? "",
     category: p.category ?? "ETC",
     subStatus: p.subStatus ?? "IN_PROGRESS",
     tags: Array.isArray(p.tags) ? p.tags : [],
-    neededRoles: Array.isArray(p.neededRoles) ? p.neededRoles : [],
+    neededRoles,
     members,
-    createdAt: p.createdAt ?? nowISO(),
-
-    // 신규 권장 필드
-    createdBy: p.createdBy ?? p.createdById ?? "", // 생성자 id
-    leaderName: p.leaderName ?? p.leader ?? leaderFromMembers ?? "Unknown", // 팀장 닉네임
+    createdAt: p.createdAt ?? p.createdDate ?? "",
+    leaderName,
   };
 }
 
 /* =========================
-  Owner / Member checks (id로만 판정)
+  Owner / Member checks (nickname 기준)
 ========================= */
-function isOwner(p, user) {
-  if (!p || !user) return false;
-  const userKey = getUserKey(user);
-  if (!userKey) return false;
-  return String(p.createdBy || "").trim() === userKey;
+function isOwner(p, nickname) {
+  return !!nickname && String(p.leaderName || "").trim() === nickname;
 }
-function isMember(p, user) {
-  if (!p || !user) return false;
-  const userKey = getUserKey(user);
-  if (!userKey) return false;
-  return (p.members || []).some((m) => String(m.userId || "").trim() === userKey);
+
+function isMember(p, nickname) {
+  if (!nickname) return false;
+  return (p.members || []).some((m) => String(m.userName || m.nickname || "").trim() === nickname);
 }
 
 /* =========================
-  Modal
+  API helpers
 ========================= */
-function openModal() {
-  modalBackdrop.classList.add("open");
-  modalBackdrop.setAttribute("aria-hidden", "false");
-  setTimeout(() => projectName.focus(), 0);
-
-  const user = readSessionUser();
-  const job = (user?.job || "").toLowerCase();
-
-  if (job.includes("front")) myRole.value = "FE";
-  else if (job.includes("back")) myRole.value = "BE";
-  else if (job.includes("ai") || job.includes("data")) myRole.value = "AI";
-  else if (job.includes("pm") || job.includes("plan")) myRole.value = "PM";
-}
-function closeModal() {
-  modalBackdrop.classList.remove("open");
-  modalBackdrop.setAttribute("aria-hidden", "true");
-
-  projectName.value = "";
-  projectDesc.value = "";
-  projectTags.value = "";
-  projectCategory.value = "WEB";
-  projectSubStatus.value = "IN_PROGRESS";
-  myRole.value = "FE";
-
-  [...neededRolesWrap.querySelectorAll("input[type='checkbox']")].forEach((cb) => {
-    cb.checked = ["FE", "BE", "AI"].includes(cb.value);
-  });
+async function apiFetch(url, options) {
+  const res = await fetch(url, options);
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  // 일부 DELETE는 body 없을 수 있음
+  const ct = res.headers.get("content-type") || "";
+  if (ct.includes("application/json")) return await res.json();
+  return null;
 }
 
 /* =========================
-  Filter UI
+  Data Load
 ========================= */
-function setActiveButton(container, selector, activeValue, datasetKey) {
-  container?.querySelectorAll(selector).forEach((btn) => {
-    const v = btn.dataset[datasetKey];
-    btn.classList.toggle("active", v === activeValue);
-  });
-}
-function bindCategoryEvents() {
-  categoryBar?.addEventListener("click", (e) => {
-    const btn = e.target.closest("button[data-cat]");
-    if (!btn) return;
-    activeCategory = btn.dataset.cat;
-    setActiveButton(categoryBar, ".cat-btn", activeCategory, "cat");
-    render();
-  });
-
-  subCategoryBar?.addEventListener("click", (e) => {
-    const btn = e.target.closest("button[data-sub]");
-    if (!btn) return;
-    activeSubStatus = btn.dataset.sub;
-    setActiveButton(subCategoryBar, ".subcat-btn", activeSubStatus, "sub");
-    render();
-  });
-}
-
-/* =========================
-  Seed (현재 로그인 유저로 생성)
-========================= */
-function seedProjects() {
-  const user = readSessionUser();
-  const createdBy = getUserKey(user);
-  const leaderName = getUserDisplayName(user);
-
-  if (!createdBy || !leaderName) {
-    alert("Seed 불가: 로그인 후 이용하세요.");
-    return;
+async function loadProjects() {
+  try {
+    const data = await apiFetch(API.LIST, { method: "GET" });
+    const list = Array.isArray(data) ? data : (data?.items || []);
+    projectsCache = list.map(normalizeProject);
+  } catch (e) {
+    projectsCache = [];
+    grid.innerHTML = `<div class="error">서버 오류: ${escapeHtml(e.message)}</div>`;
   }
-
-  const samples = [
-    {
-      id: uid(),
-      title: "PROVI - 개발자 스택 추천 MVP",
-      content: "질문 기반으로 사용자의 성향을 분석하고 스택/학습 로드맵 추천",
-      category: "AI_DATA",
-      subStatus: "IN_PROGRESS",
-      tags: ["React", "Spring", "FastAPI", "PostgreSQL"],
-      leaderName,
-      members: [{ userId: createdBy, userName: leaderName, role: "FE", isLeader: true, joinedAt: nowISO() }],
-      neededRoles: ["FE", "BE", "AI"],
-      createdAt: nowISO(),
-      createdBy,
-    },
-    {
-      id: uid(),
-      title: "팀 매칭/프로젝트 보드",
-      content: "팀 프로젝트 생성/모집/참여 기능 + 필터/검색",
-      category: "WEB",
-      subStatus: "RECRUITING",
-      tags: ["HTML", "CSS", "JS"],
-      leaderName,
-      members: [{ userId: createdBy, userName: leaderName, role: "PM", isLeader: true, joinedAt: nowISO() }],
-      neededRoles: ["BE", "PM"],
-      createdAt: nowISO(),
-      createdBy,
-    },
-  ];
-
-  const projects = readProjects();
-  writeProjects([...samples, ...projects]);
 }
 
 /* =========================
   Render
 ========================= */
 function render() {
-  const user = readSessionUser();
+  const nickname = getNickname();
   const q = (projectSearch?.value || "").trim().toLowerCase();
 
-  let projects = readProjects().map(normalizeProject);
+  let projects = [...projectsCache];
 
-  // 내 참여 프로젝트만 보기 (생성자 포함)
-  if (onlyMyProjects && user) {
-    projects = projects.filter((p) => isOwner(p, user) || isMember(p, user));
+  // "내가 참여한 팀 프로젝트 보기"
+  if (onlyMyProjects && nickname) {
+    projects = projects.filter((p) => isOwner(p, nickname) || isMember(p, nickname));
   }
 
-  // 카테고리 필터
   if (activeCategory !== "ALL") {
     projects = projects.filter((p) => p.category === activeCategory);
   }
 
-  // 서브상태 필터
   if (activeSubStatus !== "ALL") {
     projects = projects.filter((p) => p.subStatus === activeSubStatus);
   }
 
-  // 검색
   if (q) {
     projects = projects.filter((p) => {
       const hay = [
@@ -369,16 +253,16 @@ function render() {
     });
   }
 
-  // render
+  // draw
   grid.innerHTML = "";
-  countBadge.textContent = `${projects.length} projects`;
-  emptyState.style.display = projects.length === 0 ? "block" : "none";
+  if (countBadge) countBadge.textContent = `${projects.length} projects`;
+  if (emptyState) emptyState.style.display = projects.length === 0 ? "block" : "none";
 
   projects.forEach((p) => {
     const tagsHtml = (p.tags || []).map((t) => `<span class="tag">${escapeHtml(t)}</span>`).join("");
 
-    const owner = isOwner(p, user);
-    const member = isMember(p, user);
+    const owner = isOwner(p, nickname);
+    const member = isMember(p, nickname);
 
     const card = document.createElement("div");
     card.className = "project-card";
@@ -413,54 +297,246 @@ function render() {
 }
 
 /* =========================
-  Events
+  Filters
 ========================= */
-createBtn?.addEventListener("click", () => {
-  const user = readSessionUser();
-  if (!user) {
-    alert("로그인 후 이용하세요.");
-    return;
+function setActiveButton(container, selector, activeValue, datasetKey) {
+  container?.querySelectorAll(selector).forEach((btn) => {
+    const v = btn.dataset[datasetKey];
+    btn.classList.toggle("active", v === activeValue);
+  });
+}
+
+function bindCategoryEvents() {
+  categoryBar?.addEventListener("click", (e) => {
+    const btn = e.target.closest("button[data-cat]");
+    if (!btn) return;
+    activeCategory = btn.dataset.cat;
+    setActiveButton(categoryBar, ".cat-btn", activeCategory, "cat");
+    render();
+  });
+
+  subCategoryBar?.addEventListener("click", (e) => {
+    const btn = e.target.closest("button[data-sub]");
+    if (!btn) return;
+    activeSubStatus = btn.dataset.sub;
+    setActiveButton(subCategoryBar, ".subcat-btn", activeSubStatus, "sub");
+    render();
+  });
+}
+
+/* =========================
+  Create Modal (기존 생성 모달 그대로)
+========================= */
+function openCreateModal() {
+  modalBackdrop.classList.add("open");
+  modalBackdrop.setAttribute("aria-hidden", "false");
+  setTimeout(() => projectName.focus(), 0);
+
+  // 기본값
+  projectCategory.value = projectCategory.value || "WEB";
+  projectSubStatus.value = projectSubStatus.value || "IN_PROGRESS";
+
+  // neededRoles 기본 체크(원하는대로 조정 가능)
+  [...neededRolesWrap.querySelectorAll("input[type='checkbox']")].forEach((cb) => {
+    if (cb.checked === false) cb.checked = ["FE", "BE"].includes(cb.value);
+  });
+}
+
+function closeCreateModal() {
+  modalBackdrop.classList.remove("open");
+  modalBackdrop.setAttribute("aria-hidden", "true");
+
+  projectName.value = "";
+  projectDesc.value = "";
+  projectTags.value = "";
+  projectCategory.value = "WEB";
+  projectSubStatus.value = "IN_PROGRESS";
+  myRole.value = "FE";
+
+  [...neededRolesWrap.querySelectorAll("input[type='checkbox']")].forEach((cb) => {
+    cb.checked = ["FE", "BE", "AI"].includes(cb.value);
+  });
+}
+
+/* =========================
+  Join Role Modal (새 모달: 참여자 역할만 선택)
+========================= */
+let joinModalEl = null;
+
+function ensureJoinModal() {
+  if (joinModalEl) return;
+
+  joinModalEl = document.createElement("div");
+  joinModalEl.id = "joinRoleModal";
+  joinModalEl.style.cssText = `
+    position: fixed; inset: 0; display: none; align-items: center; justify-content: center;
+    background: rgba(0,0,0,0.55); z-index: 9999;
+  `;
+
+  joinModalEl.innerHTML = `
+    <div style="
+      width: min(520px, 92vw);
+      background: #0f172a;
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 16px;
+      padding: 18px 18px 14px 18px;
+      color: #e5e7eb;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.45);
+    ">
+      <div style="display:flex; align-items:center; justify-content:space-between; gap:12px;">
+        <div>
+          <div id="joinModalTitle" style="font-size:16px; font-weight:700;">프로젝트 참여</div>
+          <div id="joinModalSub" style="margin-top:4px; font-size:12px; opacity:0.8;">
+            모집 중인 역할 중 하나를 선택하세요.
+          </div>
+        </div>
+        <button id="joinModalX" style="
+          width: 34px; height:34px; border-radius:10px; border:1px solid rgba(255,255,255,0.12);
+          background: rgba(255,255,255,0.06); color:#e5e7eb; cursor:pointer;
+        ">✕</button>
+      </div>
+
+      <div id="joinModalProjectName" style="margin-top:14px; font-size:14px; font-weight:600;"></div>
+
+      <div id="joinRoleList" style="margin-top:12px; display:flex; flex-direction:column; gap:10px;"></div>
+
+      <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:16px;">
+        <button id="joinModalCancel" style="
+          padding: 10px 14px; border-radius: 10px;
+          border: 1px solid rgba(255,255,255,0.14);
+          background: rgba(255,255,255,0.06);
+          color:#e5e7eb; cursor:pointer;
+        ">취소</button>
+
+        <button id="joinModalConfirm" style="
+          padding: 10px 14px; border-radius: 10px;
+          border: 1px solid rgba(59,130,246,0.55);
+          background: rgba(59,130,246,0.9);
+          color:white; cursor:pointer; font-weight:700;
+        ">참여하기</button>
+      </div>
+    </div>
+  `;
+
+  document.body.appendChild(joinModalEl);
+
+  // backdrop click 닫기
+  joinModalEl.addEventListener("click", (e) => {
+    if (e.target === joinModalEl) hideJoinModal();
+  });
+  joinModalEl.querySelector("#joinModalX").addEventListener("click", hideJoinModal);
+  joinModalEl.querySelector("#joinModalCancel").addEventListener("click", hideJoinModal);
+}
+
+let joinContext = { projectId: null, pickedRole: null };
+
+function showJoinModal(project) {
+  ensureJoinModal();
+  joinContext = { projectId: project.id, pickedRole: null };
+
+  const titleEl = joinModalEl.querySelector("#joinModalTitle");
+  const nameEl = joinModalEl.querySelector("#joinModalProjectName");
+  const listEl = joinModalEl.querySelector("#joinRoleList");
+
+  titleEl.textContent = "프로젝트 참여";
+  nameEl.textContent = project.title ? `프로젝트: ${project.title}` : "프로젝트 참여";
+
+  const roles = Array.isArray(project.neededRoles) ? project.neededRoles : [];
+  listEl.innerHTML = "";
+
+  if (roles.length === 0) {
+    listEl.innerHTML = `<div style="opacity:0.85; font-size:13px;">현재 모집 중인 역할이 없습니다.</div>`;
+    joinContext.pickedRole = null;
+  } else {
+    roles.forEach((r, idx) => {
+      const id = `joinRole_${idx}`;
+      const item = document.createElement("label");
+      item.setAttribute("for", id);
+      item.style.cssText = `
+        display:flex; align-items:center; gap:10px;
+        padding: 10px 12px;
+        border: 1px solid rgba(255,255,255,0.10);
+        border-radius: 12px;
+        background: rgba(255,255,255,0.04);
+        cursor: pointer;
+      `;
+      item.innerHTML = `
+        <input type="radio" name="joinRoleRadio" id="${id}" value="${escapeHtml(r)}" style="transform:scale(1.05);" ${idx === 0 ? "checked" : ""}/>
+        <div style="display:flex; flex-direction:column;">
+          <div style="font-weight:700;">${escapeHtml(roleLabel(r))}</div>
+          <div style="font-size:12px; opacity:0.75;">코드: ${escapeHtml(r)}</div>
+        </div>
+      `;
+      listEl.appendChild(item);
+
+      if (idx === 0) joinContext.pickedRole = r;
+    });
+
+    listEl.querySelectorAll("input[name='joinRoleRadio']").forEach((radio) => {
+      radio.addEventListener("change", () => {
+        joinContext.pickedRole = radio.value;
+      });
+    });
   }
-  openModal();
-});
 
-myProjectsBtn?.addEventListener("click", () => {
-  onlyMyProjects = !onlyMyProjects;
-  myProjectsBtn.textContent = onlyMyProjects ? "전체 프로젝트 보기" : "내가 참여한 팀 프로젝트 보기";
-  render();
-});
+  // confirm handler (매번 최신 context로)
+  const confirmBtn = joinModalEl.querySelector("#joinModalConfirm");
+  confirmBtn.onclick = async () => {
+    if (!requireLoginOrRedirect()) return;
 
-modalCloseBtn?.addEventListener("click", closeModal);
-cancelBtn?.addEventListener("click", closeModal);
+    const nickname = getNickname();
+    const projectId = joinContext.projectId;
+    const role = joinContext.pickedRole;
 
-modalBackdrop?.addEventListener("click", (e) => {
-  if (e.target === modalBackdrop) closeModal();
-});
+    if (!projectId) {
+      alert("프로젝트 정보가 없습니다.");
+      return;
+    }
+    if (!role) {
+      alert("참여할 역할을 선택하세요.");
+      return;
+    }
 
-window.addEventListener("keydown", (e) => {
-  if (e.key === "Escape" && modalBackdrop.classList.contains("open")) closeModal();
-});
+    confirmBtn.disabled = true;
+    confirmBtn.textContent = "처리 중...";
 
-createProjectBtn?.addEventListener("click", () => {
+    try {
+      // 백엔드: nickname + projectId + role
+      await apiFetch(API.JOIN, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ projectId, nickname, role }),
+      });
+
+      hideJoinModal();
+      await refreshAndRender();
+      alert(`참여 완료\n역할: ${roleLabel(role)}`);
+    } catch (e) {
+      alert(`서버 오류: ${e.message}`);
+    } finally {
+      confirmBtn.disabled = false;
+      confirmBtn.textContent = "참여하기";
+    }
+  };
+
+  joinModalEl.style.display = "flex";
+}
+
+function hideJoinModal() {
+  if (!joinModalEl) return;
+  joinModalEl.style.display = "none";
+}
+
+/* =========================
+  Create (API)
+========================= */
+async function createProjectToServer() {
+  if (!requireLoginOrRedirect()) return;
+
+  const nickname = getNickname();
   const title = projectName.value.trim();
   const content = projectDesc.value.trim();
   const tags = normalizeTags(projectTags.value);
-
-  if (!title) {
-    alert("프로젝트 이름을 입력해주세요!");
-    projectName.focus();
-    return;
-  }
-
-  const user = readSessionUser();
-  const createdBy = getUserKey(user);
-  const leaderName = getUserDisplayName(user);
-
-  if (!createdBy || !leaderName) {
-    alert("프로젝트 생성 불가: 로그인 정보가 부족합니다.");
-    return;
-  }
-
   const category = projectCategory.value;
   const subStatus = projectSubStatus.value;
   const selectedMyRole = myRole.value;
@@ -469,75 +545,119 @@ createProjectBtn?.addEventListener("click", () => {
     .map((cb) => cb.value)
     .filter(Boolean);
 
+  if (!title) {
+    alert("프로젝트 이름을 입력해주세요!");
+    projectName.focus();
+    return;
+  }
   if (neededRoles.length === 0) {
     alert("필요 역할을 최소 1개 이상 선택해주세요!");
     return;
   }
 
-  const project = {
-    id: uid(),
+  // 백엔드에 넘길 payload (닉네임만)
+  const payload = {
+    nickname,      // 생성자 닉네임(팀장)
     title,
     content,
     category,
     subStatus,
     tags,
-    leaderName,      // 팀장 닉네임(표시용)
     neededRoles,
-    members: [
-      {
-        userId: createdBy,    // 생성자 id(고유키)
-        userName: leaderName, // 생성자 닉네임(표시용)
-        role: selectedMyRole,
-        isLeader: true,
-        joinedAt: nowISO(),
-      },
-    ],
-    createdAt: nowISO(),
-    createdBy, // 생성자 id(고유키)
+    myRole: selectedMyRole, // 생성자가 선택한 "내 역할"도 전달 (원하면 백엔드에서 members에 leader로 반영)
   };
 
-  addProject(project);
-  closeModal();
+  createProjectBtn.disabled = true;
+  createProjectBtn.textContent = "생성 중...";
+
+  try {
+    await apiFetch(API.CREATE, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+
+    closeCreateModal();
+    await refreshAndRender();
+  } catch (e) {
+    alert(`서버 오류: ${e.message}`);
+  } finally {
+    createProjectBtn.disabled = false;
+    createProjectBtn.textContent = "생성";
+  }
+}
+
+/* =========================
+  Delete (API)
+========================= */
+async function deleteProjectFromServer(projectId) {
+  if (!requireLoginOrRedirect()) return;
+  const nickname = getNickname();
+
+  try {
+    // 닉네임도 필요하면 query/body로 받게 백엔드 맞추기
+    // 여기서는 DELETE body 허용되는 서버라 가정(스프링은 가능)
+    await apiFetch(API.DELETE(projectId), {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ nickname, projectId }),
+    });
+    await refreshAndRender();
+  } catch (e) {
+    alert(`서버 오류: ${e.message}`);
+  }
+}
+
+/* =========================
+  Refresh + Render
+========================= */
+async function refreshAndRender() {
+  await loadProjects();
+  render();
+}
+
+/* =========================
+  Events
+========================= */
+createBtn?.addEventListener("click", () => {
+  if (!requireLoginOrRedirect()) return;
+  openCreateModal();
+});
+
+myProjectsBtn?.addEventListener("click", () => {
+  onlyMyProjects = !onlyMyProjects;
+  myProjectsBtn.textContent = onlyMyProjects ? "전체 프로젝트 보기" : "내가 참여한 팀 프로젝트 보기";
   render();
 });
 
-seedBtn?.addEventListener("click", () => {
-  seedProjects();
-  render();
+modalCloseBtn?.addEventListener("click", closeCreateModal);
+cancelBtn?.addEventListener("click", closeCreateModal);
+
+modalBackdrop?.addEventListener("click", (e) => {
+  if (e.target === modalBackdrop) closeCreateModal();
 });
 
-clearBtn?.addEventListener("click", () => {
-  const ok = confirm("정말 전체 프로젝트를 삭제할까요?");
-  if (!ok) return;
-  writeProjects([]);
-  render();
+window.addEventListener("keydown", (e) => {
+  if (e.key === "Escape") {
+    if (modalBackdrop?.classList.contains("open")) closeCreateModal();
+    if (joinModalEl?.style.display === "flex") hideJoinModal();
+  }
 });
+
+createProjectBtn?.addEventListener("click", createProjectToServer);
 
 projectSearch?.addEventListener("input", render);
 
-grid?.addEventListener("click", (e) => {
+grid?.addEventListener("click", async (e) => {
   const btn = e.target.closest("button[data-action]");
   if (!btn) return;
 
   const action = btn.dataset.action;
   const id = btn.dataset.id;
 
-  const user = readSessionUser();
-  const projects = readProjects().map(normalizeProject);
-  const p = projects.find((x) => x.id === id);
+  const nickname = getNickname();
+  const p = projectsCache.find((x) => String(x.id) === String(id));
   if (!p) return;
-
-  if (action === "delete") {
-    if (!user || !isOwner(p, user)) {
-      alert("삭제 권한이 없습니다. (프로젝트 생성자만 삭제 가능)");
-      return;
-    }
-    const ok = confirm("이 프로젝트를 삭제할까요?");
-    if (!ok) return;
-    deleteProject(id);
-    render();
-    return;
-  }
 
   if (action === "open") {
     alert(
@@ -546,70 +666,58 @@ grid?.addEventListener("click", (e) => {
     return;
   }
 
-  if (action === "join") {
-    if (!user) {
-      alert("로그인 후 참여할 수 있습니다.");
+  if (action === "delete") {
+    if (!requireLoginOrRedirect()) return;
+    if (!isOwner(p, nickname)) {
+      alert("삭제 권한이 없습니다. (프로젝트 생성자만 삭제 가능)");
       return;
     }
+    const ok = confirm("이 프로젝트를 삭제할까요?");
+    if (!ok) return;
+    await deleteProjectFromServer(p.id);
+    return;
+  }
 
-    if (isOwner(p, user)) {
+  if (action === "join") {
+    if (!requireLoginOrRedirect()) return;
+
+    if (isOwner(p, nickname)) {
       alert("프로젝트 생성자는 자동 참여 상태입니다.");
       return;
     }
-
-    if (isMember(p, user)) {
+    if (isMember(p, nickname)) {
       alert("이미 참여한 프로젝트입니다.");
       return;
     }
 
-    // 참여 역할 선택(neededRoles 우선)
-    let pickedRole = p.neededRoles?.[0] || "FE";
-
-    if (Array.isArray(p.neededRoles) && p.neededRoles.length > 1) {
-      const answer = prompt(
-        `참여할 역할 코드를 입력하세요:\n${p.neededRoles.map((r) => `- ${roleLabel(r)} (${r})`).join("\n")}\n\n예: FE`
-      );
-      if (answer) pickedRole = answer.trim().toUpperCase();
-    }
-
-    const userId = getUserKey(user);
-    const userName = getUserDisplayName(user);
-
-    if (!userId || !userName) {
-      alert("참여 불가: 로그인 정보가 부족합니다.");
-      return;
-    }
-
-    const nextMembers = [
-      ...(p.members || []),
-      {
-        userId,
-        userName,
-        role: pickedRole,
-        isLeader: false,
-        joinedAt: nowISO(),
-      },
-    ];
-
-    const nextNeeded = (p.neededRoles || []).filter((r) => r !== pickedRole);
-
-    updateProject(id, { members: nextMembers, neededRoles: nextNeeded });
-    alert(`참여 완료: ${p.title}\n역할: ${roleLabel(pickedRole)}`);
-    render();
+    // prompt 대신 역할 선택 모달
+    showJoinModal(p);
+    return;
   }
+});
+
+/* =========================
+  Optional: seed/clear 버튼 처리
+========================= */
+seedBtn?.addEventListener("click", () => {
+  alert("현재는 백엔드(API) 기반입니다. Seed는 백엔드에서 처리하거나 기능을 제거하세요.");
+});
+clearBtn?.addEventListener("click", () => {
+  alert("현재는 백엔드(API) 기반입니다. Clear는 백엔드에서 처리하거나 기능을 제거하세요.");
 });
 
 /* =========================
   Init
 ========================= */
 (function init() {
-  const user = readSessionUser();
-
+  // admin menu (기존 유지)
   if (adminMenu) {
-    const isAdmin = user?.isAdmin === true || sessionStorage.getItem("isAdmin") === "true";
+    const isAdmin = sessionStorage.getItem("isAdmin") === "true";
     adminMenu.style.display = isAdmin ? "block" : "none";
   }
 
   bindCategoryEvents();
-  render();
+
+  // 최초 로딩
+  refreshAndRender();
 })();
