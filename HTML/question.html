@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PROVI</title>
+
+  <link rel="stylesheet" href="../CSS/sidebar.css" />
+  <link rel="stylesheet" href="../CSS/question.css" />
+  <link rel="stylesheet" href="https://cdn.boxicons.com/fonts/basic/boxicons.min.css" />
+</head>
+<body>
+  <div class="sidebar">
+    <div class="logo_content">
+      <div class="logo">
+        <!-- <img src="../HTML/images/stackflow_light.png" alt="logo"> -->
+        <img src="../HTML/images/provi_delete.png" alt="logo">
+        <div class="logo_name">PROVI</div>
+      </div>
+      <i class='bx bx-menu' id="btn"></i> 
+    </div>
+    <ul class="nav_list">
+      <li>
+        <i class='bx bx-search' id="search"></i> 
+        <input type="text" placeholder="Search...">
+        <span class="tooltip">Search</span>
+      </li>
+      <li>
+        <a href="../HTML/stack.html">
+          <i class='bx bx-layers' id="stack"></i>
+          <span class="links_name">Stack</span>
+        </a>
+        <span class="tooltip">Stack</span>
+      </li>
+      <li>
+        <a href="../HTML/mypage.html">
+          <i class='bx bx-dashboard'></i> 
+          <span class="links_name">Dashboard</span>
+        </a>
+        <span class="tooltip">Dashboard</span>
+      </li>
+      <li>
+        <a href="../HTML/question.html">
+          <i class='bx bx-clipboard-detail'></i> 
+          <span class="links_name">Question</span>
+        </a>
+        <span class="tooltip">Question</span>
+      </li>
+      <li>
+        <a href="../HTML/teamproject.html">
+          <i class='bx bx-message'></i> 
+          <span class="links_name">Team Project</span>
+        </a>
+        <span class="tooltip">Team Project</span>
+      </li>
+      <li>
+        <a href="../HTML/portfolio.html">
+          <i class='bx bx-folder'></i> 
+          <span class="links_name">Portfolio</span>
+        </a>
+        <span class="tooltip">Portfolio</span>
+      </li>
+      <li>
+        <a href="../HTML/mainpage.html">
+          <i class='bx bx-home'></i> 
+          <span class="links_name">Home</span>
+        </a>
+        <span class="tooltip">Home</span>
+      </li>
+      <li id="adminMenu" style="display: none;">
+        <a href="../HTML/admin.html">
+          <i class='bx bx-user-check'></i>
+          <span class="links_name">AdminMenu</span>
+        </a>
+        <span class="tooltip">AdminMenu</span>
+      </li>
+      <li>
+        <a href="#">
+          <i class='bx bx-cog'></i> 
+          <span class="links_name">Settings</span>
+        </a>
+        <span class="tooltip">Settings</span>
+      </li>
+    </ul>
+    <div class="profile_content">
+      <div class="profile">
+        <div class="profile_details">
+          <img src="../HTML/images/profile.png" alt=""> 
+          <div class="name_job">
+            <div class="name"></div>
+            <div class="job"></div>
+          </div>
+        </div>
+        <i class='bx bx-arrow-in-right-square-half' id="log_in"></i> 
+        <i class='bx bx-arrow-out-left-square-half' id="log_out"></i> 
+      </div>
+    </div>
+  </div>
+  <div class="home_content">
+    <h1 class="text text-glow">면접 예상 질문</h1>
+
+    <div class="interview_toolbar">
+      <input type="text" id="qSearch" placeholder="질문 검색...">
+
+      <select id="qCategory">
+        <option value="all">전체</option>
+        <option value="동기">동기</option>
+        <option value="역량">역량</option>
+        <option value="개발자질문">개발자 관련 질문</option>
+        <option value="회사이해도">회사 이해도</option>
+        <option value="경험">경험</option>
+        <option value="상황대처">상황 대처</option>
+      </select>
+
+      <button id="btnRandom">🎲 랜덤</button>
+      <button id="btnReset">🧹 초기화</button>
+    </div>
+
+    <div class="interview_stats">
+      <span>전체 : <b id="statTotal">0</b></span>
+      <span>즐겨찾기 : <b id="statFav">0</b></span>
+      <span>완료 : <b id="statDone">0</b></span>
+      <span>표시: <b id="statShown">0</b></span>
+    </div>
+
+    <div class="question_list" id="questionList"></div>
+    <div id="empty" class="empty" style="display:none;">조건에 맞는 질문이 없어요. 검색어/필터를 바꿔보세요.</div>
+  </div>
+
+  <script src="../JAVASCRIPT/sidebar.js"></script>
+  <script src="../JAVASCRIPT/question.js"></script>
+  <script src="../JAVASCRIPT/mainpage.js"></script>
+</body>
+</html>ㄴ

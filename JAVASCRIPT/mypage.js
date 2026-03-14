@@ -1,9 +1,3 @@
-/* =========================================================
-   My Page - Data Binding (LocalStorage 기반)
-   - quiz 결과(직군/태그) + 팀프로젝트(sf_projects) + 학습기록 저장
-========================================================= */
-
-/** 프로젝트(팀프로젝트 페이지)에서 쓰던 키 */
 const STORAGE_KEYS = {
   USER: "sf_user",              // { name, job, role } (프로젝트에서 이미 사용중)
   PROJECTS: "sf_projects",      // 팀프로젝트 카드
@@ -90,9 +84,6 @@ function formatDate(iso) {
   }
 }
 
-/* -----------------------------
-   Role Normalize (quiz 결과 -> 표시용)
------------------------------ */
 function normalizeDevRole(roleRaw) {
   const r = String(roleRaw || "").toLowerCase();
   // 가능한 입력 다양성 대응
@@ -110,9 +101,6 @@ function normalizeDevRole(roleRaw) {
   return roleRaw ? String(roleRaw) : "추천 결과 없음";
 }
 
-/* -----------------------------
-   Roadmap Templates
------------------------------ */
 function getRoadmapTemplate(devRoleText) {
   // devRoleText는 normalizeDevRole 결과(한글) 기반
   if (devRoleText.includes("프론트엔드")) {
@@ -247,11 +235,6 @@ function getRoadmapTemplate(devRoleText) {
   ];
 }
 
-/* -----------------------------
-   Learning Progress Model
-   - stepProgress[stepId] = 0~100
-   - skillProgress[skillKey] = 0~100
------------------------------ */
 function readLearning() {
   return readJSON(STORAGE_KEYS.LEARNING, {
     stepProgress: {},
@@ -263,9 +246,6 @@ function writeLearning(data) {
   writeJSON(STORAGE_KEYS.LEARNING, data);
 }
 
-/* -----------------------------
-   Activity Log
------------------------------ */
 function readActivity() {
   return readJSON(STORAGE_KEYS.ACTIVITY, []);
 }
@@ -275,9 +255,6 @@ function pushActivity(text) {
   writeJSON(STORAGE_KEYS.ACTIVITY, log.slice(0, 200));
 }
 
-/* -----------------------------
-   Goals
------------------------------ */
 function readGoals() {
   return readJSON(STORAGE_KEYS.GOALS, []);
 }
@@ -318,9 +295,6 @@ function generateGoals(devRole) {
   ];
 }
 
-/* -----------------------------
-   Team Project Data
------------------------------ */
 function readUser() {
   return readJSON(STORAGE_KEYS.USER, null);
 }
@@ -369,10 +343,6 @@ function roleLabel(role) {
   }
 }
 
-/* -----------------------------
-   Quiz Result Source
-   - 프로젝트마다 키가 다를 수 있어 "유연하게" 읽음
------------------------------ */
 function readQuizResult() {
   // 1) 우선 지정 키
   const direct = readJSON(STORAGE_KEYS.QUIZ_RESULT, null);
@@ -395,9 +365,6 @@ function readQuizResult() {
   return null;
 }
 
-/* -----------------------------
-   Render: Header (Role/Tags)
------------------------------ */
 function renderHeader(user, quiz) {
   const name = user?.name || "Guest";
   const job = user?.job || "Member";
@@ -446,9 +413,6 @@ function renderHeader(user, quiz) {
   return devRole;
 }
 
-/* -----------------------------
-   Render: Roadmap
------------------------------ */
 function renderRoadmap(devRole) {
   const learning = readLearning();
   const steps = getRoadmapTemplate(devRole);
@@ -575,9 +539,6 @@ function renderSkillBars(devRole, learning) {
   });
 }
 
-/* -----------------------------
-   Render: Joined Projects
------------------------------ */
 function renderJoinedProjects(user) {
   const userName = user?.name || "Guest";
   const projects = readProjects().map(normalizeProject);
@@ -646,9 +607,6 @@ function renderJoinedProjects(user) {
   });
 }
 
-/* -----------------------------
-   Render: Timeline
------------------------------ */
 function renderTimeline(days) {
   const log = readActivity();
   const cutoff = Date.now() - days * 24 * 60 * 60 * 1000;
@@ -676,9 +634,6 @@ function renderTimeline(days) {
   });
 }
 
-/* -----------------------------
-   Render: Goals
------------------------------ */
 function renderGoals(devRole) {
   let goals = readGoals();
 
@@ -718,9 +673,6 @@ function renderGoals(devRole) {
   renderFeedback(devRole, goals);
 }
 
-/* -----------------------------
-   Feedback & Compare
------------------------------ */
 function renderFeedback(devRole, goals) {
   const total = goals.length || 1;
   const done = goals.filter(g => g.done).length;
@@ -795,9 +747,6 @@ function getNextRecommendedStep(devRole) {
   return "기초 다지기 후 미니 프로젝트로 실전 감각 확보";
 }
 
-/* -----------------------------
-   Ring
------------------------------ */
 function setRing(percent) {
   const pct = clamp(percent, 0, 100);
   // conic-gradient 업데이트
@@ -808,9 +757,6 @@ function setRing(percent) {
   )`;
 }
 
-/* -----------------------------
-   Wiring
------------------------------ */
 let timelineRangeDays = 7;
 
 function bindEvents() {
@@ -855,10 +801,6 @@ function bindEvents() {
   });
 }
 
-/* -----------------------------
-   Init + Fallback Seed
-   - quiz 결과/유저가 없으면 화면이 비지 않도록 샘플 주입(개발 편의)
------------------------------ */
 function ensureSeed() {
   const user = readUser();
   if (!user) {
@@ -884,9 +826,6 @@ function ensureSeed() {
   }
 }
 
-/* -----------------------------
-   Render All
------------------------------ */
 function renderAll() {
   const user = readUser();
   const quiz = readQuizResult() || {};
@@ -900,18 +839,12 @@ function renderAll() {
   renderTimeline(timelineRangeDays);
 }
 
-/* -----------------------------
-   Utils
------------------------------ */
 function clamp(n, min, max) {
   const x = Number(n);
   if (Number.isNaN(x)) return min;
   return Math.max(min, Math.min(max, x));
 }
 
-/* -----------------------------
-   Boot
------------------------------ */
 (function init() {
   ensureSeed();
   bindEvents();

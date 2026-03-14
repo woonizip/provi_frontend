@@ -13,14 +13,11 @@
 </head>
 
 <body>
-  <!-- =========================
-       Sidebar
-  ========================== -->
   <div class="sidebar">
     <div class="logo_content">
       <div class="logo">
         <img src="../HTML/images/provi_delete.png" alt="logo" />
-        <div class="logo_name">StackFlow</div>
+        <div class="logo_name">PROVI</div>
       </div>
       <i class="bx bx-menu" id="btn"></i>
     </div>
@@ -49,7 +46,7 @@
       </li>
 
       <li>
-        <a href="#">
+        <a href="../HTML/question.html">
           <i class="bx bx-clipboard-detail"></i>
           <span class="links_name">Question</span>
         </a>
@@ -112,163 +109,134 @@
     </div>
   </div>
 
-  <!-- =========================
-       Main Content
-  ========================== -->
   <div class="home_content">
-    <section class="hero">
-      <div class="hero-header">
-        <div class="hero-title">
-          <h1 class="text text-glow">팀 프로젝트</h1>
-          <p class="subtext">팀 프로젝트를 생성하고 진행 상황을 관리하세요.</p>
+    <div class="tp-wrap">
+      <section class="tp-header">
+        <div class="tp-title-wrap">
+          <h1>Team Project Board</h1>
+          <p>팀 프로젝트를 생성하고 참여/모집을 관리하세요.</p>
         </div>
 
-        <div class="hero-actions">
-          <button class="btn-ghost" id="myProjectsBtn" type="button">내가 참여한 팀 프로젝트 보기</button>
-          <button class="btn-create-project" id="createBtn" type="button">프로젝트 생성</button>
+        <div class="tp-actions">
+          <button id="createBtn" class="btn btn-primary" type="button">프로젝트 생성</button>
+          <button id="myProjectsBtn" class="btn btn-ghost" type="button">내가 참여한 팀 프로젝트 보기</button>
+          <button id="seedBtn" class="btn btn-ghost" type="button">샘플 추가</button>
+          <button id="clearBtn" class="btn btn-danger" type="button">샘플 삭제</button>
         </div>
-      </div>
-
-      <!-- Category / Subcategory -->
-      <section class="category-wrap">
-        <nav class="category-bar" id="categoryBar" aria-label="프로젝트 유형">
-          <button class="cat-btn active" data-cat="ALL" type="button">전체</button>
-          <button class="cat-btn" data-cat="WEB" type="button">웹</button>
-          <button class="cat-btn" data-cat="APP" type="button">앱</button>
-          <button class="cat-btn" data-cat="AI_DATA" type="button">AI/데이터</button>
-          <button class="cat-btn" data-cat="GAME" type="button">게임</button>
-          <button class="cat-btn" data-cat="SEC" type="button">보안</button>
-          <button class="cat-btn" data-cat="IOT" type="button">IoT/임베디드</button>
-          <button class="cat-btn" data-cat="BACKEND" type="button">백엔드</button>
-          <button class="cat-btn" data-cat="FRONTEND" type="button">프론트/디자인</button>
-          <button class="cat-btn" data-cat="ETC" type="button">기타</button>
-        </nav>
-
-        <nav class="subcat-bar" id="subCategoryBar" aria-label="진행/모집 상태">
-          <button class="subcat-btn active" data-sub="ALL" type="button">전체</button>
-          <button class="subcat-btn" data-sub="RECRUITING" type="button">모집중</button>
-          <button class="subcat-btn" data-sub="IN_PROGRESS" type="button">진행중</button>
-          <button class="subcat-btn" data-sub="PLANNING" type="button">기획중</button>
-          <button class="subcat-btn" data-sub="MAINTAIN" type="button">유지보수</button>
-          <button class="subcat-btn" data-sub="DONE" type="button">완료</button>
-        </nav>
       </section>
-    </section>
 
-    <section class="project-area">
-      <div class="toolbar">
-        <div class="toolbar-left">
-          <span class="count-badge" id="countBadge">0 projects</span>
+      <section class="tp-search-area">
+        <input id="projectSearch" class="search-input" type="text" placeholder="프로젝트 검색..." />
+      </section>
+
+      <section class="tp-filter-group">
+        <div id="categoryBar" class="filter-bar">
+          <button class="chip active" data-cat="ALL" type="button">전체</button>
+          <button class="chip" data-cat="WEB" type="button">웹</button>
+          <button class="chip" data-cat="AI_DATA" type="button">AI/데이터</button>
+          <button class="chip" data-cat="GAME" type="button">게임</button>
+          <button class="chip" data-cat="SEC" type="button">보안</button>
         </div>
 
-        <div class="toolbar-right">
-          <!-- 검색 input: JS에서 id=projectSearch를 사용 -->
-          <input class="search-input" id="projectSearch" type="text" placeholder="프로젝트 검색..." />
-
-          <button class="btn-ghost" id="seedBtn" type="button">샘플 추가</button>
-          <button class="btn-ghost danger" id="clearBtn" type="button">전체 삭제</button>
+        <div id="subCategoryBar" class="filter-bar">
+          <button class="chip active" data-sub="ALL" type="button">전체</button>
+          <button class="chip" data-sub="RECRUITING" type="button">모집중</button>
+          <button class="chip" data-sub="IN_PROGRESS" type="button">진행중</button>
+          <button class="chip" data-sub="DONE" type="button">완료</button>
         </div>
-      </div>
+      </section>
 
-      <div class="grid-container" id="grid"></div>
+      <section class="tp-count-wrap">
+        <span id="countBadge" class="count-badge">0 projects</span>
+      </section>
 
-      <div class="empty" id="emptyState" style="display:none;">
-        <div class="empty-title">아직 프로젝트가 없어요</div>
-        <div class="empty-desc">“프로젝트 생성” 버튼으로 시작해봐!</div>
-      </div>
-    </section>
-  </div>
+      <section id="grid" class="tp-grid"></section>
 
-  <!-- =========================
-       Create Project Modal
-  ========================== -->
-  <div class="modal-backdrop" id="modalBackdrop" aria-hidden="true">
-    <div class="modal" role="dialog" aria-modal="true" aria-label="프로젝트 생성">
-      <div class="modal-header">
-        <div class="modal-title">프로젝트 생성</div>
-        <button class="icon-btn" id="modalCloseBtn" aria-label="닫기" type="button">
-          <i class="bx bx-x"></i>
-        </button>
-      </div>
+      <section id="emptyState" class="tp-empty" style="display:none;">
+        프로젝트가 없습니다.
+      </section>
+    </div>
 
-      <div class="modal-body">
-        <div class="field">
-          <label for="projectName">프로젝트 이름</label>
-          <input id="projectName" type="text" maxlength="40" placeholder="예) PROVI - Stack Recommender" />
+    <!-- Create Modal -->
+    <div id="modalBackdrop" class="modal-backdrop" aria-hidden="true">
+      <div class="modal" role="dialog" aria-modal="true" aria-label="프로젝트 생성">
+        <div class="modal-header">
+          <div class="modal-title">프로젝트 생성</div>
+          <button id="modalCloseBtn" class="icon-btn" type="button">✕</button>
         </div>
 
-        <div class="field">
-          <label for="projectDesc">설명</label>
-          <textarea id="projectDesc" rows="4" maxlength="200" placeholder="프로젝트 목적/기능 요약 (최대 200자)"></textarea>
-        </div>
-
-        <div class="field">
-          <label for="projectTags">태그 (쉼표로 구분)</label>
-          <input id="projectTags" type="text" placeholder="React, Spring, FastAPI, PostgreSQL" />
-        </div>
-
-        <div class="field two">
-          <div>
-            <label for="projectSubStatus">상태</label>
-            <select id="projectSubStatus">
-              <option value="PLANNING">기획</option>
-              <option value="IN_PROGRESS" selected>진행중</option>
-              <option value="RECRUITING">모집중</option>
-              <option value="MAINTAIN">유지보수</option>
-              <option value="DONE">완료</option>
-            </select>
-          </div>
-
-          <div>
-            <label for="projectCategory">카테고리</label>
+        <div class="modal-body">
+          <div class="field">
+            <label for="projectCategory">분야</label>
             <select id="projectCategory">
-              <option value="WEB" selected>웹</option>
-              <option value="APP">앱</option>
-              <option value="AI">AI/데이터</option>
-              <option value="GAME">게임</option>
-              <option value="SEC">보안</option>
-              <option value="IOT">IoT/임베디드</option>
-              <option value="BE">백엔드</option>
-              <option value="DESIGN">프론트/디자인</option>
-              <option value="ETC">기타</option>
+              <option value="웹">웹</option>
+              <option value="AI/데이터">AI/데이터</option>
+              <option value="게임">게임</option>
+              <option value="보안">보안</option>
             </select>
           </div>
-        </div>
 
-        <div class="field two">
-          <div>
-            <label for="myRole">내 역할</label>
-            <select id="myRole">
-              <option value="FE">프론트(UI)</option>
-              <option value="BE">백엔드</option>
-              <option value="API">API/연동</option>
-              <option value="DATA">DB/데이터</option>
-              <option value="AI">AI/추천</option>
-              <option value="QA">테스트/품질</option>
-              <option value="PM">기획/PM</option>
-            </select>
-            <p class="hint">프로젝트 생성자는 팀장이 되며, 본인의 역할은 직접 선택합니다.</p>
+          <div class="field">
+            <label for="projectUserLimit">최대 인원</label>
+            <input type="number" id="projectUserLimit" min="1" placeholder="최대 인원 입력" />
           </div>
 
-          <div>
-            <label>필요 역할(모집)</label>
-            <div class="checkbox-grid" id="neededRolesWrap">
-              <label class="check"><input type="checkbox" value="FE" checked /> 프론트</label>
-              <label class="check"><input type="checkbox" value="BE" checked /> 백엔드</label>
-              <label class="check"><input type="checkbox" value="API" /> API/연동</label>
-              <label class="check"><input type="checkbox" value="DATA" /> DB/데이터</label>
-              <label class="check"><input type="checkbox" value="AI" /> AI/추천</label>
-              <label class="check"><input type="checkbox" value="QA" /> 테스트/품질</label>
-              <label class="check"><input type="checkbox" value="PM" /> 기획/PM</label>
+          <div class="field">
+            <label for="projectName">제목</label>
+            <input type="text" id="projectName" maxlength="40" placeholder="프로젝트 제목" />
+          </div>
+
+          <div class="field">
+            <label for="projectDesc">내용</label>
+            <textarea id="projectDesc" maxlength="200" placeholder="프로젝트 설명"></textarea>
+          </div>
+
+          <div class="field">
+            <label for="projectTagsInput">태그</label>
+            <div class="tag-input-wrap" id="tagInputWrap">
+              <div class="tag-chip-list" id="tagChipList"></div>
+              <input
+                type="text"
+                id="projectTagsInput"
+                class="tag-real-input"
+                placeholder="언어 검색..."
+                autocomplete="off"
+              />
+              <div class="tag-suggest-list" id="tagSuggestList"></div>
             </div>
-            <p class="hint">체크한 역할이 “필요 역할”로 카드에 표시됩니다.</p>
+          </div>
+
+          <div class="field two-cols">
+            <div>
+              <label for="myRole">내 역할</label>
+              <select id="myRole">
+                <option>프론트</option>
+                <option>백엔드</option>
+                <option>DB/데이터</option>
+                <option>AI/추천</option>
+                <option>테스트/품질</option>
+                <option>기획/PM</option>
+              </select>
+            </div>
+
+            <div>
+              <label>필요 역할(모집)</label>
+              <div class="checkbox-grid" id="neededRolesWrap">
+                <label class="check"><input type="checkbox" value="프론트" checked /> 프론트</label>
+                <label class="check"><input type="checkbox" value="백엔드" checked /> 백엔드</label>
+                <label class="check"><input type="checkbox" value="DB/데이터" /> DB/데이터</label>
+                <label class="check"><input type="checkbox" value="AI/추천" /> AI/추천</label>
+                <label class="check"><input type="checkbox" value="테스트/품질" /> 테스트/품질</label>
+                <label class="check"><input type="checkbox" value="기획/PM" /> 기획/PM</label>
+              </div>
+            </div>
           </div>
         </div>
-      </div>
 
-      <div class="modal-footer">
-        <button class="btn-ghost" id="cancelBtn" type="button">취소</button>
-        <button class="btn-primary" id="createProjectBtn" type="button">생성</button>
+        <div class="modal-footer">
+          <button id="cancelBtn" class="btn btn-ghost" type="button">취소</button>
+          <button id="createProjectBtn" class="btn btn-primary" type="button">생성</button>
+        </div>
       </div>
     </div>
   </div>
