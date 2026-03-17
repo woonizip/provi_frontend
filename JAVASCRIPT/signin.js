@@ -48,7 +48,7 @@ document.addEventListener("DOMContentLoaded", function () {
   async function apiFetch(url, options = {}) {
     const res = await fetch(url, {
       ...options,
-      credentials: "include" // ⭐ 세션 쿠키 포함
+      credentials: "include"
     });
 
     let data = null;
