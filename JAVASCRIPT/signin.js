@@ -45,20 +45,24 @@ document.addEventListener("DOMContentLoaded", function () {
     }
   }
 
-  async function apiFetch(url, options) {
-    const response = await fetch(url, options);
+  async function apiFetch(url, options = {}) {
+    const res = await fetch(url, {
+      ...options,
+      credentials: "include" // ⭐ 세션 쿠키 포함
+    });
 
     let data = null;
-    const contentType = response.headers.get("content-type") || "";
+    const contentType = res.headers.get("content-type") || "";
+
     if (contentType.includes("application/json")) {
-      data = await response.json();
+      data = await res.json();
     }
 
-    if (!response.ok) {
+    if (!res.ok) {
       const message =
         data?.message ||
         data?.error ||
-        `HTTP ${response.status}`;
+        `HTTP ${res.status}`;
       throw new Error(message);
     }
 
