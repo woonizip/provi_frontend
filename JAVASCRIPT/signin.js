@@ -129,37 +129,34 @@ document.addEventListener("DOMContentLoaded", function () {
 
   setRememberedId();
 
-  loginForm?.addEventListener("submit", async function (e) {
+  loginForm.addEventListener("submit", async (e) => {
     e.preventDefault();
 
-    const id = loginIdInput?.value.trim() || "";
-    const password = loginPasswordInput?.value || "";
+    const id = loginIdInput.value.trim();
+    const password = loginPasswordInput.value;
 
-    if (!validateLoginInput(id, password)) return;
+    const formData = new URLSearchParams();
+    formData.append("username", id);
+    formData.append("password", password);
 
     try {
-      const data = await apiFetch(API.LOGIN, {
+      const res = await fetch("/login", {
         method: "POST",
         headers: {
-          "Content-Type": "application/json",
+          "Content-Type": "application/x-www-form-urlencoded",
         },
-        body: JSON.stringify({
-          id,
-          password,
-        }),
+        body: formData,
+        credentials: "include",
       });
 
-      storeLoginSession({
-        id: data?.id ?? id,
-        nickname: data?.nickname ?? "",
-        job: data?.job ?? "Developer",
-        isAdmin: !!data?.isAdmin,
-      });
+      if (res.ok || res.redirected) {
+        window.location.href = "../HTML/mainpage.html";
+      } else {
+        alert("로그인 실패");
+      }
 
-      saveRememberedId();
-      window.location.href = "../HTML/mainpage.html";
-    } catch (error) {
-      showAlert(`로그인 실패: ${error.message}`);
+    } catch (e) {
+      alert("서버 연결 실패");
     }
   });
 
