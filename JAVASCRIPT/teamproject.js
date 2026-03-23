@@ -355,7 +355,7 @@ function resetTags() {
 async function loadProjects() {
   try {
     const data = await apiFetch(API.LIST, { method: "GET" });
-    const list = Array.isArray(data) ? data : (data?.items || []);
+    const list = Array.isArray(data) ? data : (data?.content || []);
     projectsCache = list.map(normalizeProject);
   } catch (e) {
     projectsCache = [];

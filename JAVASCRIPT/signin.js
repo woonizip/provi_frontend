@@ -140,8 +140,8 @@ document.addEventListener("DOMContentLoaded", function () {
     const password = loginPasswordInput.value;
 
     const formData = new URLSearchParams();
-    formData.append("username", id);
-    formData.append("password", password);
+    formData.append("userID", id);
+    formData.append("userPassword", password);
 
     try {
       const res = await fetch("/login", {
