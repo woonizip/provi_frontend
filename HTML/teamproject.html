@@ -4,7 +4,6 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-  <!-- CSS -->
   <link rel="stylesheet" href="../CSS/sidebar.css" />
   <link rel="stylesheet" href="../CSS/teamproject.css" />
   <link rel="stylesheet" href="https://cdn.boxicons.com/fonts/basic/boxicons.min.css" />
@@ -241,7 +240,97 @@
     </div>
   </div>
 
-  <!-- JS -->
+  <div class="modal-backdrop" id="detailBackdrop" aria-hidden="true">
+    <section class="modal-card detail-modal" role="dialog" aria-modal="true" aria-labelledby="detailModalTitle">
+      <div class="modal-head">
+        <div>
+          <h2 id="detailModalTitle">프로젝트 상세</h2>
+          <p class="modal-sub" id="detailModalSub">프로젝트 정보를 확인하고 참여할 수 있습니다.</p>
+        </div>
+        <button id="detailCloseBtn" class="icon-btn" type="button" aria-label="닫기">✕</button>
+      </div>
+
+      <div class="detail-body">
+        <div class="detail-main">
+          <div class="detail-badges">
+            <span id="detailCategoryBadge" class="badge-chip">카테고리</span>
+            <span id="detailStatusBadge" class="badge-chip">상태</span>
+            <span id="detailSampleBadge" class="badge-chip detail-sample-badge" style="display:none;">SAMPLE</span>
+          </div>
+
+          <h3 id="detailProjectTitle" class="detail-title">프로젝트 제목</h3>
+          <p id="detailProjectDesc" class="detail-desc">프로젝트 설명</p>
+
+          <div class="detail-meta-grid">
+            <div class="meta-box">
+              <span class="meta-label">팀장</span>
+              <strong id="detailLeaderName">-</strong>
+            </div>
+            <div class="meta-box">
+              <span class="meta-label">생성일</span>
+              <strong id="detailCreatedAt">-</strong>
+            </div>
+            <div class="meta-box">
+              <span class="meta-label">현재 인원</span>
+              <strong id="detailMemberCount">-</strong>
+            </div>
+            <div class="meta-box">
+              <span class="meta-label">최대 인원</span>
+              <strong id="detailUserLimit">-</strong>
+            </div>
+          </div>
+
+          <div class="detail-section">
+            <h4>태그</h4>
+            <div id="detailTagList" class="detail-tag-list"></div>
+          </div>
+
+          <div class="detail-section">
+            <h4>역할 모집 현황</h4>
+            <div id="detailRoleStatusList" class="role-status-list"></div>
+          </div>
+
+          <div class="detail-section">
+            <h4>현재 참여자</h4>
+            <div id="detailMemberList" class="detail-member-list"></div>
+          </div>
+        </div>
+
+        <aside class="detail-side">
+          <div class="side-box">
+            <h4>참여 정보</h4>
+            <div class="side-info-list">
+              <div class="side-info-item">
+                <span>내 상태</span>
+                <strong id="detailMyState">-</strong>
+              </div>
+              <div class="side-info-item">
+                <span>내 역할</span>
+                <strong id="detailMyRole">-</strong>
+              </div>
+              <div class="side-info-item">
+                <span>남은 역할 수</span>
+                <strong id="detailRemainRoleCount">-</strong>
+              </div>
+            </div>
+          </div>
+
+          <div id="detailJoinSection" class="side-box">
+            <h4>참여 역할 선택</h4>
+            <div id="detailJoinRoleList" class="join-role-list"></div>
+            <p class="help-text">모집 중인 역할만 선택 가능합니다.</p>
+          </div>
+        </aside>
+      </div>
+
+      <div class="modal-foot detail-foot">
+        <button id="detailCancelBtn" class="secondary-btn" type="button">닫기</button>
+        <button id="detailLeaveBtn" class="secondary-btn danger-outline" type="button" style="display:none;">참여 취소</button>
+        <button id="detailJoinBtn" class="primary-btn" type="button">참여하기</button>
+      </div>
+    </section>
+  </div>
+
   <script src="../JAVASCRIPT/sidebar.js"></script>
   <script src="../JAVASCRIPT/teamproject.js"></script>
   <script src="../JAVASCRIPT/mainpage.js"></script>
