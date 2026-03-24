@@ -174,12 +174,12 @@ document.addEventListener("DOMContentLoaded", function () {
   signupForm?.addEventListener("submit", async function (e) {
     e.preventDefault();
 
-    const id = signupIdInput?.value.trim() || "";
+    const userId = signupIdInput?.value.trim() || "";
     const nickname = signupNicknameInput?.value.trim() || "";
     const password = signupPasswordInput?.value || "";
     const confirmPassword = signupConfirmPasswordInput?.value || "";
 
-    if (!validateSignupInput(id, nickname, password, confirmPassword)) return;
+    if (!validateSignupInput(userId, nickname, password, confirmPassword)) return;
 
     try {
       await apiFetch(API.SIGNUP, {
@@ -188,7 +188,7 @@ document.addEventListener("DOMContentLoaded", function () {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          id,
+          userId,
           nickname,
           password,
         }),
@@ -200,7 +200,7 @@ document.addEventListener("DOMContentLoaded", function () {
       goToLoginTab();
 
       if (loginIdInput) {
-        loginIdInput.value = id;
+        loginIdInput.value = userId;
       }
     } catch (error) {
       showAlert(`회원가입 실패: ${error.message}`);
