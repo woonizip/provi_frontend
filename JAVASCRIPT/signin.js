@@ -85,14 +85,14 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 
   function storeLoginSession(user) {
-    sessionStorage.setItem("loggedInUser", user.id ?? "");
+    sessionStorage.setItem("loggedInUser", user.userId ?? "");
     sessionStorage.setItem("nickname", user.nickname ?? "");
     sessionStorage.setItem("job", user.job ?? "Developer");
     sessionStorage.setItem("isAdmin", user.isAdmin ? "true" : "false");
   }
 
-  function validateSignupInput(id, nickname, password, confirmPassword) {
-    if (!id) {
+  function validateSignupInput(userId, nickname, password, confirmPassword) {
+    if (!userId) {
       showAlert("ID를 입력해주세요.");
       return false;
     }
@@ -119,8 +119,8 @@ document.addEventListener("DOMContentLoaded", function () {
     return true;
   }
 
-  function validateLoginInput(id, password) {
-    if (!id) {
+  function validateLoginInput(userId, password) {
+    if (!userId) {
       showAlert("ID를 입력해주세요.");
       return false;
     }
@@ -139,28 +139,35 @@ document.addEventListener("DOMContentLoaded", function () {
     const id = loginIdInput.value.trim();
     const password = loginPasswordInput.value;
 
-    const formData = new URLSearchParams();
-    formData.append("userID", id);
-    formData.append("userPassword", password);
+    const loginData = {
+        userID: id, 
+        userPassword: password
+    };
 
     try {
-      const res = await fetch("/login", {
+      const res = await fetch(API.LOGIN, {
         method: "POST",
         headers: {
-          "Content-Type": "application/x-www-form-urlencoded",
+          "Content-Type": "application/json",
         },
-        body: formData,
-        credentials: "include",
+        body: JSON.stringify(loginData), 
       });
+      const data = await res.json();
+      console.log("로그인 응답 데이터: ", data);
 
       if (res.ok || res.redirected) {
-        window.location.href = "../HTML/mainpage.html";
+        sessionStorage.setItem("token", data.token);
+        sessionStorage.setItem("nickname", data.nickname);
+        console.log("token: ", data.token);
+        console.log("nickname: ", data.nickname);
+        window.location.href = "../mainpage.html";
       } else {
         alert("로그인 실패");
       }
 
     } catch (e) {
       alert("서버 연결 실패");
+      console.log(e);
     }
   });
 
