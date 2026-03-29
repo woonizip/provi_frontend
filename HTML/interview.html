@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PROVI</title>
+
+  <link rel="stylesheet" href="../CSS/sidebar.css" />
+  <link rel="stylesheet" href="../CSS/interview.css" />
+  <link rel="stylesheet" href="https://cdn.boxicons.com/fonts/basic/boxicons.min.css" />
+</head>
+<body>
+  <div class="sidebar">
+    <div class="logo_content">
+      <div class="logo">
+        <!-- <img src="../HTML/images/stackflow_light.png" alt="logo"> -->
+        <img src="../HTML/images/provi_delete.png" alt="logo">
+        <div class="logo_name">PROVI</div>
+      </div>
+      <i class='bx bx-menu' id="btn"></i> 
+    </div>
+    <ul class="nav_list">
+      <li>
+        <i class='bx bx-search' id="search"></i> 
+        <input type="text" placeholder="Search...">
+        <span class="tooltip">Search</span>
+      </li>
+      <li>
+        <a href="../HTML/stack.html">
+          <i class='bx bx-layers' id="stack"></i>
+          <span class="links_name">Stack</span>
+        </a>
+        <span class="tooltip">Stack</span>
+      </li>
+      <li>
+        <a href="../HTML/mypage.html">
+          <i class='bx bx-dashboard'></i> 
+          <span class="links_name">Dashboard</span>
+        </a>
+        <span class="tooltip">Dashboard</span>
+      </li>
+      <li>
+        <a href="../HTML/question.html">
+          <i class='bx bx-clipboard-detail'></i> 
+          <span class="links_name">Question</span>
+        </a>
+        <span class="tooltip">Question</span>
+      </li>
+      <li>
+        <a href="../HTML/teamproject.html">
+          <i class='bx bx-message'></i> 
+          <span class="links_name">Team Project</span>
+        </a>
+        <span class="tooltip">Team Project</span>
+      </li>
+      <li>
+        <a href="../HTML/portfolio.html">
+          <i class='bx bx-folder'></i> 
+          <span class="links_name">Portfolio</span>
+        </a>
+        <span class="tooltip">Portfolio</span>
+      </li>
+      <li>
+        <a href="../HTML/mainpage.html">
+          <i class='bx bx-home'></i> 
+          <span class="links_name">Home</span>
+        </a>
+        <span class="tooltip">Home</span>
+      </li>
+      <li id="adminMenu" style="display: none;">
+        <a href="../HTML/admin.html">
+          <i class='bx bx-user-check'></i>
+          <span class="links_name">AdminMenu</span>
+        </a>
+        <span class="tooltip">AdminMenu</span>
+      </li>
+      <li>
+        <a href="#">
+          <i class='bx bx-cog'></i> 
+          <span class="links_name">Settings</span>
+        </a>
+        <span class="tooltip">Settings</span>
+      </li>
+    </ul>
+    <div class="profile_content">
+      <div class="profile">
+        <div class="profile_details">
+          <img src="../HTML/images/profile.png" alt=""> 
+          <div class="name_job">
+            <div class="name"></div>
+            <div class="job"></div>
+          </div>
+        </div>
+        <i class='bx bx-arrow-in-right-square-half' id="log_in"></i> 
+        <i class='bx bx-arrow-out-left-square-half' id="log_out"></i> 
+      </div>
+    </div>
+  </div>
+
+  <div class="home_content">
+    <div class="interview-page">
+      <section class="interview-top">
+        <div>
+          <h1 class="interview-title">면접 예상 질문 연습</h1>
+          <p class="interview-subtitle">
+            질문을 선택하고 답변을 작성해보세요.
+            AI가 답변을 읽고 보완 방향을 알려줍니다.
+          </p>
+        </div>
+      </section>
+
+      <section class="interview-layout">
+        <div class="interview-panel write-panel">
+          <div class="panel-header">
+            <h2>답변 작성</h2>
+            <p>질문을 고르고 답변을 작성하세요.</p>
+          </div>
+
+          <div class="field">
+            <label for="questionSelect">질문 선택</label>
+            <select id="questionSelect">
+              <option value="">질문을 불러오는 중...</option>
+            </select>
+          </div>
+
+          <div class="question-box" id="questionPreview">
+            선택한 질문이 여기에 표시됩니다.
+          </div>
+
+          <div class="field">
+            <label for="answerInput">답변 작성</label>
+            <textarea id="answerInput" placeholder="질문에 대한 답변을 작성하세요."></textarea>
+          </div>
+
+          <div class="write-footer">
+            <span class="char-count" id="charCount">0자</span>
+
+            <div class="button-group">
+              <button type="button" class="btn btn-ghost" id="resetBtn">초기화</button>
+              <button type="button" class="btn btn-primary" id="feedbackBtn">AI 피드백 받기</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="interview-panel feedback-panel">
+          <div class="panel-header feedback-header">
+            <div>
+              <h2>AI 피드백</h2>
+              <p>답변 분석 결과를 확인하세요.</p>
+            </div>
+            <span class="result-badge" id="resultStatus">대기 중</span>
+          </div>
+
+          <div class="loading-box hidden" id="loadingBox">
+            AI가 답변을 분석하고 있습니다...
+          </div>
+
+          <div class="result-box" id="resultBox">
+            <div class="empty-result">
+              질문을 선택하고 답변을 작성한 뒤
+              AI 피드백을 받아보세요.
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <script src="../JAVASCRIPT/sidebar.js"></script>
+  <script src="../JAVASCRIPT/interview.js"></script>
+  <script src="../JAVASCRIPT/mainpage.js"></script>
+</body>
+</html>
