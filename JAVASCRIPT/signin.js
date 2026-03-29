@@ -152,17 +152,31 @@ document.addEventListener("DOMContentLoaded", function () {
         },
         body: JSON.stringify(loginData), 
       });
+
       const data = await res.json();
       console.log("로그인 응답 데이터: ", data);
 
-      if (res.ok || res.redirected) {
-        sessionStorage.setItem("token", data.token);
-        sessionStorage.setItem("nickname", data.nickname);
-        console.log("token: ", data.token);
-        console.log("nickname: ", data.nickname);
+      if (res.ok) {
+        const token = data.token || data.accessToken;
+        const nickname = data.nickname || data.userNickname;
+
+        if (!token) {
+          alert("토큰이 없습니다. 응답값을 확인해주세요.");
+          return;
+        }
+
+        sessionStorage.setItem("token", token);
+        
+        if (nickname) {
+          sessionStorage.setItem("nickname", nickname);
+        }
+
+        console.log("token:", token);
+        console.log("nickname:", nickname);
+
         window.location.href = "../mainpage.html";
       } else {
-        alert("로그인 실패");
+        alert(data.message || "로그인 실패");
       }
 
     } catch (e) {

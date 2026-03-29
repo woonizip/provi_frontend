@@ -30,8 +30,11 @@ document.addEventListener("DOMContentLoaded", function () {
       authArea.addEventListener("click", function (e) {
         if (e.target && e.target.id === "logout-link") {
           e.preventDefault();
-          sessionStorage.clear();   // 세션 삭제
-          location.reload();        // 비로그인 상태로 리셋
+          
+          sessionStorage.removeItem("token");
+          sessionStorage.removeItem("nickname");
+
+          location.reload();
         }
       });
     } else {

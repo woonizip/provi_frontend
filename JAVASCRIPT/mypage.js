@@ -46,9 +46,6 @@ const btnRetake = el("btnRetake");
 
 const tabs = document.querySelectorAll(".tab");
 
-/* -----------------------------
-   Safe Storage Helpers
------------------------------ */
 function readJSON(key, fallback) {
   try {
     const raw = localStorage.getItem(key);

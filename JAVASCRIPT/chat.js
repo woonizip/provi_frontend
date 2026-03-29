@@ -288,18 +288,16 @@ document.addEventListener("DOMContentLoaded", () => {
     };
     console.log(payload);
 
-    const res = await fetch(CHAT_API_URL, {
+    const data = await authFetch(CHAT_API_URL, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload)
+      headers: {
+        "content-Type": "application/json",
+      },
+      body: JSON.stringify(payload),
     });
 
-    if (!res.ok) {
-      throw new Error(`HTTP ${res.status}`);
-    }
-    const data = await res.json();
-    // 백엔드에서 `{ reply: "문자열" }` 형식으로 돌려준다고 가정
     return data.reply || JSON.stringify(data);
+
   }
 
   // 폼 submit 핸들러

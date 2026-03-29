@@ -9,6 +9,7 @@ const API = {
 };
 
 const grid = $("grid");
+const pagination = $("pagination");
 const createBtn = $("createBtn");
 const myProjectsBtn = $("myProjectsBtn");
 const seedBtn = $("seedBtn");
@@ -66,6 +67,9 @@ let projectsCache = [];
 let tagItems = [];
 let currentDetailProjectId = null;
 let currentDetailMode = "view";
+let currentPage = 0;
+const pageSize = 6;
+let totalPages = 0;
 
 const SAMPLE_KEY_PREFIX = "tp_samples_";
 
@@ -405,13 +409,31 @@ function resetTags() {
   tagSuggestList.classList.remove("open");
 }
 
-async function loadProjects() {
+async function loadProjects(page = 0) {
   try {
-    const data = await apiFetch(API.LIST, { method: "GET" });
-    const list = Array.isArray(data) ? data : (data?.content || []);
-    projectsCache = list.map(normalizeProject);
+    const query = new URLSearchParams({
+      page,
+      size: pageSize,
+    });
+
+    const data = await apiFetch(`${API.LIST}?${query.toString()}`, {
+      method: "GET",
+    });
+
+    if (Array.isArray(data)) {
+      projectsCache = data.map(normalizeProject);
+      currentPage = page;
+      totalPages = 1;
+    } else {
+      const list = Array.isArray(data?.content) ? data.content : [];
+      projectsCache = list.map(normalizeProject);
+      currentPage = data?.number ?? page;
+      totalPages = data?.totalPages ?? 1;
+    }
   } catch (e) {
     projectsCache = [];
+    currentPage = 0;
+    totalPages = 0;
     console.warn("LIST API ERROR:", e.message);
   }
 }
@@ -521,6 +543,41 @@ function render() {
 
     grid.appendChild(card);
   });
+
+  renderPagination();
+
+  function renderPagination() {
+    if (!pagination) return;
+
+    if (totalPages <= 1) {
+      pagination.innerHTML = "";
+      pagination.style.display = "none";
+      return;
+    }
+
+    pagination.style.display = "flex";
+    pagination.innerHTML = "";
+
+    const prevBtn = document.createElement("button");
+    prevBtn.textContent = "이전";
+    prevBtn.disabled = currentPage === 0;
+    prevBtn.onclick = () => refreshAndRender(currentPage - 1);
+    pagination.appendChild(prevBtn);
+
+    for (let i = 0; i < totalPages; i++) {
+      const btn = document.createElement("button");
+      btn.textContent = i + 1;
+      btn.className = i === currentPage ? "active" : "";
+      btn.onclick = () => refreshAndRender(i);
+      pagination.appendChild(btn);
+    }
+
+    const nextBtn = document.createElement("button");
+    nextBtn.textContent = "다음";
+    nextBtn.disabled = currentPage >= totalPages - 1;
+    nextBtn.onclick = () => refreshAndRender(currentPage + 1);
+    pagination.appendChild(nextBtn);
+  }
 }
 
 function setActiveButton(container, selector, activeValue, datasetKey) {
@@ -720,71 +777,73 @@ function renderDetailModal(project, mode = "view") {
 }
 
 async function createProjectToServer() {
-if (!requireLoginOrRedirect()) return;
+  if (!requireLoginOrRedirect()) return;
 
-const nickname = getNickname();
-const category = projectCategory.value;
-const userLimit = Number(projectUserLimit.value);
-const title = projectName.value.trim();
-const content = projectDesc.value.trim();
-const tags = [...tagItems];
-const myRoleLabel = getSelectedText(myRole);
-const neededRoleLabels = [...neededRolesWrap.querySelectorAll("input[type='checkbox']:checked")]
-.map((cb) => cb.value)
-.filter(Boolean);
+  const nickname = getNickname();
+  const category = projectCategory.value;
+  const userLimit = Number(projectUserLimit.value);
+  const title = projectName.value.trim();
+  const content = projectDesc.value.trim();
+  const tags = [...tagItems];
+  const myRoleLabel = getSelectedText(myRole);
+  const neededRoleLabels = [...neededRolesWrap.querySelectorAll("input[type='checkbox']:checked")]
+  .map((cb) => cb.value)
+  .filter(Boolean);
 
-if (!category) {
-alert("분야를 선택해주세요.");
-return;
-}
+  if (!category) {
+    alert("분야를 선택해주세요.");
+    return;
+  }
 
-if (!userLimit || userLimit < 1) {
-alert("최대 인원은 1명 이상이어야 합니다.");
-projectUserLimit.focus();
-return;
-}
+  if (!userLimit || userLimit < 1) {
+    alert("최대 인원은 1명 이상이어야 합니다.");
+    projectUserLimit.focus();
+    return;
+  }
 
-if (!title) {
-alert("제목을 입력해주세요.");
-projectName.focus();
-return;
-}
+  if (!title) {
+    alert("제목을 입력해주세요.");
+    projectName.focus();
+    return;
+  }
 
-if (!content) {
-alert("내용을 입력해주세요.");
-projectDesc.focus();
-return;
-}
+  if (!content) {
+    alert("내용을 입력해주세요.");
+    projectDesc.focus();
+    return;
+  }
 
-const payload = {
-nickname,
-category,
-userLimit,
-title,
-content,
-tags,
-neededRoles: neededRoleLabels,
-myRole: myRoleLabel,
-};
+  const payload = {
+    nickname,
+    category,
+    userLimit,
+    title,
+    content,
+    tags,
+    neededRoles: neededRoleLabels,
+    myRole: myRoleLabel,
+  };
 
-createProjectBtn.disabled = true;
-createProjectBtn.textContent = "생성 중...";
+  createProjectBtn.disabled = true;
+  createProjectBtn.textContent = "생성 중...";
 
-try {
-await apiFetch(API.CREATE, {
-method: "POST",
-headers: { "Content-Type": "application/json" },
-body: JSON.stringify(payload),
-});
+  try {
+    await authFetch(API.CREATE, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(payload),
+    });
 
-closeCreateModal();
-await refreshAndRender();
-} catch (e) {
-alert(`서버 오류: ${e.message}`);
-} finally {
-createProjectBtn.disabled = false;
-createProjectBtn.textContent = "생성";
-}
+    closeCreateModal();
+    await refreshAndRender();
+    } catch (e) {
+      alert(`서버 오류: ${e.message}`); 
+    } finally {
+    createProjectBtn.disabled = false;
+    createProjectBtn.textContent = "생성";
+  }
 }
 
 async function joinProjectFromDetail() {
@@ -938,7 +997,7 @@ alert(`서버 오류: ${e.message}`);
 }
 }
 
-async function refreshAndRender() {
+async function refreshAndRender(page = currentPage) {
 await loadProjects();
 render();
 }
