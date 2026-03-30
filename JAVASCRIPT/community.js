@@ -1,12 +1,10 @@
-const API_BASE = "http://localhost:8080";
-
 const API = {
-  COMMUNITY_POSTS: `${API_BASE}/api/community/posts`,
-  COMMUNITY_POST_DETAIL: (postId) => `${API_BASE}/api/community/posts/${postId}`,
-  COMMUNITY_POST_LIKE: (postId) => `${API_BASE}/api/community/posts/${postId}/like`,
-  COMMUNITY_POST_COMMENTS: (postId) => `${API_BASE}/api/community/posts/${postId}/comments`,
-  COMMUNITY_COMMENT_DETAIL: (commentId) => `${API_BASE}/api/community/comments/${commentId}`,
-  COMMUNITY_MY_ACTIVITY: `${API_BASE}/api/community/me/activity`,
+  COMMUNITY_POSTS: `/api/community/posts`,
+  COMMUNITY_POST_DETAIL: (postId) => `/api/community/posts/${postId}`,
+  COMMUNITY_POST_LIKE: (postId) => `/api/community/posts/${postId}/like`,
+  COMMUNITY_POST_COMMENTS: (postId) => `/api/community/posts/${postId}/comments`,
+  COMMUNITY_COMMENT_DETAIL: (commentId) => `/api/community/comments/${commentId}`,
+  COMMUNITY_MY_ACTIVITY: `/api/community/me/activity`,
 };
 
 // 현재 로그인한 사용자 닉네임
