@@ -1173,6 +1173,12 @@ body{
   color: var(--text);
 }
 
+.recruit-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
+
 .recruit-grid.compact {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
