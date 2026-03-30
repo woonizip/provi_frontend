@@ -1,5 +1,4 @@
 document.addEventListener("DOMContentLoaded", function () {
-
   const API = {
     SIGNUP: "/api/auth/signup",
     LOGIN: "/api/auth/login",

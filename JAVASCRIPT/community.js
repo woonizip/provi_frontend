@@ -1,0 +1,1050 @@
+const API_BASE = "http://localhost:8080";
+
+const API = {
+  COMMUNITY_POSTS: `${API_BASE}/api/community/posts`,
+  COMMUNITY_POST_DETAIL: (postId) => `${API_BASE}/api/community/posts/${postId}`,
+  COMMUNITY_POST_LIKE: (postId) => `${API_BASE}/api/community/posts/${postId}/like`,
+  COMMUNITY_POST_COMMENTS: (postId) => `${API_BASE}/api/community/posts/${postId}/comments`,
+  COMMUNITY_COMMENT_DETAIL: (commentId) => `${API_BASE}/api/community/comments/${commentId}`,
+  COMMUNITY_MY_ACTIVITY: `${API_BASE}/api/community/me/activity`,
+};
+
+// 현재 로그인한 사용자 닉네임
+const currentNickname = sessionStorage.getItem("nickname") || "익명사용자";
+
+// 현재 페이지 번호
+let currentPageNumber = 1;
+
+// 한 페이지 게시글 수
+const pageSize = 10;
+
+// 현재 선택된 카테고리 코드
+let selectedCategoryCode = "ALL";
+
+// 현재 선택된 정렬 타입
+let selectedSortType = "latest";
+
+// 현재 검색어
+let searchKeyword = "";
+
+// 현재 상세 모달에서 보고 있는 게시글 ID
+let selectedPostId = null;
+
+// 현재 수정 중인 게시글 ID
+let editingPostId = null;
+
+// 현재 수정 중인 댓글 ID
+let editingCommentId = null;
+
+// 게시글 목록 데이터
+let postList = [];
+
+// 인기 게시글 데이터
+let hotPostList = [];
+
+// 내가 쓴 글 목록
+let myPostList = [];
+
+// 내가 댓글 단 글 목록
+let myCommentedPostList = [];
+
+// 전체 게시글 개수
+let totalPostCount = 0;
+
+// 전체 페이지 수
+let totalPageCount = 1;
+
+// 현재 상세 게시글 데이터
+let selectedPostDetail = null;
+
+const COMMUNITY_CATEGORY_MAP = {
+  전체: "ALL",
+  자유: "FREE",
+  질문: "QUESTION",
+  정보: "INFO",
+  면접후기: "INTERVIEW",
+  프로젝트: "PROJECT",
+  커리어: "CAREER",
+};
+
+const COMMUNITY_CATEGORY_LABEL_MAP = {
+  ALL: "전체",
+  FREE: "자유",
+  QUESTION: "질문",
+  INFO: "정보",
+  INTERVIEW: "면접후기",
+  PROJECT: "프로젝트",
+  CAREER: "커리어",
+};
+
+const communityPostListEl = document.getElementById("communityPostList");
+const communityPaginationEl = document.getElementById("communityPagination");
+const hotPostGridEl = document.getElementById("hotPostGrid");
+const writerRankListEl = document.getElementById("writerRankList");
+
+const categoryButtons = document.querySelectorAll(".community-category-btn");
+const filterButtons = document.querySelectorAll(".post-filter-btn");
+const searchInputEl = document.getElementById("communitySearchInput");
+const searchBtnEl = document.getElementById("communitySearchBtn");
+const openWriteModalBtn = document.getElementById("openWriteModalBtn");
+const openMyActivityBtn = document.getElementById("openMyActivityBtn");
+const showHotPostsBtn = document.getElementById("showHotPostsBtn");
+
+const postDetailModalEl = document.getElementById("postDetailModal");
+const postFormModalEl = document.getElementById("postFormModal");
+const myActivityModalEl = document.getElementById("myActivityModal");
+
+const detailBadgesEl = document.getElementById("detailBadges");
+const detailTitleEl = document.getElementById("detailTitle");
+const detailAuthorEl = document.getElementById("detailAuthor");
+const detailAuthorRoleEl = document.getElementById("detailAuthorRole");
+const detailDateEl = document.getElementById("detailDate");
+const detailViewEl = document.getElementById("detailView");
+const detailBodyEl = document.getElementById("detailBody");
+const detailLikeBtnEl = document.getElementById("detailLikeBtn");
+const detailOwnerActionsEl = document.getElementById("detailOwnerActions");
+const detailCommentCountEl = document.getElementById("detailCommentCount");
+const detailCommentListEl = document.getElementById("detailCommentList");
+const detailCommentInputEl = document.getElementById("detailCommentInput");
+const submitCommentBtnEl = document.getElementById("submitCommentBtn");
+
+const postFormEl = document.getElementById("postForm");
+const postFormTitleEl = document.getElementById("postFormTitle");
+const postCategoryEl = document.getElementById("postCategory");
+const postTitleInputEl = document.getElementById("postTitleInput");
+const postContentInputEl = document.getElementById("postContentInput");
+const postAnonymousInputEl = document.getElementById("postAnonymousInput");
+const postFormSubmitBtnEl = document.getElementById("postFormSubmitBtn");
+
+const myPostsPanelEl = document.getElementById("myPostsPanel");
+const myCommentsPanelEl = document.getElementById("myCommentsPanel");
+const myActivityTabs = document.querySelectorAll(".my-activity-tab");
+
+function goToMainPage() {
+  location.href = "mainpage.html";
+}
+
+function isLoggedIn() {
+  return !!sessionStorage.getItem("token");
+}
+
+function requireLogin() {
+  if (isLoggedIn()) return true;
+
+  const ok = confirm("로그인 후 이용할 수 있는 서비스입니다. 로그인 페이지로 이동하시겠습니까?");
+  if (ok) {
+    location.href = "signin.html";
+  }
+  return false;
+}
+
+function openModal(modalEl) {
+  if (!modalEl) return;
+  modalEl.classList.remove("hidden");
+  document.body.style.overflow = "hidden";
+}
+
+function closeModal(modalEl) {
+  if (!modalEl) return;
+  modalEl.classList.add("hidden");
+
+  const openedModal = document.querySelector(".community-modal:not(.hidden)");
+  if (!openedModal) {
+    document.body.style.overflow = "";
+  }
+}
+
+function formatDate(dateString) {
+  if (!dateString) return "";
+  const date = new Date(dateString);
+  if (Number.isNaN(date.getTime())) return dateString;
+
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}.${month}.${day}`;
+}
+
+function getCategoryLabel(categoryCode) {
+  return COMMUNITY_CATEGORY_LABEL_MAP[categoryCode] || categoryCode || "";
+}
+
+function escapeHtml(value) {
+  return String(value || "")
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#39;");
+}
+
+function getSummaryText(content, max = 110) {
+  const text = String(content || "").replace(/\n/g, " ");
+  return text.length > max ? `${text.slice(0, max)}...` : text;
+}
+
+// 게시글 목록 조회
+async function fetchCommunityPostList() {
+  const params = new URLSearchParams({
+    page: String(currentPageNumber),
+    size: String(pageSize),
+    category: selectedCategoryCode,
+    sort: selectedSortType,
+    keyword: searchKeyword,
+  });
+
+  const res = await fetch(`${API.COMMUNITY_POSTS}?${params.toString()}`, {
+    method: "GET",
+  });
+
+  if (!res.ok) {
+    throw new Error(`게시글 목록 조회 실패: HTTP ${res.status}`);
+  }
+
+  const data = await res.json();
+
+  postList = data.content || [];
+  totalPostCount = data.totalElements || 0;
+  totalPageCount = data.totalPages || 1;
+}
+
+// 인기 게시글 조회
+// 아직 백엔드에 따로 없으면 popular 정렬 3개만 가져오는 방식으로 사용
+async function fetchHotPostList() {
+  const params = new URLSearchParams({
+    page: "1",
+    size: "3",
+    category: "ALL",
+    sort: "popular",
+    keyword: "",
+  });
+
+  const res = await fetch(`${API.COMMUNITY_POSTS}?${params.toString()}`, {
+    method: "GET",
+  });
+
+  if (!res.ok) {
+    throw new Error(`인기 게시글 조회 실패: HTTP ${res.status}`);
+  }
+
+  const data = await res.json();
+  hotPostList = data.content || [];
+}
+
+// 게시글 상세 조회
+async function fetchCommunityPostDetail(postId) {
+  const res = await fetch(API.COMMUNITY_POST_DETAIL(postId), {
+    method: "GET",
+  });
+
+  if (!res.ok) {
+    throw new Error(`게시글 상세 조회 실패: HTTP ${res.status}`);
+  }
+
+  const data = await res.json();
+  selectedPostDetail = data;
+}
+
+// 게시글 작성
+async function createCommunityPost() {
+  const createPostPayload = {
+    category: postCategoryEl.value,
+    title: postTitleInputEl.value.trim(),
+    content: postContentInputEl.value.trim(),
+    anonymous: postAnonymousInputEl.checked,
+  };
+
+  const res = await authFetch(API.COMMUNITY_POSTS, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(createPostPayload),
+  });
+
+  if (!res.ok) {
+    throw new Error(`게시글 작성 실패: HTTP ${res.status}`);
+  }
+
+  return await res.json();
+}
+
+// 게시글 수정
+async function updateCommunityPost(postId) {
+  const updatePostPayload = {
+    category: postCategoryEl.value,
+    title: postTitleInputEl.value.trim(),
+    content: postContentInputEl.value.trim(),
+    anonymous: postAnonymousInputEl.checked,
+  };
+
+  const res = await authFetch(API.COMMUNITY_POST_DETAIL(postId), {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(updatePostPayload),
+  });
+
+  if (!res.ok) {
+    throw new Error(`게시글 수정 실패: HTTP ${res.status}`);
+  }
+
+  return await res.json();
+}
+
+// 게시글 삭제
+async function deleteCommunityPost(postId) {
+  const res = await authFetch(API.COMMUNITY_POST_DETAIL(postId), {
+    method: "DELETE",
+  });
+
+  if (!res.ok) {
+    throw new Error(`게시글 삭제 실패: HTTP ${res.status}`);
+  }
+
+  return await res.json();
+}
+
+// 댓글 작성
+async function createCommunityComment(postId) {
+  const createCommentPayload = {
+    content: detailCommentInputEl.value.trim(),
+    anonymous: false,
+  };
+
+  const res = await authFetch(API.COMMUNITY_POST_COMMENTS(postId), {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(createCommentPayload),
+  });
+
+  if (!res.ok) {
+    throw new Error(`댓글 작성 실패: HTTP ${res.status}`);
+  }
+
+  return await res.json();
+}
+
+// 댓글 수정
+async function updateCommunityComment(commentId, content) {
+  const updateCommentPayload = {
+    content,
+    anonymous: false,
+  };
+
+  const res = await authFetch(API.COMMUNITY_COMMENT_DETAIL(commentId), {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(updateCommentPayload),
+  });
+
+  if (!res.ok) {
+    throw new Error(`댓글 수정 실패: HTTP ${res.status}`);
+  }
+
+  return await res.json();
+}
+
+// 댓글 삭제
+async function deleteCommunityComment(commentId) {
+  const res = await authFetch(API.COMMUNITY_COMMENT_DETAIL(commentId), {
+    method: "DELETE",
+  });
+
+  if (!res.ok) {
+    throw new Error(`댓글 삭제 실패: HTTP ${res.status}`);
+  }
+
+  return await res.json();
+}
+
+// 게시글 좋아요
+async function toggleCommunityPostLike(postId) {
+  const res = await authFetch(API.COMMUNITY_POST_LIKE(postId), {
+    method: "POST",
+  });
+
+  if (!res.ok) {
+    throw new Error(`좋아요 처리 실패: HTTP ${res.status}`);
+  }
+
+  return await res.json();
+}
+
+// 내 활동 조회
+async function fetchMyCommunityActivity() {
+  const res = await authFetch(API.COMMUNITY_MY_ACTIVITY, {
+    method: "GET",
+  });
+
+  if (!res.ok) {
+    throw new Error(`내 활동 조회 실패: HTTP ${res.status}`);
+  }
+
+  const data = await res.json();
+  myPostList = data.myPosts || [];
+  myCommentedPostList = data.myCommentedPosts || [];
+}
+
+function renderHotPostList() {
+  if (!hotPostGridEl) return;
+
+  if (!hotPostList.length) {
+    hotPostGridEl.innerHTML = `
+      <div class="empty-message">인기 게시글이 없습니다.</div>
+    `;
+    return;
+  }
+
+  hotPostGridEl.innerHTML = hotPostList
+    .map((post) => {
+      const hotBadge = post.hot
+        ? `<div class="highlight-badge hot">HOT</div>`
+        : `<div class="highlight-badge recommend">추천</div>`;
+
+      return `
+        <article class="highlight-card" data-post-id="${post.postId}">
+          ${hotBadge}
+          <h3>${escapeHtml(post.title)}</h3>
+          <p>${escapeHtml(post.summary || getSummaryText(post.content || ""))}</p>
+          <div class="highlight-meta">
+            <span>${escapeHtml(post.categoryLabel || getCategoryLabel(post.category))}</span>
+            <span>추천 ${post.likeCount || 0}</span>
+            <span>댓글 ${post.commentCount || 0}</span>
+          </div>
+        </article>
+      `;
+    })
+    .join("");
+}
+
+function renderPostList() {
+  if (!communityPostListEl) return;
+
+  if (!postList.length) {
+    communityPostListEl.innerHTML = `
+      <div class="empty-message">
+        게시글이 없습니다.
+      </div>
+    `;
+    renderPagination();
+    return;
+  }
+
+  communityPostListEl.innerHTML = postList
+    .map((post) => {
+      const authorNickname = post.authorNickname || "알 수 없음";
+
+      return `
+        <article class="community-post-item" data-post-id="${post.postId}">
+          <div class="community-post-top">
+            <div class="community-post-badges">
+              <span class="community-post-badge category">
+                ${escapeHtml(post.categoryLabel || getCategoryLabel(post.category))}
+              </span>
+              ${post.hot ? `<span class="community-post-badge hot">HOT</span>` : ""}
+            </div>
+            <span class="community-post-date">${formatDate(post.createdAt)}</span>
+          </div>
+
+          <h3 class="community-post-title">${escapeHtml(post.title)}</h3>
+          <p class="community-post-content">${escapeHtml(post.summary || "")}</p>
+
+          <div class="community-post-bottom">
+            <div class="community-post-author">
+              <div class="community-post-avatar">${escapeHtml(authorNickname.slice(0, 2))}</div>
+              <div class="community-post-author-info">
+                <span class="community-post-author-name">${escapeHtml(authorNickname)}</span>
+                <span class="community-post-author-role">${escapeHtml(post.authorRoleLabel || "")}</span>
+              </div>
+            </div>
+
+            <div class="community-post-stats">
+              <span>추천 ${post.likeCount || 0}</span>
+              <span>댓글 ${post.commentCount || 0}</span>
+              <span>조회 ${post.viewCount || 0}</span>
+            </div>
+          </div>
+        </article>
+      `;
+    })
+    .join("");
+
+  renderPagination();
+}
+
+function renderPagination() {
+  if (!communityPaginationEl) return;
+
+  communityPaginationEl.innerHTML = "";
+
+  for (let i = 1; i <= totalPageCount; i += 1) {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = `page-btn ${i === currentPageNumber ? "active" : ""}`;
+    button.textContent = i;
+
+    button.addEventListener("click", async () => {
+      currentPageNumber = i;
+      await loadPostList();
+    });
+
+    communityPaginationEl.appendChild(button);
+  }
+}
+
+function renderWriterRankList() {
+  if (!writerRankListEl) return;
+
+  const sourceList = [...postList, ...hotPostList];
+  const authorScoreMap = {};
+
+  sourceList.forEach((post) => {
+    const nickname = post.authorNickname;
+    if (!nickname) return;
+
+    if (!authorScoreMap[nickname]) {
+      authorScoreMap[nickname] = 0;
+    }
+    authorScoreMap[nickname] += post.likeCount || 0;
+  });
+
+  const rankList = Object.entries(authorScoreMap)
+    .map(([nickname, score]) => ({ nickname, score }))
+    .sort((a, b) => b.score - a.score)
+    .slice(0, 3);
+
+  if (!rankList.length) {
+    writerRankListEl.innerHTML = `<div class="empty-message">표시할 작성자가 없습니다.</div>`;
+    return;
+  }
+
+  writerRankListEl.innerHTML = rankList
+    .map((item, index) => {
+      return `
+        <div class="writer-rank-item">
+          <span class="rank-num">${index + 1}</span>
+          <span class="writer-name">${escapeHtml(item.nickname)}</span>
+          <span class="writer-score">+${item.score}</span>
+        </div>
+      `;
+    })
+    .join("");
+}
+
+function renderPostDetail() {
+  if (!selectedPostDetail) return;
+
+  detailBadgesEl.innerHTML = `
+    <span class="community-post-badge category">
+      ${escapeHtml(selectedPostDetail.categoryLabel || getCategoryLabel(selectedPostDetail.category))}
+    </span>
+    ${selectedPostDetail.hot ? `<span class="community-post-badge hot">HOT</span>` : ""}
+  `;
+
+  detailTitleEl.textContent = selectedPostDetail.title || "";
+  detailAuthorEl.textContent = `작성자 ${selectedPostDetail.authorNickname || ""}`;
+  detailAuthorRoleEl.textContent = selectedPostDetail.authorRoleLabel || "";
+  detailDateEl.textContent = formatDate(selectedPostDetail.createdAt);
+  detailViewEl.textContent = `조회 ${selectedPostDetail.viewCount || 0}`;
+  detailBodyEl.textContent = selectedPostDetail.content || "";
+  detailLikeBtnEl.textContent = `추천 ${selectedPostDetail.likeCount || 0}`;
+  detailCommentCountEl.textContent = `${selectedPostDetail.commentCount || 0}개`;
+
+  renderDetailOwnerActions();
+  renderCommentList();
+}
+
+function renderDetailOwnerActions() {
+  if (!detailOwnerActionsEl || !selectedPostDetail) return;
+
+  if (!selectedPostDetail.mine) {
+    detailOwnerActionsEl.innerHTML = "";
+    return;
+  }
+
+  detailOwnerActionsEl.innerHTML = `
+    <button type="button" class="detail-edit-btn" id="detailEditBtn">수정</button>
+    <button type="button" class="detail-delete-btn" id="detailDeleteBtn">삭제</button>
+  `;
+
+  document.getElementById("detailEditBtn")?.addEventListener("click", () => {
+    openEditModal();
+  });
+
+  document.getElementById("detailDeleteBtn")?.addEventListener("click", async () => {
+    await handleDeletePost();
+  });
+}
+
+function renderCommentList() {
+  if (!detailCommentListEl || !selectedPostDetail) return;
+
+  const comments = selectedPostDetail.comments || [];
+
+  if (!comments.length) {
+    detailCommentListEl.innerHTML = `
+      <div class="empty-message">아직 댓글이 없습니다.</div>
+    `;
+    return;
+  }
+
+  detailCommentListEl.innerHTML = comments
+    .map((comment) => {
+      return `
+        <div class="comment-item" data-comment-id="${comment.commentId}">
+          <div class="comment-top">
+            <span class="comment-author">${escapeHtml(comment.authorNickname || "")}</span>
+            <span class="comment-date">${formatDate(comment.createdAt)}</span>
+          </div>
+          <div class="comment-text">${escapeHtml(comment.content || "")}</div>
+          ${
+            comment.mine
+              ? `
+              <div class="detail-owner-actions" style="margin-top:10px;">
+                <button type="button" class="detail-edit-btn comment-edit-btn" data-comment-id="${comment.commentId}" data-comment-content="${escapeHtml(comment.content || "")}">
+                  댓글 수정
+                </button>
+                <button type="button" class="detail-delete-btn comment-delete-btn" data-comment-id="${comment.commentId}">
+                  댓글 삭제
+                </button>
+              </div>
+            `
+              : ""
+          }
+        </div>
+      `;
+    })
+    .join("");
+}
+
+function renderMyActivity() {
+  if (!myPostsPanelEl || !myCommentsPanelEl) return;
+
+  if (!myPostList.length) {
+    myPostsPanelEl.innerHTML = `<div class="empty-message">작성한 게시글이 없습니다.</div>`;
+  } else {
+    myPostsPanelEl.innerHTML = myPostList
+      .map((post) => {
+        return `
+          <div class="my-activity-item" data-post-id="${post.postId}">
+            <div class="my-activity-item-top">
+              <span class="community-post-badge category">
+                ${escapeHtml(post.categoryLabel || getCategoryLabel(post.category))}
+              </span>
+              <span class="community-post-date">${formatDate(post.createdAt)}</span>
+            </div>
+            <h3 class="my-activity-item-title">${escapeHtml(post.title)}</h3>
+            <p class="my-activity-item-desc">${escapeHtml(post.summary || "")}</p>
+          </div>
+        `;
+      })
+      .join("");
+  }
+
+  if (!myCommentedPostList.length) {
+    myCommentsPanelEl.innerHTML = `<div class="empty-message">댓글 단 게시글이 없습니다.</div>`;
+  } else {
+    myCommentsPanelEl.innerHTML = myCommentedPostList
+      .map((post) => {
+        return `
+          <div class="my-activity-item" data-post-id="${post.postId}">
+            <div class="my-activity-item-top">
+              <span class="community-post-badge category">
+                ${escapeHtml(post.categoryLabel || getCategoryLabel(post.category))}
+              </span>
+              <span class="community-post-date">${formatDate(post.myCommentCreatedAt || post.createdAt)}</span>
+            </div>
+            <h3 class="my-activity-item-title">${escapeHtml(post.title)}</h3>
+            <p class="my-activity-item-desc">내 댓글: ${escapeHtml(post.myCommentContent || "")}</p>
+          </div>
+        `;
+      })
+      .join("");
+  }
+}
+
+async function loadPostList() {
+  try {
+    await fetchCommunityPostList();
+    renderPostList();
+    renderWriterRankList();
+  } catch (error) {
+    console.error(error);
+    if (communityPostListEl) {
+      communityPostListEl.innerHTML = `
+        <div class="empty-message">게시글 목록을 불러오지 못했습니다.</div>
+      `;
+    }
+  }
+}
+
+async function loadHotPostList() {
+  try {
+    await fetchHotPostList();
+    renderHotPostList();
+    renderWriterRankList();
+  } catch (error) {
+    console.error(error);
+    if (hotPostGridEl) {
+      hotPostGridEl.innerHTML = `
+        <div class="empty-message">인기 게시글을 불러오지 못했습니다.</div>
+      `;
+    }
+  }
+}
+
+async function loadPostDetail(postId) {
+  try {
+    selectedPostId = postId;
+    await fetchCommunityPostDetail(postId);
+    renderPostDetail();
+    openModal(postDetailModalEl);
+  } catch (error) {
+    console.error(error);
+    alert("게시글 상세를 불러오지 못했습니다.");
+  }
+}
+
+async function loadMyActivity() {
+  try {
+    await fetchMyCommunityActivity();
+    renderMyActivity();
+  } catch (error) {
+    console.error(error);
+    alert("내 활동을 불러오지 못했습니다.");
+  }
+}
+
+async function loadCommunityPage() {
+  await Promise.all([
+    loadPostList(),
+    loadHotPostList(),
+  ]);
+}
+
+function openWriteModal() {
+  if (!requireLogin()) return;
+
+  editingPostId = null;
+  postFormTitleEl.textContent = "게시글 작성";
+  postFormSubmitBtnEl.textContent = "등록";
+  postFormEl.reset();
+  openModal(postFormModalEl);
+}
+
+function openEditModal() {
+  if (!selectedPostDetail) return;
+  if (!selectedPostDetail.mine) return;
+
+  editingPostId = selectedPostDetail.postId;
+  postFormTitleEl.textContent = "게시글 수정";
+  postFormSubmitBtnEl.textContent = "수정 완료";
+
+  postCategoryEl.value = selectedPostDetail.category || "";
+  postTitleInputEl.value = selectedPostDetail.title || "";
+  postContentInputEl.value = selectedPostDetail.content || "";
+  postAnonymousInputEl.checked = !!selectedPostDetail.anonymous;
+
+  closeModal(postDetailModalEl);
+  openModal(postFormModalEl);
+}
+
+async function handleSubmitPostForm(event) {
+  event.preventDefault();
+
+  if (!requireLogin()) return;
+
+  const category = postCategoryEl.value;
+  const title = postTitleInputEl.value.trim();
+  const content = postContentInputEl.value.trim();
+
+  if (!category || !title || !content) {
+    alert("카테고리, 제목, 내용을 모두 입력해주세요.");
+    return;
+  }
+
+  try {
+    if (editingPostId) {
+      await updateCommunityPost(editingPostId);
+      alert("게시글이 수정되었습니다.");
+    } else {
+      await createCommunityPost();
+      alert("게시글이 등록되었습니다.");
+    }
+
+    closeModal(postFormModalEl);
+    currentPageNumber = 1;
+    await loadCommunityPage();
+  } catch (error) {
+    console.error(error);
+    alert(editingPostId ? "게시글 수정에 실패했습니다." : "게시글 등록에 실패했습니다.");
+  }
+}
+
+async function handleDeletePost() {
+  if (!requireLogin()) return;
+  if (!selectedPostDetail?.mine) return;
+
+  const ok = confirm("게시글을 삭제하시겠습니까?");
+  if (!ok) return;
+
+  try {
+    await deleteCommunityPost(selectedPostDetail.postId);
+    alert("게시글이 삭제되었습니다.");
+    closeModal(postDetailModalEl);
+    await loadCommunityPage();
+  } catch (error) {
+    console.error(error);
+    alert("게시글 삭제에 실패했습니다.");
+  }
+}
+
+async function handleSubmitComment() {
+  if (!requireLogin()) return;
+  if (!selectedPostId) return;
+
+  const commentContent = detailCommentInputEl.value.trim();
+  if (!commentContent) {
+    alert("댓글 내용을 입력해주세요.");
+    return;
+  }
+
+  try {
+    await createCommunityComment(selectedPostId);
+    detailCommentInputEl.value = "";
+    await loadPostDetail(selectedPostId);
+    await loadPostList();
+  } catch (error) {
+    console.error(error);
+    alert("댓글 등록에 실패했습니다.");
+  }
+}
+
+async function handleToggleLike() {
+  if (!requireLogin()) return;
+  if (!selectedPostId) return;
+
+  try {
+    const data = await toggleCommunityPostLike(selectedPostId);
+
+    if (selectedPostDetail) {
+      selectedPostDetail.likeCount = data.likeCount ?? selectedPostDetail.likeCount;
+      selectedPostDetail.likedByMe = data.liked ?? selectedPostDetail.likedByMe;
+    }
+
+    detailLikeBtnEl.textContent = `추천 ${selectedPostDetail.likeCount || 0}`;
+    await loadPostList();
+    await loadHotPostList();
+  } catch (error) {
+    console.error(error);
+    alert("추천 처리에 실패했습니다.");
+  }
+}
+
+async function handleEditComment(commentId, oldContent) {
+  if (!requireLogin()) return;
+
+  const newContent = prompt("댓글을 수정하세요.", oldContent || "");
+  if (newContent === null) return;
+  if (!newContent.trim()) {
+    alert("댓글 내용을 입력해주세요.");
+    return;
+  }
+
+  try {
+    await updateCommunityComment(commentId, newContent.trim());
+    await loadPostDetail(selectedPostId);
+  } catch (error) {
+    console.error(error);
+    alert("댓글 수정에 실패했습니다.");
+  }
+}
+
+async function handleDeleteComment(commentId) {
+  if (!requireLogin()) return;
+
+  const ok = confirm("댓글을 삭제하시겠습니까?");
+  if (!ok) return;
+
+  try {
+    await deleteCommunityComment(commentId);
+    await loadPostDetail(selectedPostId);
+    await loadPostList();
+  } catch (error) {
+    console.error(error);
+    alert("댓글 삭제에 실패했습니다.");
+  }
+}
+
+// 카테고리 클릭
+categoryButtons.forEach((button) => {
+  button.addEventListener("click", async () => {
+    categoryButtons.forEach((btn) => btn.classList.remove("active"));
+    button.classList.add("active");
+
+    const categoryLabel = button.dataset.category || "전체";
+    selectedCategoryCode = COMMUNITY_CATEGORY_MAP[categoryLabel] || "ALL";
+    currentPageNumber = 1;
+
+    await loadPostList();
+  });
+});
+
+// 정렬 클릭
+filterButtons.forEach((button) => {
+  button.addEventListener("click", async () => {
+    filterButtons.forEach((btn) => btn.classList.remove("active"));
+    button.classList.add("active");
+
+    selectedSortType = button.dataset.sort || "latest";
+    currentPageNumber = 1;
+
+    await loadPostList();
+  });
+});
+
+// 검색
+searchBtnEl?.addEventListener("click", async () => {
+  searchKeyword = searchInputEl.value.trim();
+  currentPageNumber = 1;
+  await loadPostList();
+});
+
+searchInputEl?.addEventListener("keydown", async (event) => {
+  if (event.key === "Enter") {
+    searchKeyword = searchInputEl.value.trim();
+    currentPageNumber = 1;
+    await loadPostList();
+  }
+});
+
+// 글쓰기
+openWriteModalBtn?.addEventListener("click", openWriteModal);
+
+// 내 활동
+openMyActivityBtn?.addEventListener("click", async () => {
+  if (!requireLogin()) return;
+  await loadMyActivity();
+  openModal(myActivityModalEl);
+});
+
+// 인기 더보기
+showHotPostsBtn?.addEventListener("click", async () => {
+  selectedSortType = "popular";
+  currentPageNumber = 1;
+
+  filterButtons.forEach((btn) => btn.classList.remove("active"));
+  document.querySelector('.post-filter-btn[data-sort="popular"]')?.classList.add("active");
+
+  await loadPostList();
+  window.scrollTo({ top: 350, behavior: "smooth" });
+});
+
+// 게시글 목록 클릭 -> 상세
+communityPostListEl?.addEventListener("click", async (event) => {
+  const postItem = event.target.closest(".community-post-item");
+  if (!postItem) return;
+
+  const postId = postItem.dataset.postId;
+  if (!postId) return;
+
+  await loadPostDetail(postId);
+});
+
+// 인기 게시글 클릭 -> 상세
+hotPostGridEl?.addEventListener("click", async (event) => {
+  const postItem = event.target.closest(".highlight-card");
+  if (!postItem) return;
+
+  const postId = postItem.dataset.postId;
+  if (!postId) return;
+
+  await loadPostDetail(postId);
+});
+
+// 게시글 작성/수정 submit
+postFormEl?.addEventListener("submit", handleSubmitPostForm);
+
+// 댓글 등록
+submitCommentBtnEl?.addEventListener("click", handleSubmitComment);
+
+// 추천
+detailLikeBtnEl?.addEventListener("click", handleToggleLike);
+
+// 댓글 수정/삭제
+detailCommentListEl?.addEventListener("click", async (event) => {
+  const editBtn = event.target.closest(".comment-edit-btn");
+  const deleteBtn = event.target.closest(".comment-delete-btn");
+
+  if (editBtn) {
+    const commentId = editBtn.dataset.commentId;
+    const oldContent = editBtn.dataset.commentContent || "";
+    await handleEditComment(commentId, oldContent);
+    return;
+  }
+
+  if (deleteBtn) {
+    const commentId = deleteBtn.dataset.commentId;
+    await handleDeleteComment(commentId);
+  }
+});
+
+// 내 활동 게시글 클릭 -> 상세
+document.addEventListener("click", async (event) => {
+  const activityItem = event.target.closest(".my-activity-item");
+  if (!activityItem) return;
+
+  const postId = activityItem.dataset.postId;
+  if (!postId) return;
+
+  closeModal(myActivityModalEl);
+  await loadPostDetail(postId);
+});
+
+// 내 활동 탭
+myActivityTabs.forEach((tab) => {
+  tab.addEventListener("click", () => {
+    myActivityTabs.forEach((item) => item.classList.remove("active"));
+    tab.classList.add("active");
+
+    const targetTab = tab.dataset.tab;
+
+    document.querySelectorAll(".my-activity-panel").forEach((panel) => {
+      panel.classList.remove("active");
+    });
+
+    if (targetTab === "posts") {
+      myPostsPanelEl.classList.add("active");
+    } else {
+      myCommentsPanelEl.classList.add("active");
+    }
+  });
+});
+
+// 모달 닫기
+document.querySelectorAll("[data-close]").forEach((button) => {
+  button.addEventListener("click", () => {
+    const modalId = button.dataset.close;
+    const modalEl = document.getElementById(modalId);
+    closeModal(modalEl);
+  });
+});
+
+// ESC 닫기
+document.addEventListener("keydown", (event) => {
+  if (event.key === "Escape") {
+    [postDetailModalEl, postFormModalEl, myActivityModalEl].forEach((modalEl) => {
+      if (modalEl && !modalEl.classList.contains("hidden")) {
+        closeModal(modalEl);
+      }
+    });
+  }
+});
+
+loadCommunityPage();

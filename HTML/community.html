@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PROVI 커뮤니티</title>
+  <link rel="stylesheet" href="../CSS/community.css" />
+</head>
+<body>
+  <div class="community-page">
+    <header class="community-header">
+      <div class="community-back-wrap">
+        <button type="button" class="community-back-btn" onclick="goToMainPage()">
+          ← 메인으로
+        </button>
+      </div>
+
+      <div class="community-header__top">
+        <div class="community-title-wrap">
+          <p class="community-title-sub">PROVI Community</p>
+          <h1 class="community-title">개발자 커뮤니티</h1>
+          <p class="community-desc">
+            직군별 고민, 기술 스택, 면접 후기, 팀 프로젝트 이야기까지 한 곳에서 공유해보세요.
+          </p>
+        </div>
+
+        <div class="community-header__actions">
+          <div class="community-search-box">
+            <input type="text" id="communitySearchInput" placeholder="게시글 검색" aria-label="게시글 검색" />
+            <button type="button" id="communitySearchBtn">검색</button>
+          </div>
+          <button type="button" class="my-activity-btn" id="openMyActivityBtn">내 활동</button>
+          <button type="button" class="write-post-btn" id="openWriteModalBtn">글쓰기</button>
+        </div>
+      </div>
+
+      <nav class="community-category-nav" aria-label="커뮤니티 카테고리">
+        <button class="community-category-btn active" data-category="전체">전체</button>
+        <button class="community-category-btn" data-category="자유">자유</button>
+        <button class="community-category-btn" data-category="질문">질문</button>
+        <button class="community-category-btn" data-category="정보">정보</button>
+        <button class="community-category-btn" data-category="면접후기">면접후기</button>
+        <button class="community-category-btn" data-category="프로젝트">프로젝트</button>
+        <button class="community-category-btn" data-category="커리어">커리어</button>
+      </nav>
+    </header>
+
+    <main class="community-main">
+      <section class="community-content">
+        <section class="community-highlight-section">
+          <div class="community-section-header">
+            <h2>인기 게시물</h2>
+            <a href="javascript:void(0);" class="section-more-link" id="showHotPostsBtn">더보기</a>
+          </div>
+          <div class="community-highlight-grid" id="hotPostGrid"></div>
+        </section>
+
+        <section class="community-post-section">
+          <div class="community-section-header">
+            <h2>전체 게시글</h2>
+
+            <div class="community-filter-wrap">
+              <button type="button" class="post-filter-btn active" data-sort="latest">최신순</button>
+              <button type="button" class="post-filter-btn" data-sort="popular">인기순</button>
+              <button type="button" class="post-filter-btn" data-sort="comments">댓글순</button>
+            </div>
+          </div>
+
+          <div class="community-post-list" id="communityPostList"></div>
+
+          <div class="community-pagination" id="communityPagination"></div>
+        </section>
+      </section>
+
+      <aside class="community-sidebar">
+        <section class="sidebar-card">
+          <div class="sidebar-card__header">
+            <h3>추천 태그</h3>
+          </div>
+          <div class="tag-list">
+            <button>#백엔드</button>
+            <button>#프론트엔드</button>
+            <button>#면접</button>
+            <button>#포트폴리오</button>
+            <button>#팀프로젝트</button>
+            <button>#AI</button>
+            <button>#취업준비</button>
+            <button>#스프링</button>
+          </div>
+        </section>
+
+        <section class="sidebar-card">
+          <div class="sidebar-card__header">
+            <h3>공지사항</h3>
+          </div>
+          <ul class="notice-list">
+            <li><a href="javascript:void(0);">커뮤니티 이용 가이드 안내</a></li>
+            <li><a href="javascript:void(0);">비방 및 홍보성 게시물 제재 기준</a></li>
+            <li><a href="javascript:void(0);">면접 후기 작성 이벤트 진행 중</a></li>
+          </ul>
+        </section>
+
+        <section class="sidebar-card">
+          <div class="sidebar-card__header">
+            <h3>이번 주 인기 작성자</h3>
+          </div>
+          <div class="writer-rank-list" id="writerRankList"></div>
+        </section>
+      </aside>
+    </main>
+  </div>
+
+  <div class="community-modal hidden" id="postDetailModal">
+    <div class="community-modal__backdrop" data-close="postDetailModal"></div>
+    <div class="community-modal__dialog detail-modal">
+      <button class="community-modal__close" data-close="postDetailModal">×</button>
+
+      <div class="detail-header">
+        <div class="detail-badges" id="detailBadges"></div>
+        <h2 class="detail-title" id="detailTitle"></h2>
+        <div class="detail-meta">
+          <span id="detailAuthor"></span>
+          <span id="detailAuthorRole"></span>
+          <span id="detailDate"></span>
+          <span id="detailView"></span>
+        </div>
+      </div>
+
+      <div class="detail-body" id="detailBody"></div>
+
+      <div class="detail-actions">
+        <button type="button" class="detail-like-btn" id="detailLikeBtn">좋아요</button>
+        <div class="detail-owner-actions" id="detailOwnerActions"></div>
+      </div>
+
+      <div class="comment-section">
+        <div class="comment-section__header">
+          <h3>댓글</h3>
+          <span id="detailCommentCount">0개</span>
+        </div>
+
+        <div class="comment-list" id="detailCommentList"></div>
+
+        <div class="comment-form">
+          <textarea id="detailCommentInput" placeholder="댓글을 입력하세요."></textarea>
+          <button type="button" id="submitCommentBtn">댓글 등록</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="community-modal hidden" id="postFormModal">
+    <div class="community-modal__backdrop" data-close="postFormModal"></div>
+    <div class="community-modal__dialog form-modal">
+      <button class="community-modal__close" data-close="postFormModal">×</button>
+
+      <div class="form-modal-header">
+        <h2 id="postFormTitle">게시글 작성</h2>
+        <p>커뮤니티에 자유롭게 글을 남겨보세요.</p>
+      </div>
+
+      <form id="postForm" class="post-form">
+        <div class="form-group">
+          <label for="postCategory">카테고리</label>
+          <select id="postCategory" required>
+            <option value="">선택하세요</option>
+            <option value="자유">자유</option>
+            <option value="질문">질문</option>
+            <option value="정보">정보</option>
+            <option value="면접후기">면접후기</option>
+            <option value="프로젝트">프로젝트</option>
+            <option value="커리어">커리어</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="postTitleInput">제목</label>
+          <input type="text" id="postTitleInput" placeholder="제목을 입력하세요." required />
+        </div>
+
+        <div class="form-group">
+          <label for="postContentInput">내용</label>
+          <textarea id="postContentInput" placeholder="내용을 입력하세요." required></textarea>
+        </div>
+
+        <div class="form-check-row">
+          <label class="checkbox-wrap">
+            <input type="checkbox" id="postAnonymousInput" />
+            <span>익명으로 작성하기</span>
+          </label>
+        </div>
+
+        <div class="form-action-row">
+          <button type="button" class="cancel-btn" data-close="postFormModal">취소</button>
+          <button type="submit" class="submit-btn" id="postFormSubmitBtn">등록</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div class="community-modal hidden" id="myActivityModal">
+    <div class="community-modal__backdrop" data-close="myActivityModal"></div>
+    <div class="community-modal__dialog my-activity-modal">
+      <button class="community-modal__close" data-close="myActivityModal">×</button>
+
+      <div class="my-activity-header">
+        <h2>내 활동</h2>
+        <p>내가 작성한 글과 댓글 단 글을 확인할 수 있습니다.</p>
+      </div>
+
+      <div class="my-activity-tabs">
+        <button class="my-activity-tab active" data-tab="posts">내가 쓴 글</button>
+        <button class="my-activity-tab" data-tab="comments">댓글 단 글</button>
+      </div>
+
+      <div class="my-activity-content">
+        <div class="my-activity-panel active" id="myPostsPanel"></div>
+        <div class="my-activity-panel" id="myCommentsPanel"></div>
+      </div>
+    </div>
+  </div>
+
+  <script src="../JAVASCRIPT/api.js"></script>
+  <script src="../JAVASCRIPT/community.js"></script>
+  <script src="../JAVASCRIPT/mainpage.js"></script>
+</body>
+</html>
