@@ -1,7 +1,7 @@
 const $ = (id) => document.getElementById(id);
 
 const API = {
-  LIST: "/api/teamproject",
+  LIST: "/api/list",
   CREATE: "/api/teamproject",
   JOIN: "/api/teamproject/join",
   LEAVE: "/api/teamproject/leave",
@@ -67,9 +67,10 @@ let projectsCache = [];
 let tagItems = [];
 let currentDetailProjectId = null;
 let currentDetailMode = "view";
-let currentPage = 0;
+
+let currentPage = getPageFromUrl();
 const pageSize = 6;
-let totalPages = 0;
+let totalPages = 1;
 
 const SAMPLE_KEY_PREFIX = "tp_samples_";
 
@@ -112,12 +113,30 @@ function getSelectedText(selectEl) {
   return (opt?.textContent || "").trim();
 }
 
-function getCheckedLabelTexts(containerEl) {
-  if (!containerEl) return [];
-  return [...containerEl.querySelectorAll("label.check")]
-    .filter((lb) => lb.querySelector("input[type='checkbox']")?.checked)
-    .map((lb) => (lb.textContent || "").replace(/\s+/g, " ").trim())
-    .filter(Boolean);
+function getNickname() {
+  return (sessionStorage.getItem("nickname") || "").trim();
+}
+
+function requireLoginOrRedirect() {
+  const nickname = getNickname();
+  if (!nickname) {
+    alert("로그인 후 이용할 수 있는 서비스입니다.");
+    window.location.href = "../HTML/signin.html";
+    return false;
+  }
+  return true;
+}
+
+function getPageFromUrl() {
+  const params = new URLSearchParams(window.location.search);
+  const page = Number(params.get("page"));
+  return Number.isNaN(page) || page < 1 ? 1 : page;
+}
+
+function setPageToUrl(pageNumber) {
+  const url = new URL(window.location.href);
+  url.searchParams.set("page", String(pageNumber));
+  window.history.replaceState({}, "", url);
 }
 
 function categoryLabel(v) {
@@ -154,18 +173,57 @@ function roleListLabel(arr) {
     .join(", ");
 }
 
-function getNickname() {
-  return (sessionStorage.getItem("nickname") || "").trim();
+async function authFetch(url, options = {}) {
+  const token = sessionStorage.getItem("token");
+
+  const headers = {
+    ...(options.headers || {}),
+  };
+
+  if (token) {
+    headers["Authorization"] = `Bearer ${token}`;
+  }
+
+  const res = await fetch(url, {
+    ...options,
+    headers,
+    credentials: "include",
+  });
+
+  let data = null;
+  const ct = res.headers.get("content-type") || "";
+
+  if (ct.includes("application/json")) {
+    data = await res.json();
+  }
+
+  if (!res.ok) {
+    const message = data?.message || data?.error || `HTTP ${res.status}`;
+    throw new Error(message);
+  }
+
+  return data;
 }
 
-function requireLoginOrRedirect() {
-  const nickname = getNickname();
-  if (!nickname) {
-    alert("로그인 후 이용할 수 있는 서비스입니다.");
-    window.location.href = "../HTML/signin.html";
-    return false;
+async function apiFetch(url, options = {}) {
+  const res = await fetch(url, {
+    ...options,
+    credentials: "include",
+  });
+
+  let data = null;
+  const ct = res.headers.get("content-type") || "";
+
+  if (ct.includes("application/json")) {
+    data = await res.json();
   }
-  return true;
+
+  if (!res.ok) {
+    const message = data?.message || data?.error || `HTTP ${res.status}`;
+    throw new Error(message);
+  }
+
+  return data;
 }
 
 function sampleKey() {
@@ -221,11 +279,15 @@ function ensureTwoSamplesAdded() {
       category: "WEB",
       subStatus: "IN_PROGRESS",
       tags: ["HTML", "CSS", "JavaScript"],
-      neededRoles: ["프론트", "백엔드", "테스트/품질"],
+      recruitments: [
+        { role: "프론트", count: 2 },
+        { role: "백엔드", count: 1 },
+        { role: "테스트/품질", count: 1 },
+      ],
       leaderName: nickname,
       members: [{ userName: nickname, isLeader: true, role: "프론트" }],
       createdAt: now,
-      userLimit: 4,
+      userLimit: 5,
       isSample: true,
     },
     {
@@ -235,11 +297,15 @@ function ensureTwoSamplesAdded() {
       category: "AI_DATA",
       subStatus: "RECRUITING",
       tags: ["React", "Spring", "FastAPI", "PostgreSQL"],
-      neededRoles: ["백엔드", "DB/데이터", "AI/추천"],
+      recruitments: [
+        { role: "백엔드", count: 1 },
+        { role: "DB/데이터", count: 1 },
+        { role: "AI/추천", count: 1 },
+      ],
       leaderName: nickname,
       members: [{ userName: nickname, isLeader: true, role: "기획/PM" }],
       createdAt: now,
-      userLimit: 5,
+      userLimit: 4,
       isSample: true,
     },
   ];
@@ -247,21 +313,41 @@ function ensureTwoSamplesAdded() {
   writeUserSamples(samples);
 }
 
-async function apiFetch(url, options) {
-  const res = await fetch(url, options);
-  let data = null;
-  const ct = res.headers.get("content-type") || "";
+function getRecruitmentsFromForm() {
+  if (!neededRolesWrap) return [];
 
-  if (ct.includes("application/json")) {
-    data = await res.json();
-  }
+  const inputs = [...neededRolesWrap.querySelectorAll(".recruit-count-input")];
 
-  if (!res.ok) {
-    const message = data?.message || data?.error || `HTTP ${res.status}`;
-    throw new Error(message);
-  }
+  return inputs
+    .map((input) => {
+      const role = String(input.dataset.role || "").trim();
+      const count = Number(input.value || 0);
 
-  return data;
+      if (!role || count <= 0) return null;
+
+      return {
+        role,
+        count,
+      };
+    })
+    .filter(Boolean);
+}
+
+function normalizeRecruitments(project) {
+  const recruitmentsRaw = Array.isArray(project.recruitments)
+    ? project.recruitments
+    : Array.isArray(project.recruitmentList)
+    ? project.recruitmentList
+    : Array.isArray(project.neededRoles)
+    ? project.neededRoles.map((role) => ({ role, count: 1 }))
+    : [];
+
+  return recruitmentsRaw
+    .map((item) => ({
+      role: String(item?.role ?? item?.name ?? "").trim(),
+      count: Number(item?.count ?? item?.recruitCount ?? 1),
+    }))
+    .filter((item) => item.role);
 }
 
 function normalizeProject(p) {
@@ -271,18 +357,7 @@ function normalizeProject(p) {
     ? p.memberList
     : [];
 
-  const neededRaw = Array.isArray(p.neededRoles)
-    ? p.neededRoles
-    : Array.isArray(p.needRoles)
-    ? p.needRoles
-    : Array.isArray(p.neededRoleLabels)
-    ? p.neededRoleLabels
-    : [];
-
-  const neededRoles = (neededRaw || [])
-    .map((x) => x?.label ?? x?.name ?? x)
-    .map((x) => String(x || "").trim())
-    .filter(Boolean);
+  const recruitments = normalizeRecruitments(p);
 
   const members = (membersRaw || []).map((m) => ({
     userName: String(m.userName ?? m.nickname ?? m.name ?? "").trim(),
@@ -293,11 +368,11 @@ function normalizeProject(p) {
   const leaderName =
     String(
       p.leaderName ??
-        p.leader ??
-        p.createdByNickname ??
-        p.ownerNickname ??
-        p.createdBy ??
-        ""
+      p.leader ??
+      p.createdByNickname ??
+      p.ownerNickname ??
+      p.createdBy ??
+      ""
     ).trim() ||
     String(members.find((m) => m.isLeader)?.userName || "").trim() ||
     "Unknown";
@@ -309,7 +384,8 @@ function normalizeProject(p) {
     category: p.category ?? "WEB",
     subStatus: p.subStatus ?? "IN_PROGRESS",
     tags: Array.isArray(p.tags) ? p.tags : [],
-    neededRoles,
+    recruitments,
+    neededRoles: recruitments.map((r) => r.role),
     members,
     createdAt: p.createdAt ?? p.createdDate ?? "",
     leaderName,
@@ -331,20 +407,31 @@ function getMyMemberInfo(project, nickname) {
   return (project.members || []).find((m) => String(m.userName || "").trim() === nickname) || null;
 }
 
-function getFilledRoleMap(project) {
+function getFilledRoleCountMap(project) {
   const map = new Map();
   (project.members || []).forEach((member) => {
     const role = String(member.role || "").trim();
     if (!role) return;
-    if (!map.has(role)) map.set(role, []);
-    map.get(role).push(member);
+    map.set(role, (map.get(role) || 0) + 1);
   });
   return map;
 }
 
-function getOpenRoles(project) {
-  const filledRoleMap = getFilledRoleMap(project);
-  return (project.neededRoles || []).filter((role) => !filledRoleMap.has(role));
+function getOpenRecruitments(project) {
+  const filledMap = getFilledRoleCountMap(project);
+
+  return (project.recruitments || [])
+    .map((item) => {
+      const filled = filledMap.get(item.role) || 0;
+      const remain = Math.max(0, item.count - filled);
+      return {
+        role: item.role,
+        count: item.count,
+        filled,
+        remain,
+      };
+    })
+    .filter((item) => item.remain > 0);
 }
 
 function isProjectFull(project) {
@@ -394,9 +481,7 @@ function showTagSuggestions(keyword) {
 
 function addTag(tag) {
   const value = String(tag || "").trim();
-  if (!value) return;
-  if (tagItems.includes(value)) return;
-  if (tagItems.length >= 8) return;
+  if (!value || tagItems.includes(value) || tagItems.length >= 8) return;
   tagItems.push(value);
   renderTagChips();
 }
@@ -409,11 +494,11 @@ function resetTags() {
   tagSuggestList.classList.remove("open");
 }
 
-async function loadProjects(page = 0) {
+async function loadProjects(pageNumber = currentPage) {
   try {
     const query = new URLSearchParams({
-      page,
-      size: pageSize,
+      page: String(pageNumber),
+      size: String(pageSize),
     });
 
     const data = await apiFetch(`${API.LIST}?${query.toString()}`, {
@@ -422,24 +507,26 @@ async function loadProjects(page = 0) {
 
     if (Array.isArray(data)) {
       projectsCache = data.map(normalizeProject);
-      currentPage = page;
+      currentPage = pageNumber;
       totalPages = 1;
     } else {
       const list = Array.isArray(data?.content) ? data.content : [];
       projectsCache = list.map(normalizeProject);
-      currentPage = data?.number ?? page;
-      totalPages = data?.totalPages ?? 1;
+
+      const backendPage = Number(data?.number);
+      currentPage = Number.isNaN(backendPage) ? pageNumber : backendPage + 1;
+      totalPages = Number(data?.totalPages) || 1;
     }
   } catch (e) {
     projectsCache = [];
-    currentPage = 0;
-    totalPages = 0;
+    currentPage = 1;
+    totalPages = 1;
     console.warn("LIST API ERROR:", e.message);
   }
 }
 
 function mergedProjects() {
-  const samples = readUserSamples().map((p) => ({ ...p, isSample: true }));
+  const samples = readUserSamples().map((p) => normalizeProject({ ...p, isSample: true }));
   return [...samples, ...projectsCache];
 }
 
@@ -447,10 +534,21 @@ function getProjectById(id) {
   return mergedProjects().find((x) => String(x.id) === String(id));
 }
 
+async function refreshAndRender(pageNumber = currentPage) {
+  currentPage = pageNumber;
+  setPageToUrl(currentPage);
+  await loadProjects(currentPage);
+  render();
+}
+
 function render() {
   const nickname = getNickname();
   const q = (projectSearch?.value || "").trim().toLowerCase();
   let projects = mergedProjects();
+
+  if (!onlyMyProjects && nickname) {
+    projects = projects.filter((p) => !isMember(p, nickname) || isOwner(p, nickname));
+  }
 
   if (onlyMyProjects && nickname) {
     projects = projects.filter((p) => isOwner(p, nickname) || isMember(p, nickname));
@@ -484,7 +582,6 @@ function render() {
   }
 
   grid.innerHTML = "";
-
   if (countBadge) countBadge.textContent = `${projects.length} projects`;
   if (emptyState) emptyState.style.display = projects.length === 0 ? "block" : "none";
 
@@ -492,6 +589,10 @@ function render() {
     const owner = isOwner(p, nickname);
     const member = isMember(p, nickname);
     const currentCount = (p.members || []).length;
+
+    const recruitText = (p.recruitments || [])
+      .map((r) => `${r.role} ${r.count}명`)
+      .join(", ");
 
     const card = document.createElement("article");
     card.className = `project-card ${p.isSample ? "sample-card" : ""}`;
@@ -506,7 +607,7 @@ function render() {
 
       <div class="project-card-meta">
         <span>상태: ${escapeHtml(subStatusLabel(p.subStatus))}</span>
-        <span>필요 역할: ${escapeHtml(roleListLabel(p.neededRoles))}</span>
+        <span>모집: ${escapeHtml(recruitText || "-")}</span>
         <span>카테고리: ${escapeHtml(categoryLabel(p.category))}</span>
         ${owner ? `<span>권한: 팀장</span>` : ``}
       </div>
@@ -545,39 +646,39 @@ function render() {
   });
 
   renderPagination();
+}
 
-  function renderPagination() {
-    if (!pagination) return;
+function renderPagination() {
+  if (!pagination) return;
 
-    if (totalPages <= 1) {
-      pagination.innerHTML = "";
-      pagination.style.display = "none";
-      return;
-    }
-
-    pagination.style.display = "flex";
+  if (totalPages <= 1) {
     pagination.innerHTML = "";
-
-    const prevBtn = document.createElement("button");
-    prevBtn.textContent = "이전";
-    prevBtn.disabled = currentPage === 0;
-    prevBtn.onclick = () => refreshAndRender(currentPage - 1);
-    pagination.appendChild(prevBtn);
-
-    for (let i = 0; i < totalPages; i++) {
-      const btn = document.createElement("button");
-      btn.textContent = i + 1;
-      btn.className = i === currentPage ? "active" : "";
-      btn.onclick = () => refreshAndRender(i);
-      pagination.appendChild(btn);
-    }
-
-    const nextBtn = document.createElement("button");
-    nextBtn.textContent = "다음";
-    nextBtn.disabled = currentPage >= totalPages - 1;
-    nextBtn.onclick = () => refreshAndRender(currentPage + 1);
-    pagination.appendChild(nextBtn);
+    pagination.style.display = "none";
+    return;
   }
+
+  pagination.style.display = "flex";
+  pagination.innerHTML = "";
+
+  const prevBtn = document.createElement("button");
+  prevBtn.textContent = "이전";
+  prevBtn.disabled = currentPage <= 1;
+  prevBtn.onclick = () => refreshAndRender(currentPage - 1);
+  pagination.appendChild(prevBtn);
+
+  for (let i = 1; i <= totalPages; i++) {
+    const btn = document.createElement("button");
+    btn.textContent = i;
+    btn.className = i === currentPage ? "active" : "";
+    btn.onclick = () => refreshAndRender(i);
+    pagination.appendChild(btn);
+  }
+
+  const nextBtn = document.createElement("button");
+  nextBtn.textContent = "다음";
+  nextBtn.disabled = currentPage >= totalPages;
+  nextBtn.onclick = () => refreshAndRender(currentPage + 1);
+  pagination.appendChild(nextBtn);
 }
 
 function setActiveButton(container, selector, activeValue, datasetKey) {
@@ -614,11 +715,10 @@ function openCreateModal() {
   projectUserLimit.value = "";
   projectName.value = "";
   projectDesc.value = "";
-
   if (myRole) myRole.selectedIndex = 0;
 
-  [...neededRolesWrap.querySelectorAll("input[type='checkbox']")].forEach((cb) => {
-    cb.checked = ["프론트", "백엔드"].includes(cb.value);
+  [...neededRolesWrap.querySelectorAll(".recruit-count-input")].forEach((input) => {
+    input.value = "0";
   });
 
   resetTags();
@@ -628,6 +728,86 @@ function closeCreateModal() {
   modalBackdrop.classList.remove("open");
   modalBackdrop.setAttribute("aria-hidden", "true");
   resetTags();
+}
+
+async function createProjectToServer() {
+  if (!requireLoginOrRedirect()) return;
+
+  const nickname = getNickname();
+  const category = projectCategory.value;
+  const userLimit = Number(projectUserLimit.value);
+  const title = projectName.value.trim();
+  const content = projectDesc.value.trim();
+  const tags = [...tagItems];
+  const myRoleLabel = getSelectedText(myRole);
+  const recruitments = getRecruitmentsFromForm();
+  const totalRecruitCount = recruitments.reduce((sum, item) => sum + item.count, 0);
+
+  if (!category) {
+    alert("분야를 선택해주세요.");
+    return;
+  }
+
+  if (!userLimit || userLimit < 1) {
+    alert("최대 인원은 1명 이상이어야 합니다.");
+    projectUserLimit.focus();
+    return;
+  }
+
+  if (!title) {
+    alert("제목을 입력해주세요.");
+    projectName.focus();
+    return;
+  }
+
+  if (!content) {
+    alert("내용을 입력해주세요.");
+    projectDesc.focus();
+    return;
+  }
+
+  if (recruitments.length === 0) {
+    alert("최소 1개 이상의 모집 직군 인원을 입력해주세요.");
+    return;
+  }
+
+  if (totalRecruitCount > userLimit) {
+    alert("직군별 모집 인원 합이 최대 인원을 초과할 수 없습니다.");
+    return;
+  }
+
+  const payload = {
+    nickname,
+    category,
+    userLimit,
+    title,
+    content,
+    tags,
+    myRole: myRoleLabel,
+    recruitments,
+    neededRoles: recruitments.map((r) => r.role),
+  };
+
+  createProjectBtn.disabled = true;
+  createProjectBtn.textContent = "생성 중...";
+
+  try {
+    await authFetch(API.CREATE, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(payload),
+    });
+
+    closeCreateModal();
+    await refreshAndRender(1);
+  } catch (e) {
+    alert(`서버 오류: ${e.message}`);
+  } finally {
+    createProjectBtn.disabled = false;
+    createProjectBtn.textContent = "생성";
+  }
 }
 
 function openDetailModal(project, mode = "view") {
@@ -651,8 +831,7 @@ function renderDetailModal(project, mode = "view") {
   const owner = isOwner(project, nickname);
   const member = isMember(project, nickname);
   const myMemberInfo = getMyMemberInfo(project, nickname);
-  const filledRoleMap = getFilledRoleMap(project);
-  const openRoles = getOpenRoles(project);
+  const openRecruitments = getOpenRecruitments(project);
   const full = isProjectFull(project);
 
   detailModalSub.textContent =
@@ -673,37 +852,33 @@ function renderDetailModal(project, mode = "view") {
 
   detailTagList.innerHTML =
     Array.isArray(project.tags) && project.tags.length > 0
-      ? project.tags
-          .map((tag) => `<span class="detail-tag">${escapeHtml(tag)}</span>`)
-          .join("")
+      ? project.tags.map((tag) => `<span class="detail-tag">${escapeHtml(tag)}</span>`).join("")
       : `<div class="detail-empty">등록된 태그가 없습니다.</div>`;
 
   detailRoleStatusList.innerHTML =
-    Array.isArray(project.neededRoles) && project.neededRoles.length > 0
-      ? project.neededRoles
-          .map((role) => {
-            const assigned = filledRoleMap.get(role) || [];
-            const isOpen = assigned.length === 0;
+    Array.isArray(project.recruitments) && project.recruitments.length > 0
+      ? project.recruitments
+          .map((r) => {
+            const remainInfo = openRecruitments.find((x) => x.role === r.role);
+            const remain = remainInfo ? remainInfo.remain : 0;
+            const filled = Number(r.count) - remain;
+
             return `
               <div class="role-chip">
                 <div class="role-chip-left">
-                  <span class="role-chip-title">${escapeHtml(role)}</span>
+                  <span class="role-chip-title">${escapeHtml(r.role)}</span>
                   <span class="role-chip-sub">
-                    ${
-                      isOpen
-                        ? "아직 참여자가 없습니다."
-                        : assigned.map((m) => escapeHtml(m.userName)).join(", ") + " 참여중"
-                    }
+                    모집 ${escapeHtml(String(r.count))}명 / 참여 ${escapeHtml(String(filled))}명 / 남은 ${escapeHtml(String(remain))}명
                   </span>
                 </div>
-                <span class="role-chip-state ${isOpen ? "open" : "filled"}">
-                  ${isOpen ? "모집중" : "참여중"}
+                <span class="role-chip-state ${remain > 0 ? "open" : "filled"}">
+                  ${remain > 0 ? "모집중" : "마감"}
                 </span>
               </div>
             `;
           })
           .join("")
-      : `<div class="detail-empty">설정된 필요 역할이 없습니다.</div>`;
+      : `<div class="detail-empty">설정된 모집 직군이 없습니다.</div>`;
 
   detailMemberList.innerHTML =
     Array.isArray(project.members) && project.members.length > 0
@@ -733,18 +908,18 @@ function renderDetailModal(project, mode = "view") {
     detailMyRole.textContent = "-";
   }
 
-  detailRemainRoleCount.textContent = `${openRoles.length}개`;
+  detailRemainRoleCount.textContent = `${openRecruitments.reduce((sum, r) => sum + r.remain, 0)}명`;
 
-  const canShowJoinSection = !owner && !member && !full && openRoles.length > 0;
+  const canShowJoinSection = !owner && !member && !full && openRecruitments.length > 0;
   detailJoinSection.style.display = canShowJoinSection ? "block" : "none";
 
   detailJoinRoleList.innerHTML = canShowJoinSection
-    ? openRoles
+    ? openRecruitments
         .map(
-          (role, idx) => `
+          (r, idx) => `
             <label class="join-role-item">
-              <input type="radio" name="detailJoinRole" value="${escapeHtml(role)}" ${idx === 0 ? "checked" : ""} />
-              <span>${escapeHtml(role)}</span>
+              <input type="radio" name="detailJoinRole" value="${escapeHtml(r.role)}" ${idx === 0 ? "checked" : ""} />
+              <span>${escapeHtml(r.role)} (남은 ${escapeHtml(String(r.remain))}명)</span>
             </label>
           `
         )
@@ -766,7 +941,7 @@ function renderDetailModal(project, mode = "view") {
     if (full) {
       detailJoinBtn.disabled = true;
       detailJoinBtn.textContent = "정원 마감";
-    } else if (openRoles.length === 0) {
+    } else if (openRecruitments.length === 0) {
       detailJoinBtn.disabled = true;
       detailJoinBtn.textContent = "모집 역할 없음";
     } else {
@@ -776,264 +951,185 @@ function renderDetailModal(project, mode = "view") {
   }
 }
 
-async function createProjectToServer() {
+async function joinProjectFromDetail() {
   if (!requireLoginOrRedirect()) return;
+  if (!currentDetailProjectId) return;
+
+  const project = getProjectById(currentDetailProjectId);
+  if (!project) {
+    alert("프로젝트 정보를 찾을 수 없습니다.");
+    return;
+  }
 
   const nickname = getNickname();
-  const category = projectCategory.value;
-  const userLimit = Number(projectUserLimit.value);
-  const title = projectName.value.trim();
-  const content = projectDesc.value.trim();
-  const tags = [...tagItems];
-  const myRoleLabel = getSelectedText(myRole);
-  const neededRoleLabels = [...neededRolesWrap.querySelectorAll("input[type='checkbox']:checked")]
-  .map((cb) => cb.value)
-  .filter(Boolean);
 
-  if (!category) {
-    alert("분야를 선택해주세요.");
+  if (isOwner(project, nickname)) {
+    alert("프로젝트 생성자는 자동 참여 상태입니다.");
     return;
   }
 
-  if (!userLimit || userLimit < 1) {
-    alert("최대 인원은 1명 이상이어야 합니다.");
-    projectUserLimit.focus();
+  if (isMember(project, nickname)) {
+    alert("이미 참여한 프로젝트입니다.");
     return;
   }
 
-  if (!title) {
-    alert("제목을 입력해주세요.");
-    projectName.focus();
+  if (isProjectFull(project)) {
+    alert("정원이 가득 찼습니다.");
     return;
   }
 
-  if (!content) {
-    alert("내용을 입력해주세요.");
-    projectDesc.focus();
+  const roleEl = document.querySelector("input[name='detailJoinRole']:checked");
+  if (!roleEl) {
+    alert("참여할 역할을 선택해주세요.");
     return;
   }
 
-  const payload = {
-    nickname,
-    category,
-    userLimit,
-    title,
-    content,
-    tags,
-    neededRoles: neededRoleLabels,
-    myRole: myRoleLabel,
-  };
+  const roleLabel = roleEl.value;
 
-  createProjectBtn.disabled = true;
-  createProjectBtn.textContent = "생성 중...";
+  detailJoinBtn.disabled = true;
+  detailJoinBtn.textContent = "처리 중...";
 
   try {
-    await authFetch(API.CREATE, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(payload),
-    });
+    if (project.isSample) {
+      updateOneSample(project.id, (sample) => {
+        const members = Array.isArray(sample.members) ? [...sample.members] : [];
+        members.push({
+          userName: nickname,
+          isLeader: false,
+          role: roleLabel,
+        });
+        sample.members = members;
+        return sample;
+      });
+    } else {
+      await authFetch(API.JOIN, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          projectId: project.id,
+          nickname,
+          role: roleLabel,
+        }),
+      });
+    }
 
-    closeCreateModal();
-    await refreshAndRender();
-    } catch (e) {
-      alert(`서버 오류: ${e.message}`); 
-    } finally {
-    createProjectBtn.disabled = false;
-    createProjectBtn.textContent = "생성";
+    closeDetailModal();
+    await refreshAndRender(currentPage);
+    alert(`참여 완료\n역할: ${roleLabel}`);
+  } catch (e) {
+    alert(`서버 오류: ${e.message}`);
+  } finally {
+    detailJoinBtn.disabled = false;
+    detailJoinBtn.textContent = "참여하기";
   }
-}
-
-async function joinProjectFromDetail() {
-if (!requireLoginOrRedirect()) return;
-if (!currentDetailProjectId) return;
-
-const project = getProjectById(currentDetailProjectId);
-if (!project) {
-alert("프로젝트 정보를 찾을 수 없습니다.");
-return;
-}
-
-const nickname = getNickname();
-
-if (isOwner(project, nickname)) {
-alert("프로젝트 생성자는 자동 참여 상태입니다.");
-return;
-}
-
-if (isMember(project, nickname)) {
-alert("이미 참여한 프로젝트입니다.");
-return;
-}
-
-if (isProjectFull(project)) {
-alert("정원이 가득 찼습니다.");
-return;
-}
-
-const roleEl = document.querySelector("input[name='detailJoinRole']:checked");
-if (!roleEl) {
-alert("참여할 역할을 선택해주세요.");
-return;
-}
-
-const roleLabel = roleEl.value;
-
-detailJoinBtn.disabled = true;
-detailJoinBtn.textContent = "처리 중...";
-
-try {
-if (project.isSample) {
-updateOneSample(project.id, (sample) => {
-const members = Array.isArray(sample.members) ? [...sample.members] : [];
-members.push({
-userName: nickname,
-isLeader: false,
-role: roleLabel,
-});
-sample.members = members;
-return sample;
-});
-} else {
-await apiFetch(API.JOIN, {
-method: "POST",
-headers: { "Content-Type": "application/json" },
-body: JSON.stringify({
-projectId: project.id,
-nickname,
-role: roleLabel,
-}),
-});
-}
-
-await refreshAndRender();
-const fresh = getProjectById(currentDetailProjectId);
-if (fresh) openDetailModal(fresh, "view");
-alert(`참여 완료\n역할: ${roleLabel}`);
-} catch (e) {
-alert(`서버 오류: ${e.message}`);
-} finally {
-detailJoinBtn.disabled = false;
-detailJoinBtn.textContent = "참여하기";
-}
 }
 
 async function leaveProjectFromDetail() {
-if (!requireLoginOrRedirect()) return;
-if (!currentDetailProjectId) return;
+  if (!requireLoginOrRedirect()) return;
+  if (!currentDetailProjectId) return;
 
-const project = getProjectById(currentDetailProjectId);
-if (!project) {
-alert("프로젝트 정보를 찾을 수 없습니다.");
-return;
-}
+  const project = getProjectById(currentDetailProjectId);
+  if (!project) {
+    alert("프로젝트 정보를 찾을 수 없습니다.");
+    return;
+  }
 
-const nickname = getNickname();
-const myInfo = getMyMemberInfo(project, nickname);
+  const nickname = getNickname();
+  const myInfo = getMyMemberInfo(project, nickname);
 
-if (!myInfo) {
-alert("현재 참여 정보가 없습니다.");
-return;
-}
+  if (!myInfo) {
+    alert("현재 참여 정보가 없습니다.");
+    return;
+  }
 
-const ok = confirm("프로젝트 참여를 취소할까요?");
-if (!ok) return;
+  const ok = confirm("프로젝트 참여를 취소할까요?");
+  if (!ok) return;
 
-detailLeaveBtn.disabled = true;
-detailLeaveBtn.textContent = "처리 중...";
+  detailLeaveBtn.disabled = true;
+  detailLeaveBtn.textContent = "처리 중...";
 
-try {
-if (project.isSample) {
-updateOneSample(project.id, (sample) => {
-sample.members = (sample.members || []).filter(
-(m) => String(m.userName || "").trim() !== nickname
-);
-return sample;
-});
-} else {
-await apiFetch(API.LEAVE, {
-method: "POST",
-headers: { "Content-Type": "application/json" },
-body: JSON.stringify({
-projectId: project.id,
-nickname,
-}),
-});
-}
+  try {
+    if (project.isSample) {
+      updateOneSample(project.id, (sample) => {
+        sample.members = (sample.members || []).filter(
+          (m) => String(m.userName || "").trim() !== nickname
+        );
+        return sample;
+      });
+    } else {
+      await authFetch(API.LEAVE, {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          projectId: project.id,
+          nickname,
+        }),
+      });
+    }
 
-await refreshAndRender();
-const fresh = getProjectById(currentDetailProjectId);
-if (fresh) openDetailModal(fresh, "view");
-alert("참여가 취소되었습니다.");
-} catch (e) {
-alert(
-`참여 취소 처리 중 오류가 발생했습니다.\n${e.message}\n\n백엔드에 /api/teamproject/leave API가 없으면 추가가 필요합니다.`
-);
-} finally {
-detailLeaveBtn.disabled = false;
-detailLeaveBtn.textContent = "참여 취소";
-}
+    closeDetailModal();
+    await refreshAndRender(currentPage);
+    alert("참여가 취소되었습니다.");
+  } catch (e) {
+    alert(`참여 취소 처리 중 오류가 발생했습니다.\n${e.message}`);
+  } finally {
+    detailLeaveBtn.disabled = false;
+    detailLeaveBtn.textContent = "참여 취소";
+  }
 }
 
 async function deleteProjectFromServer(projectId) {
-if (!requireLoginOrRedirect()) return;
+  if (!requireLoginOrRedirect()) return;
 
-const nickname = getNickname();
-const ok = confirm("이 프로젝트를 삭제할까요?");
-if (!ok) return;
+  const nickname = getNickname();
+  const ok = confirm("이 프로젝트를 삭제할까요?");
+  if (!ok) return;
 
-try {
-await apiFetch(API.DELETE(projectId), {
-method: "DELETE",
-headers: { "Content-Type": "application/json" },
-body: JSON.stringify({ nickname, projectId }),
-});
+  try {
+    await authFetch(API.DELETE(projectId), {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ nickname, projectId }),
+    });
 
-await refreshAndRender();
-} catch (e) {
-alert(`서버 오류: ${e.message}`);
-}
-}
-
-async function refreshAndRender(page = currentPage) {
-await loadProjects();
-render();
+    await refreshAndRender(currentPage);
+  } catch (e) {
+    alert(`서버 오류: ${e.message}`);
+  }
 }
 
 createBtn?.addEventListener("click", () => {
-if (!requireLoginOrRedirect()) return;
-openCreateModal();
+  if (!requireLoginOrRedirect()) return;
+  openCreateModal();
 });
 
 myProjectsBtn?.addEventListener("click", () => {
-onlyMyProjects = !onlyMyProjects;
-myProjectsBtn.textContent = onlyMyProjects
-? "전체 프로젝트 보기"
-: "내가 참여한 팀 프로젝트 보기";
-render();
+  onlyMyProjects = !onlyMyProjects;
+  myProjectsBtn.textContent = onlyMyProjects
+    ? "전체 프로젝트 보기"
+    : "내가 참여한 팀 프로젝트 보기";
+  render();
 });
 
 modalCloseBtn?.addEventListener("click", closeCreateModal);
 cancelBtn?.addEventListener("click", closeCreateModal);
 
 modalBackdrop?.addEventListener("click", (e) => {
-if (e.target === modalBackdrop) closeCreateModal();
+  if (e.target === modalBackdrop) closeCreateModal();
 });
 
 detailCloseBtn?.addEventListener("click", closeDetailModal);
 detailCancelBtn?.addEventListener("click", closeDetailModal);
 
 detailBackdrop?.addEventListener("click", (e) => {
-if (e.target === detailBackdrop) closeDetailModal();
+  if (e.target === detailBackdrop) closeDetailModal();
 });
 
 window.addEventListener("keydown", (e) => {
-if (e.key === "Escape") {
-if (modalBackdrop?.classList.contains("open")) closeCreateModal();
-if (detailBackdrop?.classList.contains("open")) closeDetailModal();
-}
+  if (e.key === "Escape") {
+    if (modalBackdrop?.classList.contains("open")) closeCreateModal();
+    if (detailBackdrop?.classList.contains("open")) closeDetailModal();
+  }
 });
 
 createProjectBtn?.addEventListener("click", createProjectToServer);
@@ -1043,113 +1139,140 @@ detailLeaveBtn?.addEventListener("click", leaveProjectFromDetail);
 projectSearch?.addEventListener("input", render);
 
 seedBtn?.addEventListener("click", () => {
-if (!requireLoginOrRedirect()) return;
-ensureTwoSamplesAdded();
-render();
+  if (!requireLoginOrRedirect()) return;
+  ensureTwoSamplesAdded();
+  render();
 });
 
 clearBtn?.addEventListener("click", () => {
-if (!requireLoginOrRedirect()) return;
-const ok = confirm("내 샘플 프로젝트를 삭제할까요?");
-if (!ok) return;
-clearUserSamples();
-render();
+  if (!requireLoginOrRedirect()) return;
+  const ok = confirm("내 샘플 프로젝트를 삭제할까요?");
+  if (!ok) return;
+  clearUserSamples();
+  render();
 });
 
 projectTagsInput?.addEventListener("input", (e) => {
-showTagSuggestions(e.target.value);
+  showTagSuggestions(e.target.value);
 });
 
 projectTagsInput?.addEventListener("keydown", (e) => {
-if (e.key === "Enter" || e.key === ",") {
-e.preventDefault();
-const value = projectTagsInput.value.replace(/,/g, "").trim();
-if (!value) return;
-addTag(value);
-projectTagsInput.value = "";
-tagSuggestList.innerHTML = "";
-tagSuggestList.classList.remove("open");
-}
+  if (e.key === "Enter" || e.key === ",") {
+    e.preventDefault();
+    const value = projectTagsInput.value.replace(/,/g, "").trim();
+    if (!value) return;
+    addTag(value);
+    projectTagsInput.value = "";
+    tagSuggestList.innerHTML = "";
+    tagSuggestList.classList.remove("open");
+  }
 
-if (e.key === "Backspace" && !projectTagsInput.value.trim() && tagItems.length > 0) {
-tagItems.pop();
-renderTagChips();
-}
+  if (e.key === "Backspace" && !projectTagsInput.value.trim() && tagItems.length > 0) {
+    tagItems.pop();
+    renderTagChips();
+  }
 });
 
 tagSuggestList?.addEventListener("click", (e) => {
-const btn = e.target.closest("[data-tag]");
-if (!btn) return;
+  const btn = e.target.closest("[data-tag]");
+  if (!btn) return;
 
-const tag = btn.dataset.tag;
-addTag(tag);
-projectTagsInput.value = "";
-tagSuggestList.innerHTML = "";
-tagSuggestList.classList.remove("open");
-projectTagsInput.focus();
+  const tag = btn.dataset.tag;
+  addTag(tag);
+  projectTagsInput.value = "";
+  tagSuggestList.innerHTML = "";
+  tagSuggestList.classList.remove("open");
+  projectTagsInput.focus();
 });
 
 tagChipList?.addEventListener("click", (e) => {
-const btn = e.target.closest("[data-tag-index]");
-if (!btn) return;
+  const btn = e.target.closest("[data-tag-index]");
+  if (!btn) return;
 
-const idx = Number(btn.dataset.tagIndex);
-if (Number.isNaN(idx)) return;
+  const idx = Number(btn.dataset.tagIndex);
+  if (Number.isNaN(idx)) return;
 
-tagItems.splice(idx, 1);
-renderTagChips();
+  tagItems.splice(idx, 1);
+  renderTagChips();
 });
 
 grid?.addEventListener("click", async (e) => {
-const btn = e.target.closest("button[data-action]");
-if (!btn) return;
+  const btn = e.target.closest("button[data-action]");
+  if (!btn) return;
 
-const action = btn.dataset.action;
-const id = btn.dataset.id;
-const nickname = getNickname();
-const p = getProjectById(id);
+  const action = btn.dataset.action;
+  const id = btn.dataset.id;
+  const nickname = getNickname();
+  const p = getProjectById(id);
 
-if (!p) return;
+  if (!p) return;
 
-if (action === "open") {
-openDetailModal(p, "view");
-return;
-}
+  if (action === "open") {
+    openDetailModal(p, "view");
+    return;
+  }
 
-if (action === "join") {
-if (!requireLoginOrRedirect()) return;
+  if (action === "join") {
+    if (!requireLoginOrRedirect()) return;
 
-if (isOwner(p, nickname)) {
-openDetailModal(p, "view");
-return;
-}
+    if (isOwner(p, nickname) || isMember(p, nickname)) {
+      openDetailModal(p, "view");
+      return;
+    }
 
-if (isMember(p, nickname)) {
-openDetailModal(p, "view");
-return;
-}
+    openDetailModal(p, "join");
+    return;
+  }
 
-openDetailModal(p, "join");
-return;
-}
+  if (action === "deleteSample") {
+    const ok = confirm("이 샘플을 삭제할까요?");
+    if (!ok) return;
+    deleteOneSample(p.id);
+    render();
+    return;
+  }
 
-if (action === "deleteSample") {
-const ok = confirm("이 샘플을 삭제할까요?");
-if (!ok) return;
-deleteOneSample(p.id);
-render();
-return;
-}
+  if (action === "delete") {
+    if (!isOwner(p, nickname)) {
+      alert("삭제 권한이 없습니다.");
+      return;
+    }
 
-if (action === "delete") {
-if (!isOwner(p, nickname)) {
-alert("삭제 권한이 없습니다.");
-return;
-}
-
-await deleteProjectFromServer(p.id);
-}
+    await deleteProjectFromServer(p.id);
+  }
 });
 
-bindCategoryEvents();
-refreshAndRender();
+function setActiveButton(container, selector, activeValue, datasetKey) {
+  container?.querySelectorAll(selector).forEach((btn) => {
+    const v = btn.dataset[datasetKey];
+    btn.classList.toggle("active", v === activeValue);
+  });
+}
+
+function bindCategoryEvents() {
+  categoryBar?.addEventListener("click", (e) => {
+    const btn = e.target.closest("button[data-cat]");
+    if (!btn) return;
+    activeCategory = btn.dataset.cat;
+    setActiveButton(categoryBar, "button[data-cat]", activeCategory, "cat");
+    render();
+  });
+
+  subCategoryBar?.addEventListener("click", (e) => {
+    const btn = e.target.closest("button[data-sub]");
+    if (!btn) return;
+    activeSubStatus = btn.dataset.sub;
+    setActiveButton(subCategoryBar, "button[data-sub]", activeSubStatus, "sub");
+    render();
+  });
+}
+
+(function init() {
+  if (adminMenu) {
+    const isAdmin = sessionStorage.getItem("isAdmin") === "true";
+    adminMenu.style.display = isAdmin ? "block" : "none";
+  }
+
+  bindCategoryEvents();
+  refreshAndRender(currentPage);
+})();

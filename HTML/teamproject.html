@@ -113,9 +113,9 @@
       <section class="tp-header">
         <div class="tp-title-wrap">
           <h1>Team Project Board</h1>
-          <p>팀 프로젝트를 생성하고 참여/모집을 관리하세요.</p>
+          <p>팀 프로젝트를 생성하고 모집 현황을 관리하세요.</p>
         </div>
-
+  
         <div class="tp-actions">
           <button id="createBtn" class="btn btn-primary" type="button">프로젝트 생성</button>
           <button id="myProjectsBtn" class="btn btn-ghost" type="button">내가 참여한 팀 프로젝트 보기</button>
@@ -123,11 +123,11 @@
           <button id="clearBtn" class="btn btn-danger" type="button">샘플 삭제</button>
         </div>
       </section>
-
+  
       <section class="tp-search-area">
         <input id="projectSearch" class="search-input" type="text" placeholder="프로젝트 검색..." />
       </section>
-
+  
       <section class="tp-filter-group">
         <div id="categoryBar" class="filter-bar">
           <button class="chip active" data-cat="ALL" type="button">전체</button>
@@ -136,7 +136,7 @@
           <button class="chip" data-cat="GAME" type="button">게임</button>
           <button class="chip" data-cat="SEC" type="button">보안</button>
         </div>
-
+  
         <div id="subCategoryBar" class="filter-bar">
           <button class="chip active" data-sub="ALL" type="button">전체</button>
           <button class="chip" data-sub="RECRUITING" type="button">모집중</button>
@@ -144,28 +144,28 @@
           <button class="chip" data-sub="DONE" type="button">완료</button>
         </div>
       </section>
-
+  
       <section class="tp-count-wrap">
         <span id="countBadge" class="count-badge">0 projects</span>
       </section>
-
+  
       <section id="grid" class="tp-grid"></section>
-
+  
+      <div id="pagination" class="pagination"></div>
+  
       <section id="emptyState" class="tp-empty" style="display:none;">
         프로젝트가 없습니다.
       </section>
-
-      <div class="pagination" id="pagination"></div>
     </div>
-
-    <!-- Create Modal -->
+  
+    <!-- 생성 모달 -->
     <div id="modalBackdrop" class="modal-backdrop" aria-hidden="true">
-      <div class="modal" role="dialog" aria-modal="true" aria-label="프로젝트 생성">
+      <div class="modal" role="dialog" aria-modal="true">
         <div class="modal-header">
           <div class="modal-title">프로젝트 생성</div>
           <button id="modalCloseBtn" class="icon-btn" type="button">✕</button>
         </div>
-
+  
         <div class="modal-body">
           <div class="field">
             <label for="projectCategory">분야</label>
@@ -176,161 +176,141 @@
               <option value="보안">보안</option>
             </select>
           </div>
-
+  
           <div class="field">
             <label for="projectUserLimit">최대 인원</label>
             <input type="number" id="projectUserLimit" min="1" placeholder="최대 인원 입력" />
           </div>
-
+  
           <div class="field">
             <label for="projectName">제목</label>
             <input type="text" id="projectName" maxlength="40" placeholder="프로젝트 제목" />
           </div>
-
+  
           <div class="field">
             <label for="projectDesc">내용</label>
             <textarea id="projectDesc" maxlength="200" placeholder="프로젝트 설명"></textarea>
           </div>
-
+  
           <div class="field">
             <label for="projectTagsInput">태그</label>
-            <div class="tag-input-wrap" id="tagInputWrap">
+            <div class="tag-input-wrap">
               <div class="tag-chip-list" id="tagChipList"></div>
-              <input
-                type="text"
-                id="projectTagsInput"
-                class="tag-real-input"
-                placeholder="언어 검색..."
-                autocomplete="off"
-              />
+              <input type="text" id="projectTagsInput" class="tag-real-input" placeholder="언어 검색..." autocomplete="off" />
               <div class="tag-suggest-list" id="tagSuggestList"></div>
             </div>
           </div>
-
-          <div class="field two-cols">
-            <div>
-              <label for="myRole">내 역할</label>
-              <select id="myRole">
-                <option>프론트</option>
-                <option>백엔드</option>
-                <option>DB/데이터</option>
-                <option>AI/추천</option>
-                <option>테스트/품질</option>
-                <option>기획/PM</option>
-              </select>
-            </div>
-
-            <div>
-              <label>필요 역할(모집)</label>
-              <div class="checkbox-grid" id="neededRolesWrap">
-                <label class="check"><input type="checkbox" value="프론트" checked /> 프론트</label>
-                <label class="check"><input type="checkbox" value="백엔드" checked /> 백엔드</label>
-                <label class="check"><input type="checkbox" value="DB/데이터" /> DB/데이터</label>
-                <label class="check"><input type="checkbox" value="AI/추천" /> AI/추천</label>
-                <label class="check"><input type="checkbox" value="테스트/품질" /> 테스트/품질</label>
-                <label class="check"><input type="checkbox" value="기획/PM" /> 기획/PM</label>
+  
+          <div class="field">
+            <label for="myRole">내 역할</label>
+            <select id="myRole">
+              <option>프론트</option>
+              <option>백엔드</option>
+              <option>DB/데이터</option>
+              <option>AI/추천</option>
+              <option>테스트/품질</option>
+              <option>기획/PM</option>
+            </select>
+          </div>
+  
+          <div class="field">
+            <label>직군별 모집 인원</label>
+            <div id="neededRolesWrap" class="recruit-grid">
+              <div class="recruit-row">
+                <span class="recruit-role">프론트</span>
+                <input type="number" class="recruit-count-input" data-role="프론트" min="0" value="0" />
+              </div>
+              <div class="recruit-row">
+                <span class="recruit-role">백엔드</span>
+                <input type="number" class="recruit-count-input" data-role="백엔드" min="0" value="0" />
+              </div>
+              <div class="recruit-row">
+                <span class="recruit-role">DB/데이터</span>
+                <input type="number" class="recruit-count-input" data-role="DB/데이터" min="0" value="0" />
+              </div>
+              <div class="recruit-row">
+                <span class="recruit-role">AI/추천</span>
+                <input type="number" class="recruit-count-input" data-role="AI/추천" min="0" value="0" />
+              </div>
+              <div class="recruit-row">
+                <span class="recruit-role">테스트/품질</span>
+                <input type="number" class="recruit-count-input" data-role="테스트/품질" min="0" value="0" />
+              </div>
+              <div class="recruit-row">
+                <span class="recruit-role">기획/PM</span>
+                <input type="number" class="recruit-count-input" data-role="기획/PM" min="0" value="0" />
               </div>
             </div>
+            <p class="field-hint">0은 모집 안 함입니다. 직군별 인원 합은 최대 인원을 넘을 수 없습니다.</p>
           </div>
         </div>
-
+  
         <div class="modal-footer">
           <button id="cancelBtn" class="btn btn-ghost" type="button">취소</button>
           <button id="createProjectBtn" class="btn btn-primary" type="button">생성</button>
         </div>
       </div>
     </div>
-  </div>
-
-  <div class="modal-backdrop" id="detailBackdrop" aria-hidden="true">
-    <section class="modal-card detail-modal" role="dialog" aria-modal="true" aria-labelledby="detailModalTitle">
-      <div class="modal-head">
-        <div>
-          <h2 id="detailModalTitle">프로젝트 상세</h2>
-          <p class="modal-sub" id="detailModalSub">프로젝트 정보를 확인하고 참여할 수 있습니다.</p>
+  
+    <!-- 상세 모달 -->
+    <div id="detailBackdrop" class="modal-backdrop" aria-hidden="true">
+      <div class="modal detail-modal" role="dialog" aria-modal="true">
+        <div class="modal-header">
+          <div>
+            <div class="modal-title">프로젝트 상세</div>
+            <p id="detailModalSub" class="detail-sub">프로젝트 상세 정보입니다.</p>
+          </div>
+          <button id="detailCloseBtn" class="icon-btn" type="button">✕</button>
         </div>
-        <button id="detailCloseBtn" class="icon-btn" type="button" aria-label="닫기">✕</button>
-      </div>
-
-      <div class="detail-body">
-        <div class="detail-main">
-          <div class="detail-badges">
-            <span id="detailCategoryBadge" class="badge-chip">카테고리</span>
-            <span id="detailStatusBadge" class="badge-chip">상태</span>
-            <span id="detailSampleBadge" class="badge-chip detail-sample-badge" style="display:none;">SAMPLE</span>
+  
+        <div class="modal-body detail-body">
+          <div class="detail-top-badges">
+            <span id="detailCategoryBadge" class="detail-badge"></span>
+            <span id="detailStatusBadge" class="detail-badge"></span>
+            <span id="detailSampleBadge" class="detail-badge sample" style="display:none;">SAMPLE</span>
           </div>
-
-          <h3 id="detailProjectTitle" class="detail-title">프로젝트 제목</h3>
-          <p id="detailProjectDesc" class="detail-desc">프로젝트 설명</p>
-
-          <div class="detail-meta-grid">
-            <div class="meta-box">
-              <span class="meta-label">팀장</span>
-              <strong id="detailLeaderName">-</strong>
-            </div>
-            <div class="meta-box">
-              <span class="meta-label">생성일</span>
-              <strong id="detailCreatedAt">-</strong>
-            </div>
-            <div class="meta-box">
-              <span class="meta-label">현재 인원</span>
-              <strong id="detailMemberCount">-</strong>
-            </div>
-            <div class="meta-box">
-              <span class="meta-label">최대 인원</span>
-              <strong id="detailUserLimit">-</strong>
-            </div>
+  
+          <h2 id="detailProjectTitle" class="detail-title"></h2>
+          <p id="detailProjectDesc" class="detail-desc"></p>
+  
+          <div class="detail-info-grid">
+            <div><strong>팀장</strong><span id="detailLeaderName"></span></div>
+            <div><strong>생성일</strong><span id="detailCreatedAt"></span></div>
+            <div><strong>현재 인원</strong><span id="detailMemberCount"></span></div>
+            <div><strong>최대 인원</strong><span id="detailUserLimit"></span></div>
+            <div><strong>내 상태</strong><span id="detailMyState"></span></div>
+            <div><strong>내 역할</strong><span id="detailMyRole"></span></div>
+            <div><strong>남은 모집 인원</strong><span id="detailRemainRoleCount"></span></div>
           </div>
-
+  
           <div class="detail-section">
-            <h4>태그</h4>
+            <h3>태그</h3>
             <div id="detailTagList" class="detail-tag-list"></div>
           </div>
-
+  
           <div class="detail-section">
-            <h4>역할 모집 현황</h4>
+            <h3>직군별 모집 현황</h3>
             <div id="detailRoleStatusList" class="role-status-list"></div>
           </div>
-
+  
           <div class="detail-section">
-            <h4>현재 참여자</h4>
-            <div id="detailMemberList" class="detail-member-list"></div>
+            <h3>참여 멤버</h3>
+            <div id="detailMemberList" class="member-list"></div>
+          </div>
+  
+          <div id="detailJoinSection" class="detail-section" style="display:none;">
+            <h3>참여 역할 선택</h3>
+            <div id="detailJoinRoleList" class="join-role-list"></div>
           </div>
         </div>
-
-        <aside class="detail-side">
-          <div class="side-box">
-            <h4>참여 정보</h4>
-            <div class="side-info-list">
-              <div class="side-info-item">
-                <span>내 상태</span>
-                <strong id="detailMyState">-</strong>
-              </div>
-              <div class="side-info-item">
-                <span>내 역할</span>
-                <strong id="detailMyRole">-</strong>
-              </div>
-              <div class="side-info-item">
-                <span>남은 역할 수</span>
-                <strong id="detailRemainRoleCount">-</strong>
-              </div>
-            </div>
-          </div>
-
-          <div id="detailJoinSection" class="side-box">
-            <h4>참여 역할 선택</h4>
-            <div id="detailJoinRoleList" class="join-role-list"></div>
-            <p class="help-text">모집 중인 역할만 선택 가능합니다.</p>
-          </div>
-        </aside>
+  
+        <div class="modal-footer">
+          <button id="detailCancelBtn" class="btn btn-ghost" type="button">닫기</button>
+          <button id="detailLeaveBtn" class="btn btn-danger" type="button" style="display:none;">참여 취소</button>
+          <button id="detailJoinBtn" class="btn btn-primary" type="button" style="display:none;">참여하기</button>
+        </div>
       </div>
-
-      <div class="modal-foot detail-foot">
-        <button id="detailCancelBtn" class="secondary-btn" type="button">닫기</button>
-        <button id="detailLeaveBtn" class="secondary-btn danger-outline" type="button" style="display:none;">참여 취소</button>
-        <button id="detailJoinBtn" class="primary-btn" type="button">참여하기</button>
-      </div>
-    </section>
+    </div>
   </div>
 
   <script src="../JAVASCRIPT/sidebar.js"></script>
