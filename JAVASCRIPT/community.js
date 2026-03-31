@@ -249,7 +249,7 @@ async function createCommunityPost() {
     category: postCategoryEl.value,
     title: postTitleInputEl.value.trim(),
     content: postContentInputEl.value.trim(),
-    anonymous: postAnonymousInputEl.checked,
+    anonymous: postAnonymousInputEl ? postAnonymousInputEl.checked : false,
   };
 
   const res = await authFetch(API.COMMUNITY_POSTS, {
