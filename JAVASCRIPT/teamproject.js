@@ -339,14 +339,23 @@ function normalizeRecruitments(project) {
     : Array.isArray(project.recruitmentList)
     ? project.recruitmentList
     : Array.isArray(project.neededRoles)
-    ? project.neededRoles.map((role) => ({ role, count: 1 }))
+    ? project.neededRoles
     : [];
 
   return recruitmentsRaw
-    .map((item) => ({
-      role: String(item?.role ?? item?.name ?? "").trim(),
-      count: Number(item?.count ?? item?.recruitCount ?? 1),
-    }))
+    .map((item) => {
+      if (typeof item === "string") {
+        return {
+          role: item.trim(),
+          count: 1,
+        };
+      }
+
+      return {
+        role: String(item?.role ?? item?.name ?? "").trim(),
+        count: Number(item?.count ?? item?.recruitCount ?? item?.userCount ?? 1),
+      };
+    })
     .filter((item) => item.role);
 }
 

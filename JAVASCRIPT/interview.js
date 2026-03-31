@@ -61,8 +61,10 @@ async function loadQuestions() {
 }
 
 questionSelect.addEventListener("change", () => {
-  const selectedId = Number(questionSelect.value);
-  selectedQuestion = questions.find(q => q.id === selectedId) || null;
+  const selectedId = questionSelect.value;
+
+  selectedQuestion =
+    questions.find((q) => String(q.id) === String(selectedId)) || null;
 
   questionPreview.textContent = selectedQuestion
     ? selectedQuestion.question
