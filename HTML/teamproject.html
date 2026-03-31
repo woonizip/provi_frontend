@@ -266,13 +266,20 @@
         <div class="modal-body detail-body">
           <div class="detail-main">
             <div class="detail-top-badges">
-              <span id="detailCategoryBadge" class="detail-badge"></span>
-              <span id="detailStatusBadge" class="detail-badge"></span>
-              <span id="detailSampleBadge" class="detail-badge sample" style="display:none;">SAMPLE</span>
+              <span id="detailCategoryBadge" class="badge-chip"></span>
+              <span id="detailStatusBadge" class="badge-chip"></span>
+              <span id="detailSampleBadge" class="badge-chip detail-sample-badge" style="display:none;">SAMPLE</span>
             </div>
         
             <h2 id="detailProjectTitle" class="detail-title"></h2>
             <p id="detailProjectDesc" class="detail-desc"></p>
+        
+            <div class="detail-meta-grid">
+              <div class="meta-box"><strong class="meta-label">팀장</strong><span id="detailLeaderName"></span></div>
+              <div class="meta-box"><strong class="meta-label">생성일</strong><span id="detailCreatedAt"></span></div>
+              <div class="meta-box"><strong class="meta-label">현재 인원</strong><span id="detailMemberCount"></span></div>
+              <div class="meta-box"><strong class="meta-label">최대 인원</strong><span id="detailUserLimit"></span></div>
+            </div>
         
             <div class="detail-section">
               <h3>태그</h3>
@@ -280,30 +287,30 @@
             </div>
         
             <div class="detail-section">
-              <h3>참여 멤버</h3>
-              <div id="detailMemberList" class="member-list"></div>
+              <h3>역할 모집 현황</h3>
+              <div id="detailRoleStatusList" class="role-status-list"></div>
+            </div>
+        
+            <div class="detail-section">
+              <h3>현재 참여자</h3>
+              <div id="detailMemberList" class="detail-member-list"></div>
             </div>
           </div>
         
           <div class="detail-side">
-            <div class="detail-info-grid">
-              <div><strong>팀장</strong><span id="detailLeaderName"></span></div>
-              <div><strong>생성일</strong><span id="detailCreatedAt"></span></div>
-              <div><strong>현재 인원</strong><span id="detailMemberCount"></span></div>
-              <div><strong>최대 인원</strong><span id="detailUserLimit"></span></div>
-              <div><strong>내 상태</strong><span id="detailMyState"></span></div>
-              <div><strong>내 역할</strong><span id="detailMyRole"></span></div>
-              <div><strong>남은 모집 인원</strong><span id="detailRemainRoleCount"></span></div>
+            <div class="side-box">
+              <h4>참여 정보</h4>
+              <div class="side-info-list">
+                <div class="side-info-item"><span>내 상태</span><strong id="detailMyState"></strong></div>
+                <div class="side-info-item"><span>내 역할</span><strong id="detailMyRole"></strong></div>
+                <div class="side-info-item"><span>남은 역할 수</span><strong id="detailRemainRoleCount"></strong></div>
+              </div>
             </div>
         
-            <div class="detail-section">
-              <h3>직군별 모집 현황</h3>
-              <div id="detailRoleStatusList" class="role-status-list"></div>
-            </div>
-        
-            <div id="detailJoinSection" class="detail-section" style="display:none;">
-              <h3>참여 역할 선택</h3>
+            <div id="detailJoinSection" class="side-box" style="display:none;">
+              <h4>참여 역할 선택</h4>
               <div id="detailJoinRoleList" class="join-role-list"></div>
+              <p class="help-text">모집 중인 역할만 선택 가능합니다.</p>
             </div>
           </div>
         </div>
