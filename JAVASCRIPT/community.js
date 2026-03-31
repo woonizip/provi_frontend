@@ -75,6 +75,20 @@ const COMMUNITY_CATEGORY_LABEL_MAP = {
   CAREER: "커리어",
 };
 
+function getCategoryCodeFromFormValue(value) {
+  if (!value) return "";
+
+  if (COMMUNITY_CATEGORY_MAP[value]) {
+    return COMMUNITY_CATEGORY_MAP[value];
+  }
+
+  return value;
+}
+
+function getPostIdValue(post) {
+  return post?.postId ?? post?.id ?? null;
+}
+
 const communityPostListEl = document.getElementById("communityPostList");
 const communityPaginationEl = document.getElementById("communityPagination");
 const hotPostGridEl = document.getElementById("hotPostGrid");
@@ -246,62 +260,44 @@ async function fetchCommunityPostDetail(postId) {
 // 게시글 작성
 async function createCommunityPost() {
   const createPostPayload = {
-    category: postCategoryEl.value,
+    category: getCategoryCodeFromFormValue(postCategoryEl.value),
     title: postTitleInputEl.value.trim(),
     content: postContentInputEl.value.trim(),
     anonymous: postAnonymousInputEl ? postAnonymousInputEl.checked : false,
   };
 
-  const res = await authFetch(API.COMMUNITY_POSTS, {
+  return await authFetch(API.COMMUNITY_POSTS, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
     },
     body: JSON.stringify(createPostPayload),
   });
-
-  if (!res.ok) {
-    throw new Error(`게시글 작성 실패: HTTP ${res.status}`);
-  }
-
-  return await res.json();
 }
 
 // 게시글 수정
-async function updateCommunityPost(postId) {
-  const updatePostPayload = {
-    category: postCategoryEl.value,
+async function createCommunityPost() {
+  const createPostPayload = {
+    category: getCategoryCodeFromFormValue(postCategoryEl.value),
     title: postTitleInputEl.value.trim(),
     content: postContentInputEl.value.trim(),
-    anonymous: postAnonymousInputEl.checked,
+    anonymous: postAnonymousInputEl ? postAnonymousInputEl.checked : false,
   };
 
-  const res = await authFetch(API.COMMUNITY_POST_DETAIL(postId), {
-    method: "PUT",
+  return await authFetch(API.COMMUNITY_POSTS, {
+    method: "POST",
     headers: {
       "Content-Type": "application/json",
     },
-    body: JSON.stringify(updatePostPayload),
+    body: JSON.stringify(createPostPayload),
   });
-
-  if (!res.ok) {
-    throw new Error(`게시글 수정 실패: HTTP ${res.status}`);
-  }
-
-  return await res.json();
 }
 
 // 게시글 삭제
 async function deleteCommunityPost(postId) {
-  const res = await authFetch(API.COMMUNITY_POST_DETAIL(postId), {
+  return await authFetch(API.COMMUNITY_POST_DETAIL(postId), {
     method: "DELETE",
   });
-
-  if (!res.ok) {
-    throw new Error(`게시글 삭제 실패: HTTP ${res.status}`);
-  }
-
-  return await res.json();
 }
 
 // 댓글 작성
@@ -311,19 +307,13 @@ async function createCommunityComment(postId) {
     anonymous: false,
   };
 
-  const res = await authFetch(API.COMMUNITY_POST_COMMENTS(postId), {
+  return await authFetch(API.COMMUNITY_POST_COMMENTS(postId), {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
     },
     body: JSON.stringify(createCommentPayload),
   });
-
-  if (!res.ok) {
-    throw new Error(`댓글 작성 실패: HTTP ${res.status}`);
-  }
-
-  return await res.json();
 }
 
 // 댓글 수정
@@ -333,60 +323,37 @@ async function updateCommunityComment(commentId, content) {
     anonymous: false,
   };
 
-  const res = await authFetch(API.COMMUNITY_COMMENT_DETAIL(commentId), {
+  return await authFetch(API.COMMUNITY_COMMENT_DETAIL(commentId), {
     method: "PUT",
     headers: {
       "Content-Type": "application/json",
     },
     body: JSON.stringify(updateCommentPayload),
   });
-
-  if (!res.ok) {
-    throw new Error(`댓글 수정 실패: HTTP ${res.status}`);
-  }
-
-  return await res.json();
 }
 
 // 댓글 삭제
 async function deleteCommunityComment(commentId) {
-  const res = await authFetch(API.COMMUNITY_COMMENT_DETAIL(commentId), {
+  return await authFetch(API.COMMUNITY_COMMENT_DETAIL(commentId), {
     method: "DELETE",
   });
-
-  if (!res.ok) {
-    throw new Error(`댓글 삭제 실패: HTTP ${res.status}`);
-  }
-
-  return await res.json();
 }
 
 // 게시글 좋아요
 async function toggleCommunityPostLike(postId) {
-  const res = await authFetch(API.COMMUNITY_POST_LIKE(postId), {
+  return await authFetch(API.COMMUNITY_POST_LIKE(postId), {
     method: "POST",
   });
-
-  if (!res.ok) {
-    throw new Error(`좋아요 처리 실패: HTTP ${res.status}`);
-  }
-
-  return await res.json();
 }
 
 // 내 활동 조회
 async function fetchMyCommunityActivity() {
-  const res = await authFetch(API.COMMUNITY_MY_ACTIVITY, {
+  const data = await authFetch(API.COMMUNITY_MY_ACTIVITY, {
     method: "GET",
   });
 
-  if (!res.ok) {
-    throw new Error(`내 활동 조회 실패: HTTP ${res.status}`);
-  }
-
-  const data = await res.json();
-  myPostList = data.myPosts || [];
-  myCommentedPostList = data.myCommentedPosts || [];
+  myPostList = data?.myPosts || [];
+  myCommentedPostList = data?.myCommentedPosts || [];
 }
 
 function renderHotPostList() {
@@ -401,12 +368,13 @@ function renderHotPostList() {
 
   hotPostGridEl.innerHTML = hotPostList
     .map((post) => {
+      const postId = getPostIdValue(post);
       const hotBadge = post.hot
         ? `<div class="highlight-badge hot">HOT</div>`
         : `<div class="highlight-badge recommend">추천</div>`;
 
       return `
-        <article class="highlight-card" data-post-id="${post.postId}">
+        <article class="highlight-card" data-post-id="${postId ?? ""}">
           ${hotBadge}
           <h3>${escapeHtml(post.title)}</h3>
           <p>${escapeHtml(post.summary || getSummaryText(post.content || ""))}</p>
@@ -436,10 +404,11 @@ function renderPostList() {
 
   communityPostListEl.innerHTML = postList
     .map((post) => {
+      const postId = getPostIdValue(post);
       const authorNickname = post.authorNickname || "알 수 없음";
 
       return `
-        <article class="community-post-item" data-post-id="${post.postId}">
+        <article class="community-post-item" data-post-id="${postId ?? ""}">
           <div class="community-post-top">
             <div class="community-post-badges">
               <span class="community-post-badge category">
@@ -451,7 +420,7 @@ function renderPostList() {
           </div>
 
           <h3 class="community-post-title">${escapeHtml(post.title)}</h3>
-          <p class="community-post-content">${escapeHtml(post.summary || "")}</p>
+          <p class="community-post-content">${escapeHtml(post.summary || getSummaryText(post.content || ""))}</p>
 
           <div class="community-post-bottom">
             <div class="community-post-author">
@@ -629,8 +598,10 @@ function renderMyActivity() {
   } else {
     myPostsPanelEl.innerHTML = myPostList
       .map((post) => {
+        const postId = getPostIdValue(post);
+
         return `
-          <div class="my-activity-item" data-post-id="${post.postId}">
+          <div class="my-activity-item" data-post-id="${postId ?? ""}">
             <div class="my-activity-item-top">
               <span class="community-post-badge category">
                 ${escapeHtml(post.categoryLabel || getCategoryLabel(post.category))}
@@ -650,8 +621,10 @@ function renderMyActivity() {
   } else {
     myCommentsPanelEl.innerHTML = myCommentedPostList
       .map((post) => {
+        const postId = getPostIdValue(post);
+
         return `
-          <div class="my-activity-item" data-post-id="${post.postId}">
+          <div class="my-activity-item" data-post-id="${postId ?? ""}">
             <div class="my-activity-item-top">
               <span class="community-post-badge category">
                 ${escapeHtml(post.categoryLabel || getCategoryLabel(post.category))}
@@ -740,14 +713,17 @@ function openEditModal() {
   if (!selectedPostDetail) return;
   if (!selectedPostDetail.mine) return;
 
-  editingPostId = selectedPostDetail.postId;
+  editingPostId = getPostIdValue(selectedPostDetail);
   postFormTitleEl.textContent = "게시글 수정";
   postFormSubmitBtnEl.textContent = "수정 완료";
 
-  postCategoryEl.value = selectedPostDetail.category || "";
+  postCategoryEl.value = getCategoryLabel(selectedPostDetail.category || "");
   postTitleInputEl.value = selectedPostDetail.title || "";
   postContentInputEl.value = selectedPostDetail.content || "";
-  postAnonymousInputEl.checked = !!selectedPostDetail.anonymous;
+
+  if (postAnonymousInputEl) {
+    postAnonymousInputEl.checked = !!selectedPostDetail.anonymous;
+  }
 
   closeModal(postDetailModalEl);
   openModal(postFormModalEl);
@@ -789,11 +765,17 @@ async function handleDeletePost() {
   if (!requireLogin()) return;
   if (!selectedPostDetail?.mine) return;
 
+  const postId = getPostIdValue(selectedPostDetail);
+  if (!postId) {
+    alert("게시글 ID를 찾을 수 없습니다.");
+    return;
+  }
+
   const ok = confirm("게시글을 삭제하시겠습니까?");
   if (!ok) return;
 
   try {
-    await deleteCommunityPost(selectedPostDetail.postId);
+    await deleteCommunityPost(postId);
     alert("게시글이 삭제되었습니다.");
     closeModal(postDetailModalEl);
     await loadCommunityPage();
@@ -950,7 +932,10 @@ communityPostListEl?.addEventListener("click", async (event) => {
   if (!postItem) return;
 
   const postId = postItem.dataset.postId;
-  if (!postId) return;
+  if (!postId || postId === "undefined" || postId === "null") {
+    console.error("잘못된 postId:", postId);
+    return;
+  }
 
   await loadPostDetail(postId);
 });
@@ -961,7 +946,10 @@ hotPostGridEl?.addEventListener("click", async (event) => {
   if (!postItem) return;
 
   const postId = postItem.dataset.postId;
-  if (!postId) return;
+  if (!postId || postId === "undefined" || postId === "null") {
+    console.error("잘못된 postId:", postId);
+    return;
+  }
 
   await loadPostDetail(postId);
 });
@@ -999,7 +987,10 @@ document.addEventListener("click", async (event) => {
   if (!activityItem) return;
 
   const postId = activityItem.dataset.postId;
-  if (!postId) return;
+  if (!postId || postId === "undefined" || postId === "null") {
+    console.error("잘못된 postId:", postId);
+    return;
+  }
 
   closeModal(myActivityModalEl);
   await loadPostDetail(postId);
