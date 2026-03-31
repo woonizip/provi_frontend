@@ -397,7 +397,6 @@ body {
   position: fixed;
   inset: 0;
   background: rgba(0, 0, 0, 0.6);
-  /* �닿쾶 dim �④낵 */
   display: none;
   align-items: center;
   justify-content: center;
@@ -526,7 +525,6 @@ body {
   color: var(--muted);
 }
 
-/* �쒓렇 �꾩껜 �곸뿭 */
 .tag-input-wrap {
   position: relative;
   display: flex;
@@ -541,7 +539,6 @@ body {
   background: #0f1b33;
 }
 
-/* �좏깮�� �쒓렇�� 以꾨컮轅� */
 .tag-chip-list {
   display: flex;
   flex-wrap: wrap;
@@ -551,7 +548,6 @@ body {
   min-width: 0;
 }
 
-/* �좏깮�� �쒓렇 移� */
 .tag-chip {
   display: inline-flex;
   align-items: center;
@@ -578,7 +574,6 @@ body {
   line-height: 1;
 }
 
-/* �ㅼ젣 �낅젰李� */
 .tag-real-input {
   flex: 1 1 160px;
   min-width: 140px;
@@ -591,7 +586,6 @@ body {
   padding: 0 4px;
 }
 
-/* 異붿쿇 紐⑸줉 */
 .tag-suggest-list {
   position: absolute;
   left: 0;
@@ -612,7 +606,6 @@ body {
   display: flex;
 }
 
-/* 異붿쿇 �꾩씠�� */
 .tag-suggest-item {
   width: 100%;
   text-align: left;
@@ -629,7 +622,6 @@ body {
   background: #20345c;
 }
 
-/* 怨좎젙 �쒓렇 �쒖떆 */
 .tag-chip-static {
   display: inline-flex;
   align-items: center;
