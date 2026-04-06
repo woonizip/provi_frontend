@@ -7,7 +7,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   // 1. quiz 공통 응답 불러오기
   let quizAnswers = null;
   try {
-    const raw = sessionStorage.getItem("quizResultAnswers");
+    const raw = sessionStorage.getItem("quizResultPayload");
     quizAnswers = raw ? JSON.parse(raw) : null;
   } catch (e) {
     console.warn("quizCommonAnswers 파싱 실패:", e);
@@ -85,20 +85,14 @@ document.addEventListener("DOMContentLoaded", async () => {
         answers: quizAnswers.answers
       };
 
-      const res = await fetch(RESULT_API_URL, {
+      const res = await authFetch(RESULT_API_URL, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload)
       });
 
-      if (!res.ok) {
-        throw new Error(`HTTP ${res.status}`);
-      }
-
-      const data = await res.json();
-
       // 응답이 비어있을 때도 대비
-      if (!data || typeof data !== "object") {
+      if (!res || typeof res !== "object") {
         console.warn("백엔드 응답 형식 이상 → mockResult 사용");
         return mockResult;
       }
