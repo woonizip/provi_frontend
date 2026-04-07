@@ -59,7 +59,7 @@ const COMMUNITY_CATEGORY_MAP = {
   전체: "ALL",
   자유: "FREE",
   질문: "QUESTION",
-  정보: "INFO",
+  기업정보: "INFO",
   면접후기: "INTERVIEW",
   프로젝트: "PROJECT",
   커리어: "CAREER",
@@ -69,7 +69,7 @@ const COMMUNITY_CATEGORY_LABEL_MAP = {
   ALL: "전체",
   FREE: "자유",
   QUESTION: "질문",
-  INFO: "정보",
+  INFO: "기업정보",
   INTERVIEW: "면접후기",
   PROJECT: "프로젝트",
   CAREER: "커리어",
@@ -195,6 +195,62 @@ function getSummaryText(content, max = 110) {
   return text.length > max ? `${text.slice(0, max)}...` : text;
 }
 
+function isAnonymousPost(post) {
+  return !!(post?.anonymous || post?.isAnonymous);
+}
+
+function isMinePost(post) {
+  return !!post?.mine;
+}
+
+function getHotScore(post) {
+  return (post?.likeCount || 0) + (post?.commentCount || 0);
+}
+
+function sortPostsForHot(posts = []) {
+  return [...posts].sort((a, b) => {
+    const scoreDiff = getHotScore(b) - getHotScore(a);
+    if (scoreDiff !== 0) return scoreDiff;
+
+    const dateA = new Date(a?.createdAt || a?.createdDate || 0).getTime();
+    const dateB = new Date(b?.createdAt || b?.createdDate || 0).getTime();
+    return dateB - dateA;
+  });
+}
+
+function closeAllMoreMenus() {
+  document.querySelectorAll(".post-more-menu.open").forEach((menu) => {
+    menu.classList.remove("open");
+  });
+}
+
+function renderPostMoreButton(post) {
+  if (!isMinePost(post)) return "";
+
+  const postId = getPostIdValue(post);
+
+  return `
+    <div class="post-more-wrap" data-more-wrap>
+      <button
+        type="button"
+        class="post-more-btn"
+        data-more-btn
+        data-post-id="${postId}"
+        aria-label="게시글 더보기"
+      >⋯</button>
+
+      <div class="post-more-menu" data-more-menu>
+        <button type="button" class="post-more-action edit" data-action="edit" data-post-id="${postId}">
+          수정
+        </button>
+        <button type="button" class="post-more-action delete" data-action="delete" data-post-id="${postId}">
+          삭제
+        </button>
+      </div>
+    </div>
+  `;
+}
+
 // 게시글 목록 조회
 async function fetchCommunityPostList() {
   const params = new URLSearchParams({
@@ -225,7 +281,7 @@ async function fetchCommunityPostList() {
 async function fetchHotPostList() {
   const params = new URLSearchParams({
     page: "1",
-    size: "3",
+    size: "30",
     category: "ALL",
     sort: "popular",
     keyword: "",
@@ -240,7 +296,9 @@ async function fetchHotPostList() {
   }
 
   const data = await res.json();
-  hotPostList = data.content || [];
+  const rawList = data.content || [];
+
+  hotPostList = sortPostsForHot(rawList).slice(0, 3);
 }
 
 // 게시글 상세 조회
@@ -276,20 +334,20 @@ async function createCommunityPost() {
 }
 
 // 게시글 수정
-async function createCommunityPost() {
-  const createPostPayload = {
+async function updateCommunityPost(postId) {
+  const updatePostPayload = {
     category: getCategoryCodeFromFormValue(postCategoryEl.value),
     title: postTitleInputEl.value.trim(),
     content: postContentInputEl.value.trim(),
     anonymous: postAnonymousInputEl ? postAnonymousInputEl.checked : false,
   };
 
-  return await authFetch(API.COMMUNITY_POSTS, {
-    method: "POST",
+  return await authFetch(API.COMMUNITY_POST_DETAIL(postId), {
+    method: "PUT",
     headers: {
       "Content-Type": "application/json",
     },
-    body: JSON.stringify(createPostPayload),
+    body: JSON.stringify(updatePostPayload),
   });
 }
 
@@ -369,19 +427,23 @@ function renderHotPostList() {
   hotPostGridEl.innerHTML = hotPostList
     .map((post) => {
       const postId = getPostIdValue(post);
-      const hotBadge = post.hot
-        ? `<div class="highlight-badge hot">HOT</div>`
-        : `<div class="highlight-badge recommend">추천</div>`;
+      const score = getHotScore(post);
 
       return `
         <article class="highlight-card" data-post-id="${postId ?? ""}">
-          ${hotBadge}
+          <div class="highlight-card-top">
+            ${post.hot ? `<div class="highlight-badge hot">HOT</div>` : `<div class="highlight-badge recommend">TOP</div>`}
+            ${isAnonymousPost(post) ? `<div class="highlight-badge anonymous">익명</div>` : ""}
+          </div>
+
           <h3>${escapeHtml(post.title)}</h3>
           <p>${escapeHtml(post.summary || getSummaryText(post.content || ""))}</p>
+
           <div class="highlight-meta">
             <span>${escapeHtml(post.categoryLabel || getCategoryLabel(post.category))}</span>
             <span>추천 ${post.likeCount || 0}</span>
             <span>댓글 ${post.commentCount || 0}</span>
+            <span>점수 ${score}</span>
           </div>
         </article>
       `;
@@ -406,6 +468,7 @@ function renderPostList() {
     .map((post) => {
       const postId = getPostIdValue(post);
       const authorNickname = post.authorNickname || "알 수 없음";
+      const displayNickname = isAnonymousPost(post) ? "익명" : authorNickname;
 
       return `
         <article class="community-post-item" data-post-id="${postId ?? ""}">
@@ -415,8 +478,13 @@ function renderPostList() {
                 ${escapeHtml(post.categoryLabel || getCategoryLabel(post.category))}
               </span>
               ${post.hot ? `<span class="community-post-badge hot">HOT</span>` : ""}
+              ${isAnonymousPost(post) ? `<span class="community-post-badge anonymous">익명</span>` : ""}
             </div>
-            <span class="community-post-date">${formatDate(post.createdAt)}</span>
+
+            <div class="community-post-top-right">
+              <span class="community-post-date">${formatDate(post.createdAt)}</span>
+              ${renderPostMoreButton(post)}
+            </div>
           </div>
 
           <h3 class="community-post-title">${escapeHtml(post.title)}</h3>
@@ -424,9 +492,9 @@ function renderPostList() {
 
           <div class="community-post-bottom">
             <div class="community-post-author">
-              <div class="community-post-avatar">${escapeHtml(authorNickname.slice(0, 2))}</div>
+              <div class="community-post-avatar">${escapeHtml(displayNickname.slice(0, 2))}</div>
               <div class="community-post-author-info">
-                <span class="community-post-author-name">${escapeHtml(authorNickname)}</span>
+                <span class="community-post-author-name">${escapeHtml(displayNickname)}</span>
                 <span class="community-post-author-role">${escapeHtml(post.authorRoleLabel || "")}</span>
               </div>
             </div>
@@ -468,22 +536,43 @@ function renderPagination() {
 function renderWriterRankList() {
   if (!writerRankListEl) return;
 
-  const sourceList = [...postList, ...hotPostList];
+  const merged = [...postList, ...hotPostList];
+  const uniquePosts = [];
+  const seenPostIds = new Set();
+
+  merged.forEach((post) => {
+    const postId = getPostIdValue(post);
+    if (!postId || seenPostIds.has(postId)) return;
+    seenPostIds.add(postId);
+    uniquePosts.push(post);
+  });
+
   const authorScoreMap = {};
 
-  sourceList.forEach((post) => {
+  uniquePosts.forEach((post) => {
+    if (isAnonymousPost(post)) return;
+
     const nickname = post.authorNickname;
     if (!nickname) return;
 
     if (!authorScoreMap[nickname]) {
-      authorScoreMap[nickname] = 0;
+      authorScoreMap[nickname] = {
+        score: 0,
+        postCount: 0,
+      };
     }
-    authorScoreMap[nickname] += post.likeCount || 0;
+
+    authorScoreMap[nickname].score += (post.likeCount || 0) + (post.commentCount || 0);
+    authorScoreMap[nickname].postCount += 1;
   });
 
   const rankList = Object.entries(authorScoreMap)
-    .map(([nickname, score]) => ({ nickname, score }))
-    .sort((a, b) => b.score - a.score)
+    .map(([nickname, info]) => ({
+      nickname,
+      score: info.score,
+      postCount: info.postCount,
+    }))
+    .sort((a, b) => b.score - a.score || b.postCount - a.postCount)
     .slice(0, 3);
 
   if (!rankList.length) {
@@ -492,15 +581,13 @@ function renderWriterRankList() {
   }
 
   writerRankListEl.innerHTML = rankList
-    .map((item, index) => {
-      return `
-        <div class="writer-rank-item">
-          <span class="rank-num">${index + 1}</span>
-          <span class="writer-name">${escapeHtml(item.nickname)}</span>
-          <span class="writer-score">+${item.score}</span>
-        </div>
-      `;
-    })
+    .map((item, index) => `
+      <div class="writer-rank-item">
+        <span class="rank-num">${index + 1}</span>
+        <span class="writer-name">${escapeHtml(item.nickname)}</span>
+        <span class="writer-score">+${item.score}</span>
+      </div>
+    `)
     .join("");
 }
 
@@ -512,10 +599,14 @@ function renderPostDetail() {
       ${escapeHtml(selectedPostDetail.categoryLabel || getCategoryLabel(selectedPostDetail.category))}
     </span>
     ${selectedPostDetail.hot ? `<span class="community-post-badge hot">HOT</span>` : ""}
+    ${isAnonymousPost(selectedPostDetail) ? `<span class="community-post-badge anonymous">익명</span>` : ""}
   `;
 
   detailTitleEl.textContent = selectedPostDetail.title || "";
-  detailAuthorEl.textContent = `작성자 ${selectedPostDetail.authorNickname || ""}`;
+  const detailDisplayNickname = isAnonymousPost(selectedPostDetail)
+    ? "익명"
+    : (selectedPostDetail.authorNickname || "");
+  detailAuthorEl.textContent = `작성자 ${detailDisplayNickname}`;
   detailAuthorRoleEl.textContent = selectedPostDetail.authorRoleLabel || "";
   detailDateEl.textContent = formatDate(selectedPostDetail.createdAt);
   detailViewEl.textContent = `조회 ${selectedPostDetail.viewCount || 0}`;
@@ -535,18 +626,28 @@ function renderDetailOwnerActions() {
     return;
   }
 
+  const postId = getPostIdValue(selectedPostDetail);
+
   detailOwnerActionsEl.innerHTML = `
-    <button type="button" class="detail-edit-btn" id="detailEditBtn">수정</button>
-    <button type="button" class="detail-delete-btn" id="detailDeleteBtn">삭제</button>
+    <div class="post-more-wrap detail-more" data-more-wrap>
+      <button
+        type="button"
+        class="post-more-btn"
+        data-more-btn
+        data-post-id="${postId}"
+        aria-label="상세 더보기"
+      >⋯</button>
+
+      <div class="post-more-menu" data-more-menu>
+        <button type="button" class="post-more-action edit" data-action="edit" data-post-id="${postId}">
+          수정
+        </button>
+        <button type="button" class="post-more-action delete" data-action="delete" data-post-id="${postId}">
+          삭제
+        </button>
+      </div>
+    </div>
   `;
-
-  document.getElementById("detailEditBtn")?.addEventListener("click", () => {
-    openEditModal();
-  });
-
-  document.getElementById("detailDeleteBtn")?.addEventListener("click", async () => {
-    await handleDeletePost();
-  });
 }
 
 function renderCommentList() {
@@ -574,7 +675,7 @@ function renderCommentList() {
             comment.mine
               ? `
               <div class="detail-owner-actions" style="margin-top:10px;">
-                <button type="button" class="detail-edit-btn comment-edit-btn" data-comment-id="${comment.commentId}" data-comment-content="${escapeHtml(comment.content || "")}">
+                <button type="button" class="detail-edit-btn comment-edit-btn" data-comment-id="${comment.commentId}" data-comment-content="${encodeURIComponent(comment.content || "")}">
                   댓글 수정
                 </button>
                 <button type="button" class="detail-delete-btn comment-delete-btn" data-comment-id="${comment.commentId}">
@@ -928,6 +1029,8 @@ showHotPostsBtn?.addEventListener("click", async () => {
 
 // 게시글 목록 클릭 -> 상세
 communityPostListEl?.addEventListener("click", async (event) => {
+  if (event.target.closest("[data-more-wrap]")) return;
+
   const postItem = event.target.closest(".community-post-item");
   if (!postItem) return;
 
@@ -1034,6 +1137,76 @@ document.addEventListener("keydown", (event) => {
       }
     });
   }
+});
+
+document.addEventListener("click", async (event) => {
+  const moreBtn = event.target.closest("[data-more-btn]");
+  const moreAction = event.target.closest("[data-action]");
+
+  if (moreBtn) {
+    event.stopPropagation();
+
+    const wrap = moreBtn.closest("[data-more-wrap]");
+    const menu = wrap?.querySelector("[data-more-menu]");
+    if (!menu) return;
+
+    const isOpen = menu.classList.contains("open");
+    closeAllMoreMenus();
+
+    if (!isOpen) {
+      menu.classList.add("open");
+    }
+    return;
+  }
+
+  if (moreAction) {
+    event.stopPropagation();
+
+    const action = moreAction.dataset.action;
+    const postId = moreAction.dataset.postId;
+    if (!postId) return;
+
+    closeAllMoreMenus();
+
+    if (action === "edit") {
+      if (selectedPostDetail && String(getPostIdValue(selectedPostDetail)) === String(postId)) {
+        openEditModal();
+        return;
+      }
+
+      await loadPostDetail(postId);
+      openEditModal();
+      return;
+    }
+
+    if (action === "delete") {
+      if (!selectedPostDetail || String(getPostIdValue(selectedPostDetail)) !== String(postId)) {
+        await fetchCommunityPostDetail(postId);
+      }
+      await handleDeletePost();
+    }
+  } else {
+    closeAllMoreMenus();
+  }
+});
+
+detailCommentInputEl?.addEventListener("keydown", async (event) => {
+  if (event.key === "Enter" && !event.shiftKey) {
+    event.preventDefault();
+    await handleSubmitComment();
+  }
+});
+
+document.querySelectorAll(".tag-list button").forEach((button) => {
+  button.addEventListener("click", async () => {
+    const keyword = button.textContent.replace("#", "").trim();
+    searchKeyword = keyword;
+    if (searchInputEl) {
+      searchInputEl.value = keyword;
+    }
+    currentPageNumber = 1;
+    await loadPostList();
+  });
 });
 
 loadCommunityPage();
