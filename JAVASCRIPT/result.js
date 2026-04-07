@@ -99,12 +99,12 @@ document.addEventListener("DOMContentLoaded", async () => {
 
       // chat에서 이어쓰기 위해 저장 (선택사항이지만 써두면 좋음)
       try {
-        sessionStorage.setItem("quizResult", JSON.stringify(data));
+        sessionStorage.setItem("quizResult", JSON.stringify(res));
       } catch (e) {
         console.warn("quizResult 저장 실패:", e);
       }
 
-      return data;
+      return res;
     } catch (err) {
       console.warn("백엔드 통신 실패 → mockResult 사용:", err);
       return mockResult;
@@ -220,6 +220,15 @@ document.addEventListener("DOMContentLoaded", async () => {
   });
 
   toChat?.addEventListener("click", () => {
+    try {
+      const raw = sessionStorage.getItem("quizResultPayload");
+      if (raw) {
+        sessionStorage.setItem("quizCommonAnswers", raw);
+      }
+    } catch (e) {
+      console.warn("chat 이동용 설문 데이터 저장 실패:", e);
+    }
+
     window.location.href = "chat.html";
   });
 
@@ -233,7 +242,7 @@ document.addEventListener("DOMContentLoaded", function () {
   const nickname = sessionStorage.getItem("nickname");
   const allowAnonymous = sessionStorage.getItem("allowAnonymousResult") === "true";
 
-  if (!nickname && !allowAnnoymous) {
+  if (!nickname && !allowAnoymous) {
     const goLogin = confirm ("로그인 후 이용할 수 있는 서비스입니다. \n로그인 페이지로 이동하시겠습니까>");
 
     if (goLogin) {

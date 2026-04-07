@@ -13,10 +13,12 @@ document.addEventListener("DOMContentLoaded", () => {
   // 로 저장하고 chat.html로 이동하고 있음
   let quizCommon = null;
   try {
-    const raw = sessionStorage.getItem("quizCommonAnswers");
+    const raw =
+      sessionStorage.getItem("quizCommonAnswers") ||
+      sessionStorage.getItem("quizResultPayload");
     quizCommon = raw ? JSON.parse(raw) : null;
   } catch (e) {
-    console.warn("quizCommonAnswers 파싱 실패:", e);
+    console.warn("설문 데이터 파싱 실패:", e);
   }
 
   const nickname = (sessionStorage.getItem("nickname") || "").trim() || "사용자";
