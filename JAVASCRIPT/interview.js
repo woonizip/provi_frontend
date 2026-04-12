@@ -133,4 +133,47 @@ function renderFeedback(data) {
   `;
 }
 
+feedbackBtn.addEventListener("click", async () => {
+  const answer = answerInput.value.trim();
+
+  if (!selectedQuestion) {
+    alert("면접 질문을 선택해주세요.");
+    return;
+  }
+
+  if (!answer) {
+    alert("답변을 작성해주세요.");
+    answerInput.focus();
+    return;
+  }
+
+  resultStatus.textContent = "분석 중";
+  loadingBox.classList.remove("hidden");
+  resultBox.innerHTML = "";
+
+  try {
+    const feedback = await authFetch(API.FEEDBACK, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        questionId: selectedQuestion.id,
+        answer
+      })
+    });
+
+    renderFeedback(feedback);
+    resultStatus.textContent = "완료";
+  } catch (error) {
+    resultStatus.textContent = "오류";
+    resultBox.innerHTML = `
+      <div class="empty-result">
+        피드백을 불러오지 못했습니다. 잠시 후 다시 시도해주세요.
+      </div>
+    `;
+    console.error(error);
+  } finally {
+    loadingBox.classList.add("hidden");
+  }
+});
+
 loadQuestions();

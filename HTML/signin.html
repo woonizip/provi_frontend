@@ -1,66 +1,250 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ko">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>SIGN IN</title>
-  <link rel="stylesheet" href="../CSS/signin.css">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PROVI | 로그인 / 회원가입</title>
+  <link rel="stylesheet" href="../CSS/signin.css" />
 </head>
 <body>
-  <div class="wrapper">
-    <div class="title-text">
-      <div class="title login">SIGN IN</div>
-      <div class="title signup">SIGN UP</div>
-    </div>
-    <div class="form-container">
-      <div class="slide-controls">
-        <input type="radio" name="slide" id="login" checked>
-        <input type="radio" name="slide" id="signup">
-        <label for="login" class="slide login">SIGN IN</label>
-        <label for="signup" class="slide signup">SIGN UP</label>
-        <div class="slider-tab"></div>
+  <div class="auth-page">
+    <div class="bg-orb orb-1"></div>
+    <div class="bg-orb orb-2"></div>
+    <div class="bg-grid"></div>
+
+    <header class="auth-header">
+      <div class="logo-badge">PROVI</div>
+      <div class="header-text">
+        <h1>나에게 맞는 개발 스택 추천</h1>
+        <p>안전한 로그인과 회원가입으로 PROVI 서비스를 시작해보세요.</p>
       </div>
-      <div class="form-inner">
-        <form action="../HTML/mainpage.html" class="login">
-          <div class="field">
-            <input type="text" placeholder="ID" required>
+    </header>
+
+    <main class="auth-shell">
+      <section class="auth-hero">
+        <div class="hero-chip">AI STACK RECOMMENDATION</div>
+        <h2>
+          개발자를 위한<br />
+          더 똑똑한 시작
+        </h2>
+        <p>
+          PROVI는 사용자의 성향, 목표, 관심 분야를 바탕으로
+          적합한 개발 직군과 기술 스택을 추천하는 서비스입니다.
+        </p>
+
+        <div class="hero-points">
+          <div class="hero-point">
+            <span class="point-title">개인 맞춤 추천</span>
+            <span class="point-desc">관심 분야와 목표를 반영한 스택 제안</span>
           </div>
-          <div class="field">
-            <input type="password" placeholder="Password" required>
+          <div class="hero-point">
+            <span class="point-title">실무 중심</span>
+            <span class="point-desc">현업과 취업 준비에 맞춘 기술 흐름 반영</span>
           </div>
-          <div class="pass-link"><a href="forget_account.html">Forgot password?</a></div>
-          <div class="field-remember-id">
-            <input type="checkbox" id="remember-id">
-            <label for="remember-id">Remember ID</label>
+          <div class="hero-point">
+            <span class="point-title">쉬운 시작</span>
+            <span class="point-desc">로그인 후 설문, 결과, 대화형 추천까지 한 번에</span>
           </div>
-          <div class="field btn">
-            <div class="btn-layer"></div>
-            <input type="submit" value="SIGN IN">
+        </div>
+      </section>
+
+      <section class="auth-card">
+        <div class="title-text">
+          <div class="title login">SIGN IN</div>
+          <div class="title signup">SIGN UP</div>
+        </div>
+
+        <div class="form-container">
+          <div class="slide-controls">
+            <input type="radio" name="slide" id="login" checked />
+            <input type="radio" name="slide" id="signup" />
+            <label for="login" class="slide login">SIGN IN</label>
+            <label for="signup" class="slide signup">SIGN UP</label>
+            <div class="slider-tab"></div>
           </div>
-          <div class="signup-link">Not a member? <a href="">Sign up now</a></div>
-        </form>
-        <form action="#" class="signup">
-          <div class="field">
-            <input type="text" placeholder="ID" required>
+
+          <div class="form-inner">
+            <!-- 로그인 -->
+            <form action="#" class="login" novalidate>
+              <div class="form-section login-layout">
+                <div class="section-head">
+                  <h3>환영합니다</h3>
+                  <p class="section-desc">아이디와 비밀번호를 입력해 로그인하세요.</p>
+                </div>
+
+                <div class="field">
+                  <label for="login-id">아이디</label>
+                  <input type="text" id="login-id" placeholder="아이디 입력" autocomplete="username" required />
+                </div>
+
+                <div class="field">
+                  <label for="login-password">비밀번호</label>
+                  <div class="password-wrap">
+                    <input type="password" id="login-password" placeholder="비밀번호 입력" autocomplete="current-password"
+                      required />
+                    <button type="button" class="toggle-password" data-target="login-password">보기</button>
+                  </div>
+                </div>
+
+                <div class="row-between">
+                  <label class="checkbox-inline">
+                    <input type="checkbox" id="remember-id" />
+                    <span>아이디 저장</span>
+                  </label>
+                  <a href="forget_account.html" class="text-link">비밀번호를 잊으셨나요?</a>
+                </div>
+
+                <div class="field btn">
+                  <div class="btn-layer"></div>
+                  <input type="submit" value="SIGN IN" />
+                </div>
+
+                <div class="divider">
+                  <span>또는</span>
+                </div>
+
+                <div class="social-login">
+                  <button type="button" class="social-btn google" data-provider="google">
+                    <span class="social-icon">G</span>
+                    <span>구글로 로그인</span>
+                  </button>
+                  <button type="button" class="social-btn kakao" data-provider="kakao">
+                    <span class="social-icon">K</span>
+                    <span>카카오로 로그인</span>
+                  </button>
+                  <button type="button" class="social-btn naver" data-provider="naver">
+                    <span class="social-icon">N</span>
+                    <span>네이버로 로그인</span>
+                  </button>
+                </div>
+
+                <div class="signup-link">
+                  아직 회원이 아니신가요? <a href="#" id="go-signup-link">회원가입</a>
+                </div>
+              </div>
+            </form>
+
+            <!-- 회원가입 -->
+            <form action="#" class="signup" novalidate>
+              <div class="form-section signup-layout">
+                <div class="section-head">
+                  <h3>회원가입</h3>
+                  <p class="section-desc">이메일 인증 후 회원가입을 진행해주세요.</p>
+                </div>
+
+                <div class="signup-grid">
+                  <div class="field">
+                    <label for="signup-id">아이디</label>
+                    <input type="text" id="signup-id" placeholder="영문/숫자 4~20자" maxlength="20" required />
+                    <small class="hint">영문, 숫자, _, - 사용 가능</small>
+                  </div>
+
+                  <div class="field">
+                    <label for="signup-nickname">닉네임</label>
+                    <input type="text" id="signup-nickname" placeholder="닉네임 입력" maxlength="20" required />
+                  </div>
+
+                  <div class="field field-span-2">
+                    <label for="signup-email">이메일</label>
+                    <div class="inline-action">
+                      <input type="email" id="signup-email" placeholder="example@email.com" required />
+                      <button type="button" class="sub-btn" id="send-code-btn">인증번호 전송</button>
+                    </div>
+                  </div>
+
+                  <div class="field field-span-2">
+                    <label for="email-code">이메일 인증번호</label>
+                    <div class="inline-action">
+                      <input type="text" id="email-code" placeholder="인증번호 6자리 입력" maxlength="6" />
+                      <button type="button" class="sub-btn verify-btn" id="verify-code-btn">인증 확인</button>
+                    </div>
+                    <small class="hint" id="email-verify-status">이메일 인증을 완료해주세요.</small>
+                  </div>
+
+                  <div class="field">
+                    <label for="signup-password">비밀번호</label>
+                    <div class="password-wrap">
+                      <input type="password" id="signup-password" placeholder="8~20자 / 영문, 숫자, 특수문자 포함"
+                        autocomplete="new-password" required />
+                      <button type="button" class="toggle-password" data-target="signup-password">보기</button>
+                    </div>
+
+                    <div class="password-strength compact">
+                      <div class="strength-bar">
+                        <div class="strength-fill" id="strength-fill"></div>
+                      </div>
+                      <span id="strength-text">비밀번호 강도: 미입력</span>
+                    </div>
+
+                    <ul class="password-policy compact">
+                      <li id="policy-length">8~20자</li>
+                      <li id="policy-letter">영문 포함</li>
+                      <li id="policy-number">숫자 포함</li>
+                      <li id="policy-special">특수문자 포함</li>
+                    </ul>
+                  </div>
+
+                  <div class="field">
+                    <label for="signup-confirm-password">비밀번호 확인</label>
+                    <div class="password-wrap">
+                      <input type="password" id="signup-confirm-password" placeholder="비밀번호를 다시 입력하세요"
+                        autocomplete="new-password" required />
+                      <button type="button" class="toggle-password" data-target="signup-confirm-password">보기</button>
+                    </div>
+                    <small class="hint" id="password-match-status">비밀번호를 다시 입력해주세요.</small>
+                  </div>
+
+                  <div class="field field-span-2">
+                    <div class="agreement-box">
+                      <label class="checkbox-block all-check">
+                        <input type="checkbox" id="agree-all" />
+                        <span>전체 동의</span>
+                      </label>
+
+                      <div class="agreement-grid">
+                        <label class="checkbox-block">
+                          <input type="checkbox" class="agree-item required-agree" id="agree-terms" />
+                          <span>[필수] 이용약관 동의</span>
+                        </label>
+
+                        <label class="checkbox-block">
+                          <input type="checkbox" class="agree-item required-agree" id="agree-privacy" />
+                          <span>[필수] 개인정보 수집 및 이용 동의</span>
+                        </label>
+
+                        <label class="checkbox-block">
+                          <input type="checkbox" class="agree-item required-agree" id="agree-age" />
+                          <span>[필수] 만 14세 이상입니다</span>
+                        </label>
+
+                        <label class="checkbox-block">
+                          <input type="checkbox" class="agree-item optional-agree" id="agree-marketing" />
+                          <span>[선택] 마케팅 정보 수신 동의</span>
+                        </label>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="field field-span-2 btn">
+                    <div class="btn-layer"></div>
+                    <input type="submit" value="SIGN UP" />
+                  </div>
+                </div>
+
+                <div class="signup-link">
+                  이미 계정이 있으신가요? <a href="#" id="go-login-link">로그인</a>
+                </div>
+              </div>
+            </form>
           </div>
-          <div class="field">
-            <input type="text" placeholder="NickName" required>
-          </div>
-          <div class="field">
-            <input type="password" placeholder="Password" required>
-          </div>
-          <div class="field">
-            <input type="password" placeholder="Confirm password" required>
-          </div>
-          <div class="field btn">
-            <div class="btn-layer"></div>
-            <input type="submit" value="Signup">
-          </div>
-        </form>
-      </div>
-    </div>
+        </div>
+      </section>
+    </main>
   </div>
-  
-  <script src="/JAVASCRIPT/signin.js"></script>
+
+  <div id="toast" class="toast"></div>
+
+  <script src="../JAVASCRIPT/signin.js"></script>
 </body>
+
 </html>
