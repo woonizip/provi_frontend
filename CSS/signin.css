@@ -38,8 +38,9 @@ select {
 .auth-page {
   min-height: 100vh;
   position: relative;
-  overflow: hidden;
-  padding: 40px 32px;
+  overflow-x: hidden;
+  overflow-y: auto;
+  padding: 32px 32px 40px;
   background:
     radial-gradient(circle at 15% 18%, rgba(0, 115, 230, 0.22), transparent 20%),
     radial-gradient(circle at 88% 82%, rgba(40, 80, 255, 0.16), transparent 22%),
@@ -131,22 +132,22 @@ select {
 
 .auth-hero {
   position: relative;
-    overflow: hidden;
-    border-radius: 32px;
-    padding: 46px 42px 40px;
-    background:
-      radial-gradient(circle at 18% 12%, rgba(44, 127, 255, 0.22), transparent 26%),
-      linear-gradient(180deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.03));
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    box-shadow:
-      inset 0 1px 0 rgba(255, 255, 255, 0.05),
-      0 20px 60px rgba(0, 0, 0, 0.22);
-    color: #fff;
-    backdrop-filter: blur(10px);
-    display: flex;
-    flex-direction: column;
-    justify-content: flex-start;
-    min-height: 760px;
+  overflow: hidden;
+  border-radius: 32px;
+  padding: 38px 42px 34px;
+  background:
+    radial-gradient(circle at 18% 12%, rgba(44, 127, 255, 0.22), transparent 26%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.03));
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.05),
+    0 20px 60px rgba(0, 0, 0, 0.22);
+  color: #fff;
+  backdrop-filter: blur(10px);
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  min-height: 640px;
 }
 
 .hero-chip {
@@ -162,18 +163,18 @@ select {
   font-size: 12px;
   font-weight: 700;
   letter-spacing: 0.08em;
-  margin-bottom: 42px;
+  margin-bottom: 28px;
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
 }
 
 .auth-hero h2 {
   position: relative;
   z-index: 1;
-  font-size: 64px;
+  font-size: 60px;
   line-height: 1.08;
   font-weight: 800;
   letter-spacing: -0.04em;
-  margin-bottom: 26px;
+  margin-bottom: 18px;
   max-width: 440px;
 }
 
@@ -181,10 +182,10 @@ select {
   position: relative;
   z-index: 1;
   font-size: 17px;
-  line-height: 1.9;
+  line-height: 1.85;
   color: rgba(255, 255, 255, 0.78);
   max-width: 500px;
-  margin-bottom: 56px;
+  margin-bottom: 34px;
 }
 
 .auth-hero::before {
@@ -215,14 +216,14 @@ select {
   z-index: 1;
   display: grid;
   grid-template-columns: 1fr;
-  gap: 16px;
-  margin-top: auto;
+  gap: 14px;
+  margin-top: 24px;
 }
 
 .hero-point {
   position: relative;
-  padding: 22px 22px 22px 24px;
-  border-radius: 22px;
+  padding: 18px 20px 18px 22px;
+  border-radius: 20px;
   background:
     linear-gradient(180deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.05));
   border: 1px solid rgba(255, 255, 255, 0.08);
@@ -253,18 +254,18 @@ select {
 
 .point-title {
   display: block;
-  font-size: 24px;
+  font-size: 18px;
   font-weight: 700;
-  margin-bottom: 8px;
+  margin-bottom: 6px;
   color: #ffffff;
   letter-spacing: -0.02em;
 }
 
 .point-desc {
   display: block;
-  font-size: 15px;
+  font-size: 14px;
   color: rgba(255, 255, 255, 0.72);
-  line-height: 1.75;
+  line-height: 1.65;
 }
 
 .auth-card {
@@ -277,7 +278,7 @@ select {
     0 24px 70px rgba(0, 0, 0, 0.25),
     inset 0 1px 0 rgba(255, 255, 255, 0.72);
   backdrop-filter: blur(18px);
-  min-height: 760px;
+  min-height: 640px;
 }
 
 .title-text {
@@ -380,7 +381,7 @@ input[type="radio"] {
 }
 
 .form-section {
-  padding: 2px 2px 6px;
+  padding: 2px 2px 18px;
 }
 
 .login-layout {
@@ -737,7 +738,8 @@ input[type="radio"] {
 
 .signup-link {
   text-align: center;
-  margin-top: 20px;
+  margin-top: 16px;
+  margin-bottom: 4px;
   font-size: 14px;
   color: #475569;
 }

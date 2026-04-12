@@ -136,7 +136,6 @@ document.addEventListener("DOMContentLoaded", function () {
     if (!loginForm || !loginText || !signupText) return;
     loginForm.style.marginLeft = "0%";
     loginText.style.marginLeft = "0%";
-    signupText.style.marginLeft = "0%";
     if (loginRadio) loginRadio.checked = true;
   }
 
@@ -144,7 +143,6 @@ document.addEventListener("DOMContentLoaded", function () {
     if (!loginForm || !loginText || !signupText) return;
     loginForm.style.marginLeft = "-50%";
     loginText.style.marginLeft = "-50%";
-    signupText.style.marginLeft = "-50%";
     if (signupRadio) signupRadio.checked = true;
   }
 
