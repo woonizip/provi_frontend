@@ -271,9 +271,66 @@ async function fetchCommunityPostList() {
 
   const data = await res.json();
 
-  postList = data.content || [];
-  totalPostCount = data.totalElements || 0;
-  totalPageCount = data.totalPages || 1;
+  let rawList = Array.isArray(data.content) ? data.content : [];
+
+  // 카테고리 프론트 보정
+  if (selectedCategoryCode !== "ALL") {
+    rawList = rawList.filter((post) => {
+      const code = String(post.category || "").trim().toUpperCase();
+      return code === selectedCategoryCode;
+    });
+  }
+
+  // 검색 프론트 보정
+  if (searchKeyword.trim()) {
+    const q = searchKeyword.trim().toLowerCase();
+    rawList = rawList.filter((post) => {
+      const hay = [
+        post.title,
+        post.content,
+        post.summary,
+        post.authorNickname,
+        post.categoryLabel,
+        getCategoryLabel(post.category),
+      ]
+        .filter(Boolean)
+        .join(" ")
+        .toLowerCase();
+
+      return hay.includes(q);
+    });
+  }
+
+  // 정렬 프론트 보정
+  if (selectedSortType === "popular") {
+    rawList.sort((a, b) => {
+      const likeDiff = (b.likeCount || 0) - (a.likeCount || 0);
+      if (likeDiff !== 0) return likeDiff;
+
+      const commentDiff = (b.commentCount || 0) - (a.commentCount || 0);
+      if (commentDiff !== 0) return commentDiff;
+
+      return new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime();
+    });
+  } else if (selectedSortType === "comments") {
+    rawList.sort((a, b) => {
+      const commentDiff = (b.commentCount || 0) - (a.commentCount || 0);
+      if (commentDiff !== 0) return commentDiff;
+
+      const likeDiff = (b.likeCount || 0) - (a.likeCount || 0);
+      if (likeDiff !== 0) return likeDiff;
+
+      return new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime();
+    });
+  } else {
+    rawList.sort((a, b) => {
+      return new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime();
+    });
+  }
+
+  postList = rawList;
+  totalPostCount = Number(data.totalElements) || rawList.length;
+  totalPageCount = Number(data.totalPages) || 1;
 }
 
 // 인기 게시글 조회

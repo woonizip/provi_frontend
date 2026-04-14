@@ -139,28 +139,56 @@ function setPageToUrl(pageNumber) {
   window.history.replaceState({}, "", url);
 }
 
+function normalizeCategoryCode(value) {
+  switch (String(value || "").trim()) {
+    case "WEB":
+    case "웹":
+      return "WEB";
+    case "AI_DATA":
+    case "AI/데이터":
+      return "AI_DATA";
+    case "GAME":
+    case "게임":
+      return "GAME";
+    case "SEC":
+    case "보안":
+      return "SEC";
+    default:
+      return String(value || "").trim();
+  }
+}
+
 function categoryLabel(v) {
-  switch (v) {
+  switch (normalizeCategoryCode(v)) {
     case "WEB": return "웹";
     case "AI_DATA": return "AI/데이터";
     case "GAME": return "게임";
     case "SEC": return "보안";
-    case "웹": return "웹";
-    case "AI/데이터": return "AI/데이터";
-    case "게임": return "게임";
-    case "보안": return "보안";
     default: return v;
   }
 }
 
+function normalizeSubStatusCode(value) {
+  switch (String(value || "").trim()) {
+    case "RECRUITING":
+    case "모집중":
+      return "RECRUITING";
+    case "IN_PROGRESS":
+    case "진행중":
+      return "IN_PROGRESS";
+    case "DONE":
+    case "완료":
+      return "DONE";
+    default:
+      return String(value || "").trim();
+  }
+}
+
 function subStatusLabel(v) {
-  switch (v) {
+  switch (normalizeSubStatusCode(v)) {
     case "RECRUITING": return "모집중";
     case "IN_PROGRESS": return "진행중";
     case "DONE": return "완료";
-    case "모집중": return "모집중";
-    case "진행중": return "진행중";
-    case "완료": return "완료";
     default: return v;
   }
 }
@@ -390,8 +418,8 @@ function normalizeProject(p) {
     id: p.id ?? p.projectId,
     title: p.title ?? p.name ?? "Untitled",
     content: p.content ?? p.description ?? "",
-    category: p.category ?? "WEB",
-    subStatus: p.subStatus ?? "IN_PROGRESS",
+    category: normalizeCategoryCode(p.category ?? "WEB"),
+    subStatus: normalizeSubStatusCode(p.subStatus ?? "IN_PROGRESS"),
     tags: Array.isArray(p.tags) ? p.tags : [],
     recruitments,
     neededRoles: recruitments.map((r) => r.role),
@@ -743,7 +771,7 @@ async function createProjectToServer() {
   if (!requireLoginOrRedirect()) return;
 
   const nickname = getNickname();
-  const category = projectCategory.value;
+  const category = normalizeCategoryCode(projectCategory.value);
   const userLimit = Number(projectUserLimit.value);
   const title = projectName.value.trim();
   const content = projectDesc.value.trim();
