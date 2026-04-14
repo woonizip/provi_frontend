@@ -4,6 +4,8 @@ document.addEventListener("DOMContentLoaded", function () {
     LOGIN: "/api/auth/login",
     SEND_EMAIL_CODE: "/api/auth/email/send-code",
     VERIFY_EMAIL_CODE: "/api/auth/email/verify-code",
+    CHECK_USER_ID: "/api/auth/check-userid",
+    CHECK_NICKNAME: "/api/auth/check-nickname",
     SOCIAL: {
       google: "/oauth2/authorization/google",
       kakao: "/oauth2/authorization/kakao",
@@ -59,6 +61,17 @@ document.addEventListener("DOMContentLoaded", function () {
 
   const socialButtons = document.querySelectorAll(".social-btn");
   const togglePasswordButtons = document.querySelectorAll(".toggle-password");
+
+  const checkIdBtn = document.getElementById("check-id-btn");
+  const checkNicknameBtn = document.getElementById("check-nickname-btn");
+
+  const idCheckStatus = document.getElementById("id-check-status");
+  const nicknameCheckStatus = document.getElementById("nickname-check-status");
+
+  let isUserIdChecked = false;
+  let isNicknameChecked = false;
+  let checkedUserIdValue = "";
+  let checkedNicknameValue = "";
 
   let emailVerified = false;
   let verifiedEmailValue = "";
@@ -293,6 +306,16 @@ document.addEventListener("DOMContentLoaded", function () {
       return false;
     }
 
+    if (!isUserIdChecked || checkedUserIdValue !== userId) {
+      showAlert("아이디 중복 확인을 완료해주세요.");
+      return false;
+    }
+
+    if (!isNicknameChecked || checkedNicknameValue !== nickname) {
+      showAlert("닉네임 중복 확인을 완료해주세요.");
+      return false;
+    }
+
     return true;
   }
 
@@ -397,21 +420,151 @@ document.addEventListener("DOMContentLoaded", function () {
     }
   }
 
-  function syncAgreeAll() {
-    const allChecked = [...agreeItems].every((item) => item.checked);
-    agreeAll.checked = allChecked;
+  async function checkNicknameDuplicate() {
+    const nickname = signupNicknameInput.value.trim();
+
+    if (!nickname) {
+      showAlert("닉네임을 입력해주세요.");
+      signupNicknameInput.focus();
+      return;
+    }
+
+    if (nickname.length < 2 || nickname.length > 20) {
+      showAlert("닉네임은 2자 이상 20자 이하로 입력해주세요.");
+      signupNicknameInput.focus();
+      return;
+    }
+
+    try {
+      checkNicknameBtn.disabled = true;
+      checkNicknameBtn.textContent = "확인 중...";
+
+      const data = await apiFetch(`${API.CHECK_NICKNAME}?nickname=${encodeURIComponent(nickname)}`, {
+        method: "GET",
+      });
+
+      if (data.available) {
+        isNicknameChecked = true;
+        checkedNicknameValue = nickname;
+        nicknameCheckStatus.textContent = data.message || "사용 가능한 닉네임입니다.";
+        nicknameCheckStatus.className = "hint success";
+        checkNicknameBtn.classList.add("available");
+        checkNicknameBtn.textContent = "확인 완료";
+        showAlert("사용 가능한 닉네임입니다.", "success");
+      } else {
+        isNicknameChecked = false;
+        checkedNicknameValue = "";
+        nicknameCheckStatus.textContent = data.message || "이미 사용 중인 닉네임입니다.";
+        nicknameCheckStatus.className = "hint error";
+        checkNicknameBtn.classList.remove("available");
+        checkNicknameBtn.textContent = "중복 확인";
+        showAlert(nicknameCheckStatus.textContent);
+      }
+    } catch (error) {
+      isNicknameChecked = false;
+      checkedNicknameValue = "";
+      nicknameCheckStatus.textContent = `닉네임 확인 실패: ${error.message}`;
+      nicknameCheckStatus.className = "hint error";
+      checkNicknameBtn.classList.remove("available");
+      checkNicknameBtn.textContent = "중복 확인";
+      showAlert(`닉네임 확인 실패: ${error.message}`);
+    } finally {
+      checkNicknameBtn.disabled = false;
+    }
   }
 
-  function resetSignupState() {
-    resetEmailVerification();
-    updatePasswordPolicyUI("");
-    updatePasswordMatchUI();
+    function syncAgreeAll() {
+      const allChecked = [...agreeItems].every((item) => item.checked);
+      agreeAll.checked = allChecked;
+    }
 
-    agreeAll.checked = false;
-    agreeTerms.checked = false;
-    agreePrivacy.checked = false;
-    agreeAge.checked = false;
-    agreeMarketing.checked = false;
+    function resetSignupState() {
+      resetEmailVerification();
+      updatePasswordPolicyUI("");
+      updatePasswordMatchUI();
+      resetUserIdCheck();
+      resetNicknameCheck();
+
+      agreeAll.checked = false;
+      agreeTerms.checked = false;
+      agreePrivacy.checked = false;
+      agreeAge.checked = false;
+      agreeMarketing.checked = false;
+    }
+
+    function resetUserIdCheck() {
+      isUserIdChecked = false;
+      checkedUserIdValue = "";
+      if (idCheckStatus) {
+        idCheckStatus.textContent = "아이디 중복 확인을 해주세요.";
+        idCheckStatus.className = "hint";
+      }
+      checkIdBtn?.classList.remove("available");
+      if (checkIdBtn) checkIdBtn.textContent = "중복 확인";
+    }
+
+    function resetNicknameCheck() {
+      isNicknameChecked = false;
+      checkedNicknameValue = "";
+      if (nicknameCheckStatus) {
+        nicknameCheckStatus.textContent = "닉네임 중복 확인을 해주세요.";
+        nicknameCheckStatus.className = "hint";
+      }
+      checkNicknameBtn?.classList.remove("available");
+      if (checkNicknameBtn) checkNicknameBtn.textContent = "중복 확인";
+    }
+
+    async function checkUserIdDuplicate() {
+    const userId = signupIdInput.value.trim();
+
+    if (!userId) {
+      showAlert("아이디를 입력해주세요.");
+      signupIdInput.focus();
+      return;
+    }
+
+    if (!isValidUserId(userId)) {
+      showAlert("아이디는 영문, 숫자, _, - 조합의 4~20자여야 합니다.");
+      signupIdInput.focus();
+      return;
+    }
+
+    try {
+      checkIdBtn.disabled = true;
+      checkIdBtn.textContent = "확인 중...";
+
+      const data = await apiFetch(`${API.CHECK_USER_ID}?userId=${encodeURIComponent(userId)}`, {
+        method: "GET",
+      });
+
+      if (data.available) {
+        isUserIdChecked = true;
+        checkedUserIdValue = userId;
+        idCheckStatus.textContent = data.message || "사용 가능한 아이디입니다.";
+        idCheckStatus.className = "hint success";
+        checkIdBtn.classList.add("available");
+        checkIdBtn.textContent = "확인 완료";
+        showAlert("사용 가능한 아이디입니다.", "success");
+      } else {
+        isUserIdChecked = false;
+        checkedUserIdValue = "";
+        idCheckStatus.textContent = data.message || "이미 사용 중인 아이디입니다.";
+        idCheckStatus.className = "hint error";
+        checkIdBtn.classList.remove("available");
+        checkIdBtn.textContent = "중복 확인";
+        showAlert(idCheckStatus.textContent);
+      }
+    } catch (error) {
+      isUserIdChecked = false;
+      checkedUserIdValue = "";
+      idCheckStatus.textContent = `아이디 확인 실패: ${error.message}`;
+      idCheckStatus.className = "hint error";
+      checkIdBtn.classList.remove("available");
+      checkIdBtn.textContent = "중복 확인";
+      showAlert(`아이디 확인 실패: ${error.message}`);
+    } finally {
+      checkIdBtn.disabled = false;
+    }
   }
 
   setRememberedId();
@@ -529,6 +682,21 @@ document.addEventListener("DOMContentLoaded", function () {
 
   sendCodeBtn?.addEventListener("click", sendEmailCode);
   verifyCodeBtn?.addEventListener("click", verifyEmailCode);
+
+  signupIdInput?.addEventListener("input", function () {
+    if (this.value.trim() !== checkedUserIdValue) {
+      resetUserIdCheck();
+    }
+  });
+
+  signupNicknameInput?.addEventListener("input", function () {
+    if (this.value.trim() !== checkedNicknameValue) {
+      resetNicknameCheck();
+    }
+  });
+
+  checkIdBtn?.addEventListener("click", checkUserIdDuplicate);
+  checkNicknameBtn?.addEventListener("click", checkNicknameDuplicate);
 
   signupEmailInput?.addEventListener("input", function () {
     if (this.value.trim() !== verifiedEmailValue) {

@@ -470,7 +470,7 @@ input[type="radio"] {
 
 .inline-action {
   display: grid;
-  grid-template-columns: 1fr 132px;
+  grid-template-columns: 1fr 100px;
   gap: 10px;
 }
 
@@ -506,6 +506,14 @@ input[type="radio"] {
   cursor: pointer;
   transition: transform 0.15s ease, opacity 0.2s ease, box-shadow 0.2s ease;
   box-shadow: 0 10px 24px rgba(15, 23, 42, 0.18);
+}
+
+.sub-btn-light {
+  background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+}
+
+.sub-btn-light.available {
+  background: linear-gradient(135deg, #15803d 0%, #16a34a 100%);
 }
 
 .sub-btn:hover {

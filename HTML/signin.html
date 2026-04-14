@@ -135,13 +135,20 @@
                 <div class="signup-grid">
                   <div class="field">
                     <label for="signup-id">아이디</label>
-                    <input type="text" id="signup-id" placeholder="영문/숫자 4~20자" maxlength="20" required />
-                    <small class="hint">영문, 숫자, _, - 사용 가능</small>
+                    <div class="inline-action">
+                      <input type="text" id="signup-id" placeholder="영문/숫자 4~20자" maxlength="20" required />
+                      <button type="button" class="sub-btn sub-btn-light" id="check-id-btn">중복 확인</button>
+                    </div>
+                    <small class="hint" id="id-check-status">아이디 중복 확인을 해주세요.</small>
                   </div>
 
                   <div class="field">
                     <label for="signup-nickname">닉네임</label>
-                    <input type="text" id="signup-nickname" placeholder="닉네임 입력" maxlength="20" required />
+                    <div class="inline-action">
+                      <input type="text" id="signup-nickname" placeholder="닉네임 입력" maxlength="20" required />
+                      <button type="button" class="sub-btn sub-btn-light" id="check-nickname-btn">중복 확인</button>
+                    </div>
+                    <small class="hint" id="nickname-check-status">닉네임 중복 확인을 해주세요.</small>
                   </div>
 
                   <div class="field field-span-2">
