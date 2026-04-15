@@ -639,6 +639,7 @@ document.addEventListener("DOMContentLoaded", function () {
           nickname: payload.nickname,
           email: payload.email,
           password: payload.password,
+          confirmPassword: payload.confirmPassword,
           agreements: {
             terms: agreeTerms.checked,
             privacy: agreePrivacy.checked,
