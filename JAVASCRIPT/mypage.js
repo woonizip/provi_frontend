@@ -1,7 +1,6 @@
 const STORAGE_KEYS = {
   USER: "sf_user",              // { name, job, role } (프로젝트에서 이미 사용중)
   PROJECTS: "sf_projects",      // 팀프로젝트 카드
-  // 마이페이지용
   QUIZ_RESULT: "provi_quiz_result",       // 추천 결과(직군/태그)
   LEARNING: "provi_learning_progress",    // 학습 진행/완료
   GOALS: "provi_weekly_goals",            // 이번주 목표 체크리스트
@@ -43,6 +42,10 @@ const btnResetGoals = el("btnResetGoals");
 const btnGoTeamProject = el("btnGoTeamProject");
 const btnContinue = el("btnContinue");
 const btnRetake = el("btnRetake");
+const dashboardContent = el("dashboardContent");
+const quizEmptyState = el("quizEmptyState");
+const btnGoStackSurvey = el("btnGoStackSurvey");
+const btnGoTeamOnly = el("btnGoTeamOnly");
 
 const tabs = document.querySelectorAll(".tab");
 
@@ -83,7 +86,6 @@ function formatDate(iso) {
 
 function normalizeDevRole(roleRaw) {
   const r = String(roleRaw || "").toLowerCase();
-  // 가능한 입력 다양성 대응
   if (r.includes("front")) return "웹 개발자 · 프론트엔드";
   if (r.includes("프론트")) return "웹 개발자 · 프론트엔드";
   if (r.includes("backend")) return "웹 개발자 · 백엔드";
@@ -99,7 +101,6 @@ function normalizeDevRole(roleRaw) {
 }
 
 function getRoadmapTemplate(devRoleText) {
-  // devRoleText는 normalizeDevRole 결과(한글) 기반
   if (devRoleText.includes("프론트엔드")) {
     return [
       {
@@ -199,7 +200,6 @@ function getRoadmapTemplate(devRoleText) {
     ];
   }
 
-  // default
   return [
     {
       id: "GEN_1",
@@ -260,7 +260,6 @@ function writeGoals(goals) {
 }
 
 function generateGoals(devRole) {
-  // 역할별 간단 목표 세트
   if (devRole.includes("프론트엔드")) {
     return [
       { id: "g1", text: "HTML 시맨틱 태그로 페이지 1개 구성", done: false, type: "주간" },
@@ -295,38 +294,239 @@ function generateGoals(devRole) {
 function readUser() {
   return readJSON(STORAGE_KEYS.USER, null);
 }
-function readProjects() {
-  const arr = readJSON(STORAGE_KEYS.PROJECTS, []);
-  return Array.isArray(arr) ? arr : [];
+const TEAM_PROJECT_API = {
+  LIST: "/api/list",
+};
+
+const MYPAGE_PROJECT_PAGE_SIZE = 100;
+let mypageProjectsCache = [];
+
+function getNickname() {
+  return (sessionStorage.getItem("nickname") || "").trim();
 }
 
-// 팀프로젝트 코드 호환(예전 구조 포함)
-function normalizeProject(p) {
-  return {
-    ...p,
-    id: p.id,
-    name: p.name || "Untitled",
-    description: p.description || "",
-    status: p.status || "PLANNING",
-    createdAt: p.createdAt || nowISO(),
-    leader: p.leader || p.createdBy || "Unknown",
-    myRole: p.myRole || p.role || "",
-    neededRoles: Array.isArray(p.neededRoles) ? p.neededRoles : [],
-    tags: Array.isArray(p.tags) ? p.tags : [],
-    members: Array.isArray(p.members) ? p.members : []
-  };
+async function fetchJSON(url, options = {}) {
+  const token = sessionStorage.getItem("token");
+  const headers = { ...(options.headers || {}) };
+
+  if (token) {
+    headers["Authorization"] = `Bearer ${token}`;
+  }
+
+  const res = await fetch(url, {
+    ...options,
+    headers,
+    credentials: "include",
+  });
+
+  let data = null;
+  const contentType = res.headers.get("content-type") || "";
+  if (contentType.includes("application/json")) {
+    data = await res.json();
+  }
+
+  if (!res.ok) {
+    const message = data?.message || data?.error || `HTTP ${res.status}`;
+    throw new Error(message);
+  }
+
+  return data;
+}
+
+function sampleKey() {
+  const nickname = getNickname();
+  return "tp_samples_" + (nickname || "__guest__");
+}
+
+function readUserSamples() {
+  try {
+    const raw = localStorage.getItem(sampleKey());
+    const data = raw ? JSON.parse(raw) : [];
+    return Array.isArray(data) ? data : [];
+  } catch {
+    return [];
+  }
+}
+
+function normalizeCategoryCode(value) {
+  switch (String(value || "").trim()) {
+    case "WEB":
+    case "웹":
+      return "WEB";
+    case "AI_DATA":
+    case "AI/데이터":
+      return "AI_DATA";
+    case "GAME":
+    case "게임":
+      return "GAME";
+    case "SEC":
+    case "보안":
+      return "SEC";
+    default:
+      return String(value || "").trim();
+  }
+}
+
+function categoryLabel(v) {
+  switch (normalizeCategoryCode(v)) {
+    case "WEB": return "웹";
+    case "AI_DATA": return "AI/데이터";
+    case "GAME": return "게임";
+    case "SEC": return "보안";
+    default: return v || "-";
+  }
+}
+
+function normalizeSubStatusCode(value) {
+  switch (String(value || "").trim()) {
+    case "RECRUITING":
+    case "모집중":
+      return "RECRUITING";
+    case "IN_PROGRESS":
+    case "DEVELOPING":
+    case "진행중":
+      return "IN_PROGRESS";
+    case "DONE":
+    case "완료":
+      return "DONE";
+    case "PLANNING":
+    case "기획중":
+      return "PLANNING";
+    case "MAINTAIN":
+    case "유지보수":
+      return "MAINTAIN";
+    case "TESTING":
+    case "테스트":
+      return "TESTING";
+    default:
+      return String(value || "").trim();
+  }
 }
 
 function statusLabel(status) {
-  switch (status) {
+  switch (normalizeSubStatusCode(status)) {
     case "RECRUITING": return "모집중";
     case "PLANNING": return "기획중";
-    case "DEVELOPING": return "진행중";
+    case "IN_PROGRESS": return "진행중";
     case "DONE": return "완료";
     case "MAINTAIN": return "유지보수";
     case "TESTING": return "테스트";
-    default: return status;
+    default: return status || "-";
   }
+}
+
+function normalizeRecruitments(project) {
+  const recruitmentsRaw = Array.isArray(project.recruitments)
+    ? project.recruitments
+    : Array.isArray(project.recruitmentList)
+    ? project.recruitmentList
+    : Array.isArray(project.neededRoles)
+    ? project.neededRoles
+    : [];
+
+  return recruitmentsRaw
+    .map((item) => {
+      if (typeof item === "string") {
+        return { role: item.trim(), count: 1 };
+      }
+
+      return {
+        role: String(item?.role ?? item?.name ?? item?.label ?? "").trim(),
+        count: Number(item?.count ?? item?.recruitCount ?? item?.userCount ?? 1),
+      };
+    })
+    .filter((item) => item.role);
+}
+
+function normalizeMember(member) {
+  return {
+    userName: String(member?.userName ?? member?.nickname ?? member?.name ?? "").trim(),
+    isLeader: !!member?.isLeader,
+    role: String(member?.role ?? member?.roleLabel ?? member?.myRole ?? "").trim(),
+  };
+}
+
+function normalizeProject(p) {
+  const recruitments = normalizeRecruitments(p);
+  const membersRaw = Array.isArray(p.members)
+    ? p.members
+    : Array.isArray(p.memberList)
+    ? p.memberList
+    : [];
+
+  const members = membersRaw.map(normalizeMember);
+
+  const leaderName =
+    String(
+      p.leaderName ??
+      p.leader ??
+      p.createdByNickname ??
+      p.ownerNickname ??
+      p.createdBy ??
+      ""
+    ).trim() ||
+    String(members.find((m) => m.isLeader)?.userName || "").trim() ||
+    "Unknown";
+
+  return {
+    ...p,
+    id: p.id ?? p.projectId,
+    name: p.title ?? p.name ?? "Untitled",
+    description: p.content ?? p.description ?? "",
+    category: normalizeCategoryCode(p.category ?? "WEB"),
+    status: normalizeSubStatusCode(p.subStatus ?? p.status ?? "IN_PROGRESS"),
+    createdAt: p.createdAt ?? p.createdDate ?? nowISO(),
+    leader: leaderName,
+    leaderName,
+    myRole: p.myRole || p.role || "",
+    neededRoles: recruitments.map((r) => r.role),
+    recruitments,
+    tags: Array.isArray(p.tags) ? p.tags : [],
+    members,
+    userLimit: p.userLimit ?? p.maxMember ?? null,
+    isSample: !!p.isSample,
+  };
+}
+
+function isOwner(project, nickname) {
+  return !!nickname && String(project.leaderName || project.leader || "").trim() === nickname;
+}
+
+function isMember(project, nickname) {
+  if (!nickname) return false;
+  return (project.members || []).some((m) => String(m.userName || m.name || m.nickname || "").trim() === nickname);
+}
+
+function getMyMemberInfo(project, nickname) {
+  return (project.members || []).find((m) => String(m.userName || m.name || m.nickname || "").trim() === nickname) || null;
+}
+
+async function loadProjectsForMypage() {
+  const samples = readUserSamples().map((p) => normalizeProject({ ...p, isSample: true }));
+
+  try {
+    const query = new URLSearchParams({
+      page: "1",
+      size: String(MYPAGE_PROJECT_PAGE_SIZE),
+    });
+
+    const data = await fetchJSON(`${TEAM_PROJECT_API.LIST}?${query.toString()}`, {
+      method: "GET",
+    });
+
+    const serverProjects = Array.isArray(data)
+      ? data
+      : Array.isArray(data?.content)
+      ? data.content
+      : [];
+
+    mypageProjectsCache = [...samples, ...serverProjects.map(normalizeProject)];
+  } catch (e) {
+    console.warn("MYPAGE PROJECT LIST API ERROR:", e.message);
+    mypageProjectsCache = samples;
+  }
+
+  return mypageProjectsCache;
 }
 
 function roleLabel(role) {
@@ -341,11 +541,8 @@ function roleLabel(role) {
 }
 
 function readQuizResult() {
-  // 1) 우선 지정 키
   const direct = readJSON(STORAGE_KEYS.QUIZ_RESULT, null);
   if (direct) return direct;
-
-  // 2) 흔한 키 후보들(네 프로젝트 구조가 다양할 수 있으니)
   const candidates = [
     "quizResult",
     "provi_result",
@@ -362,27 +559,66 @@ function readQuizResult() {
   return null;
 }
 
-function renderHeader(user, quiz) {
-  const name = user?.name || "Guest";
-  const job = user?.job || "Member";
-  if (sbName) sbName.textContent = name;
-  if (sbJob) sbJob.textContent = job;
-
-  // quiz 구조 유연 처리
-  const rawRole =
-    quiz?.developerRole ||
+function getQuizRoleRaw(quiz) {
+  return quiz?.developerRole ||
     quiz?.role ||
     quiz?.recommendedRole ||
     quiz?.job ||
     quiz?.devRole ||
     quiz?.resultRole ||
     "";
+}
+
+function isOldFrontendSeedQuiz(quiz) {
+  if (!quiz) return false;
+  const sameArray = (arr, target) =>
+    Array.isArray(arr) &&
+    arr.length === target.length &&
+    arr.every((v, i) => String(v) === target[i]);
+
+  return quiz.developerRole === "Frontend" &&
+    sameArray(quiz.preferredLanguages, ["JavaScript", "TypeScript"]) &&
+    sameArray(quiz.wantLanguages, ["React", "Next.js"]) &&
+    sameArray(quiz.interests, ["웹", "UI/UX"]);
+}
+
+function hasValidQuizResult(quiz) {
+  if (!quiz) return false;
+  if (isOldFrontendSeedQuiz(quiz)) return false;
+
+  const roleRaw = getQuizRoleRaw(quiz);
+  const hasRole = String(roleRaw || "").trim().length > 0;
+  const hasStack = Array.isArray(quiz?.recommendedStacks) && quiz.recommendedStacks.length > 0;
+  const hasTags = [
+    ...(quiz?.preferredLanguages || quiz?.preferredLangs || []),
+    ...(quiz?.wantLanguages || quiz?.targetLanguages || quiz?.learnLanguages || []),
+    ...(quiz?.interests || [])
+  ].filter(Boolean).length > 0;
+
+  return hasRole || hasStack || hasTags;
+}
+
+function clearOldFrontendSeedIfNeeded() {
+  const quiz = readJSON(STORAGE_KEYS.QUIZ_RESULT, null);
+  if (isOldFrontendSeedQuiz(quiz)) {
+    localStorage.removeItem(STORAGE_KEYS.QUIZ_RESULT);
+    localStorage.removeItem(STORAGE_KEYS.LEARNING);
+    localStorage.removeItem(STORAGE_KEYS.GOALS);
+  }
+}
+
+function renderHeader(user, quiz) {
+  const name = user?.name || "Guest";
+  const job = user?.job || "Member";
+  if (sbName) sbName.textContent = name;
+  if (sbJob) sbJob.textContent = job;
+
+  const rawRole = getQuizRoleRaw(quiz);
 
   const devRole = normalizeDevRole(rawRole);
 
   devRoleText.textContent = devRole;
 
-  // 태그(선호/배우고싶은 언어 등)
   const tags = [
     ...(quiz?.preferredLanguages || quiz?.preferredLangs || []),
     ...(quiz?.wantLanguages || quiz?.targetLanguages || quiz?.learnLanguages || []),
@@ -391,7 +627,6 @@ function renderHeader(user, quiz) {
 
   tagRow.innerHTML = "";
   if (tags.length === 0) {
-    // 기본 안내 태그
     ["선호 언어", "배우고 싶은 언어", "관심 분야"].forEach((t) => {
       const span = document.createElement("span");
       span.className = "tag";
@@ -414,19 +649,16 @@ function renderRoadmap(devRole) {
   const learning = readLearning();
   const steps = getRoadmapTemplate(devRole);
 
-  // step progress 기본값 부여
   steps.forEach((s, idx) => {
     if (learning.stepProgress[s.id] == null) {
-      learning.stepProgress[s.id] = idx === 0 ? 20 : 0; // 첫 단계 기본 20% 정도
+      learning.stepProgress[s.id] = idx === 0 ? 20 : 0;
     }
   });
 
-  // current step id
   if (!learning.currentStepId) {
     learning.currentStepId = steps[0]?.id || null;
   }
 
-  // 현재/다음 단계 계산
   const ordered = steps.map(s => s.id);
   const currentIdx = Math.max(0, ordered.indexOf(learning.currentStepId));
   const nextIdx = Math.min(steps.length - 1, currentIdx + 1);
@@ -470,7 +702,6 @@ function renderRoadmap(devRole) {
     roadmapEl.appendChild(card);
   });
 
-  // overall percent
   const avg = Math.round(
     steps.reduce((sum, s) => sum + (learning.stepProgress[s.id] ?? 0), 0) / Math.max(1, steps.length)
   );
@@ -479,20 +710,16 @@ function renderRoadmap(devRole) {
   overallPercent.textContent = `${avg}%`;
   ringValue.textContent = `${avg}%`;
 
-  // skill bars(간단히: 역할별 대표 기술 바)
   renderSkillBars(devRole, learning);
 
-  // 저장
   writeLearning(learning);
 
-  // roadmap interactions
   roadmapEl.querySelectorAll('button[data-action="complete"]').forEach((btn) => {
     btn.addEventListener("click", () => {
       const stepId = btn.getAttribute("data-step");
       const l = readLearning();
       l.stepProgress[stepId] = clamp((l.stepProgress[stepId] ?? 0) + 10, 0, 100);
 
-      // 현재 단계 갱신 규칙: 현재 단계가 100%면 다음 단계로
       const steps2 = getRoadmapTemplate(devRole);
       const idx = steps2.findIndex(x => x.id === stepId);
       if (idx >= 0 && l.stepProgress[stepId] >= 100 && idx < steps2.length - 1) {
@@ -503,7 +730,7 @@ function renderRoadmap(devRole) {
 
       writeLearning(l);
       pushActivity(`로드맵 진행: ${steps.find(x => x.id === stepId)?.title || stepId} (+10%)`);
-      renderAll(); // 재렌더
+      renderAll();
     });
   });
 }
@@ -515,7 +742,6 @@ function renderSkillBars(devRole, learning) {
   else if (devRole.includes("AI")) preset.push(["Python", 55], ["Pandas", 45], ["Sklearn", 25], ["Deploy", 10]);
   else preset.push(["Basics", 30], ["Git", 20], ["Practice", 10]);
 
-  // 저장된 skillProgress가 있으면 그걸 우선 사용
   const final = preset.map(([k, v]) => {
     const saved = learning.skillProgress?.[k];
     return [k, saved == null ? v : saved];
@@ -536,16 +762,11 @@ function renderSkillBars(devRole, learning) {
   });
 }
 
-function renderJoinedProjects(user) {
-  const userName = user?.name || "Guest";
-  const projects = readProjects().map(normalizeProject);
+async function renderJoinedProjects(user) {
+  const nickname = getNickname() || user?.name || "Guest";
+  const projects = await loadProjectsForMypage();
 
-  // 참여 판단: members에 이름이 있거나, leader/createdBy가 본인
-  const joined = projects.filter((p) => {
-    const inMembers = (p.members || []).some(m => m?.name === userName);
-    const isLeader = p.leader === userName || p.createdBy === userName;
-    return inMembers || isLeader;
-  });
+  const joined = projects.filter((p) => isOwner(p, nickname) || isMember(p, nickname));
 
   joinedProjectCount.textContent = `${joined.length}개`;
 
@@ -557,9 +778,12 @@ function renderJoinedProjects(user) {
   joinedEmpty.style.display = "none";
 
   joined.slice(0, 8).forEach((p) => {
-    // 내 역할 추출
-    const me = (p.members || []).find(m => m?.name === userName);
-    const myRole = me?.role || (p.leader === userName ? "LEAD" : p.myRole) || "-";
+    const myMember = getMyMemberInfo(p, nickname);
+    const myRole = myMember?.role || (isOwner(p, nickname) ? "LEAD" : p.myRole) || "-";
+
+    const recruitText = (p.recruitments || [])
+      .map((r) => `${r.role} ${r.count}명`)
+      .join(", ");
 
     const card = document.createElement("div");
     card.className = "pcard";
@@ -570,14 +794,15 @@ function renderJoinedProjects(user) {
       <div class="badges">
         <span class="badge status">상태: ${escapeHtml(statusLabel(p.status))}</span>
         <span class="badge role">내 역할: ${escapeHtml(roleLabel(myRole))}</span>
-        ${p.neededRoles?.length ? `<span class="badge need">필요: ${escapeHtml(p.neededRoles.map(roleLabel).join(", "))}</span>` : ""}
+        ${recruitText ? `<span class="badge need">모집: ${escapeHtml(recruitText)}</span>` : ""}
+        ${isOwner(p, nickname) ? `<span class="badge role">권한: 팀장</span>` : ""}
       </div>
 
       <div class="pcard-foot">
-        <div class="meta">팀장: ${escapeHtml(p.leader)} · ${escapeHtml(formatDate(p.createdAt))}</div>
+        <div class="meta">팀장: ${escapeHtml(p.leaderName)} · ${escapeHtml(formatDate(p.createdAt))}</div>
         <div class="pbtns">
-          <button class="action-btn" data-action="open" data-id="${escapeHtml(p.id)}">상세</button>
-          <button class="action-btn primary" data-action="goto" data-id="${escapeHtml(p.id)}">보드</button>
+          <button class="action-btn" data-action="open" data-id="${escapeHtml(String(p.id))}">상세</button>
+          <button class="action-btn primary" data-action="goto" data-id="${escapeHtml(String(p.id))}">보드</button>
         </div>
       </div>
     `;
@@ -585,20 +810,20 @@ function renderJoinedProjects(user) {
     joinedProjectsEl.appendChild(card);
   });
 
-  // 카드 버튼
   joinedProjectsEl.querySelectorAll("button[data-action]").forEach((btn) => {
     btn.addEventListener("click", () => {
       const action = btn.getAttribute("data-action");
       const id = btn.getAttribute("data-id");
-      const p = readProjects().map(normalizeProject).find(x => x.id === id);
+      const p = mypageProjectsCache.find((x) => String(x.id) === String(id));
       if (!p) return;
 
       if (action === "open") {
-        alert(`[${p.name}]\n\n상태: ${statusLabel(p.status)}\n팀장: ${p.leader}\n태그: ${(p.tags||[]).join(", ")}`);
+        const recruitSummary = (p.recruitments || []).map(r => `${r.role} ${r.count}명`).join(", ") || "-";
+        alert(`[${p.name}]\n\n상태: ${statusLabel(p.status)}\n팀장: ${p.leaderName}\n모집: ${recruitSummary}\n태그: ${(p.tags || []).join(", ") || "-"}`);
       }
+
       if (action === "goto") {
-        // 팀프로젝트 상세로 이동 (네 라우팅에 맞게 수정)
-        location.href = `../HTML/teamproject_detail.html?id=${encodeURIComponent(id)}`;
+        location.href = "../HTML/teamproject.html?page=1";
       }
     });
   });
@@ -666,7 +891,6 @@ function renderGoals(devRole) {
     });
   });
 
-  // 피드백 갱신
   renderFeedback(devRole, goals);
 }
 
@@ -694,7 +918,6 @@ function renderFeedback(devRole, goals) {
 }
 
 function renderCompare(devRole) {
-  // 실제 통계는 API/데이터 필요. MVP로는 “샘플 통계”를 역할별로 다르게 보여줌
   let items = [];
   if (devRole.includes("프론트엔드")) {
     items = [
@@ -746,7 +969,6 @@ function getNextRecommendedStep(devRole) {
 
 function setRing(percent) {
   const pct = clamp(percent, 0, 100);
-  // conic-gradient 업데이트
   ringEl.style.background = `conic-gradient(
     rgba(59,130,246,0.90) 0deg,
     rgba(168,85,247,0.70) ${Math.round(3.6 * pct)}deg,
@@ -759,14 +981,7 @@ let timelineRangeDays = 7;
 function bindEvents() {
   btnResetGoals?.addEventListener("click", () => {
     const quiz = readQuizResult() || {};
-    const roleRaw =
-      quiz?.developerRole ||
-      quiz?.role ||
-      quiz?.recommendedRole ||
-      quiz?.job ||
-      quiz?.devRole ||
-      quiz?.resultRole ||
-      "";
+    const roleRaw = getQuizRoleRaw(quiz);
     const devRole = normalizeDevRole(roleRaw);
 
     const next = generateGoals(devRole);
@@ -784,8 +999,15 @@ function bindEvents() {
   });
 
   btnRetake?.addEventListener("click", () => {
-    // 네 프로젝트의 quiz 페이지 경로로 수정
     location.href = "../HTML/quiz.html";
+  });
+
+  btnGoStackSurvey?.addEventListener("click", () => {
+    location.href = "../HTML/quiz.html";
+  });
+
+  btnGoTeamOnly?.addEventListener("click", () => {
+    location.href = "../HTML/teamproject.html";
   });
 
   tabs.forEach((t) => {
@@ -798,39 +1020,61 @@ function bindEvents() {
   });
 }
 
-function ensureSeed() {
+function renderNoQuizState(user) {
+  const name = user?.name || sessionStorage.getItem("nickname") || "Guest";
+  const job = user?.job || "Member";
+  if (sbName) sbName.textContent = name;
+  if (sbJob) sbJob.textContent = job;
+
+  devRoleText.textContent = "추천 조사 전";
+  tagRow.innerHTML = "";
+
+  weeklyGoalCount.textContent = "0개";
+  joinedProjectCount.textContent = "0개";
+  overallPercent.textContent = "0%";
+  ringValue.textContent = "0%";
+  currentStepText.textContent = "-";
+  nextStepText.textContent = "-";
+  nextStepPill.textContent = "스택 추천 조사를 먼저 진행해주세요";
+
+  btnContinue?.classList.add("is-hidden");
+  btnRetake?.classList.add("is-hidden");
+  dashboardContent?.classList.add("is-hidden");
+  quizEmptyState?.classList.remove("is-hidden");
+  if (quizEmptyState) quizEmptyState.style.display = "grid";
+}
+
+function renderDashboardState() {
+  btnContinue?.classList.remove("is-hidden");
+  btnRetake?.classList.remove("is-hidden");
+  dashboardContent?.classList.remove("is-hidden");
+  quizEmptyState?.classList.add("is-hidden");
+  if (quizEmptyState) quizEmptyState.style.display = "none";
+}
+
+function ensureInitialState() {
+  clearOldFrontendSeedIfNeeded();
   const user = readUser();
   if (!user) {
-    writeJSON(STORAGE_KEYS.USER, { name: "Team Member", job: "Member", role: "USER" });
-  }
-
-  const quiz = readQuizResult();
-  if (!quiz) {
-    // 최소 샘플(프론트엔드)
-    writeJSON(STORAGE_KEYS.QUIZ_RESULT, {
-      developerRole: "Frontend",
-      preferredLanguages: ["JavaScript", "TypeScript"],
-      wantLanguages: ["React", "Next.js"],
-      interests: ["웹", "UI/UX"]
-    });
-  }
-
-  const goals = readGoals();
-  if (!Array.isArray(goals) || goals.length === 0) {
-    const q = readQuizResult() || {};
-    const roleRaw = q.developerRole || q.role || q.recommendedRole || "";
-    writeGoals(generateGoals(normalizeDevRole(roleRaw)));
+    const nickname = sessionStorage.getItem("nickname") || "Team Member";
+    writeJSON(STORAGE_KEYS.USER, { name: nickname, job: "Member", role: "USER" });
   }
 }
 
-function renderAll() {
+async function renderAll() {
   const user = readUser();
-  const quiz = readQuizResult() || {};
+  const quiz = readQuizResult();
 
+  if (!hasValidQuizResult(quiz)) {
+    renderNoQuizState(user);
+    return;
+  }
+
+  renderDashboardState();
   const devRole = renderHeader(user, quiz);
 
   renderRoadmap(devRole);
-  renderJoinedProjects(user);
+  await renderJoinedProjects(user);
   renderGoals(devRole);
   renderCompare(devRole);
   renderTimeline(timelineRangeDays);
@@ -843,7 +1087,7 @@ function clamp(n, min, max) {
 }
 
 (function init() {
-  ensureSeed();
+  ensureInitialState();
   bindEvents();
   renderAll();
 })();
