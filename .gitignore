@@ -4,3 +4,9 @@ node_modules/
 dist/
 .env
 ._*
+CSS/question.css
+HTML/portfolio.html
+HTML/question.html
+HTML/images/stackflow_dark.png
+HTML/images/stackflow_light.png
+JAVASCRIPT/question.js
