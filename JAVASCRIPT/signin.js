@@ -7,9 +7,9 @@ document.addEventListener("DOMContentLoaded", function () {
     CHECK_USER_ID: "/api/auth/check-userid",
     CHECK_NICKNAME: "/api/auth/check-nickname",
     SOCIAL: {
-      google: "/oauth2/authorization/google",
-      kakao: "/oauth2/authorization/kakao",
-      naver: "/oauth2/authorization/naver",
+      google: "api/oauth2/authorization/google",
+      kakao: "api/oauth2/authorization/kakao",
+      naver: "api/oauth2/authorization/naver",
     },
   };
 
