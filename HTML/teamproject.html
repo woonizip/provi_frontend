@@ -153,9 +153,7 @@
   
       <div id="pagination" class="pagination"></div>
   
-      <section id="emptyState" class="tp-empty" style="display:none;">
-        프로젝트가 없습니다.
-      </section>
+      <section id="emptyState" class="tp-empty" style="display:none;">프로젝트가 없습니다.</section>
     </div>
   
     <!-- 생성 모달 -->
@@ -317,15 +315,42 @@
   
         <div class="modal-footer">
           <button id="detailCancelBtn" class="btn btn-ghost" type="button">닫기</button>
+          <button id="detailChatBtn" class="btn btn-primary" type="button" style="display: none; background: #8b5cf6; border:none;">채팅방 참여하기</button>
           <button id="detailLeaveBtn" class="btn btn-danger" type="button" style="display:none;">참여 취소</button>
           <button id="detailJoinBtn" class="btn btn-primary" type="button" style="display:none;">참여하기</button>
         </div>
+      </div>
+    </div>
+
+    <div id="chatWindow" aria-hidden="true">
+      <div class="chat-header">
+        <div>
+          <strong id="chatTitle">팀 프로젝트 채팅</strong>
+          <p id="chatProjectInfo">프로젝트 참여자만 이용할 수 있습니다.</p>
+        </div>
+        <button id="chatCloseBtn" class="chat-close-btn" type="button">X</button>
+      </div>
+
+      <div id="msgArea" class="chat-message-area"></div>
+
+      <div id="chatFilePreview" class="chat-file-preview" style="display: none;"></div>
+
+      <div class="chat-footer">
+        <input type="file" id="chatFile" hidden />
+      
+        <button id="chatFileBtn" type="button" class="file-btn">📎 파일</button>
+      
+        <div class="chat-input-wrap">
+          <input type="text" id="chatInput" placeholder="메시지를 입력하세요..." autocomplete="off" />
+          <button id="chatSendBtn" type="button" class="btn btn-primary">전송</button>
       </div>
     </div>
   </div>
 
   <script src="../JAVASCRIPT/sidebar.js"></script>
   <script src="../JAVASCRIPT/api.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@stomp/stompjs@7/bundles/stomp.umd.min.js"></script>
   <script src="../JAVASCRIPT/teamproject.js"></script>
   <script src="../JAVASCRIPT/mainpage.js"></script>
 </body>

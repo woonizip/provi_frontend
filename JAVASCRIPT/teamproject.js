@@ -870,6 +870,15 @@ function renderDetailModal(project, mode = "view") {
   const myMemberInfo = getMyMemberInfo(project, nickname);
   const openRecruitments = getOpenRecruitments(project);
   const full = isProjectFull(project);
+  const detailChatBtn = document.getElementById("detailChatBtn");
+
+  if (detailChatBtn) {
+    if (owner || member) {
+      detailChatBtn.style.display = "inline-flex";
+    } else {
+      detailChatBtn.style.display = "none";
+    }
+  }
 
   detailModalSub.textContent =
     mode === "join"
@@ -1313,3 +1322,345 @@ function bindCategoryEvents() {
   bindCategoryEvents();
   refreshAndRender(currentPage);
 })();
+
+/* Team Project Chat Frontend */
+
+const detailChatBtn = document.getElementById("detailChatBtn");
+
+const chatWindow = document.getElementById("chatWindow");
+const chatCloseBtn = document.getElementById("chatCloseBtn");
+const chatTitle = document.getElementById("chatTitle");
+const chatProjectInfo = document.getElementById("chatProjectInfo");
+const msgArea = document.getElementById("msgArea");
+const chatInput = document.getElementById("chatInput");
+const chatSendBtn = document.getElementById("chatSendBtn");
+const chatFile = document.getElementById("chatFile");
+const chatFileBtn = document.getElementById("chatFileBtn");
+const chatFilePreview = document.getElementById("chatFilePreview");
+
+let currentChatProjectId = null;
+let selectedChatFile = null;
+let stompClient = null;
+let chatSubscription = null;
+
+function openChatWindow(project) {
+  const nickname = getNickname();
+
+  if (!isOwner(project, nickname) && !isMember(project, nickname)) {
+    alert("프로젝트 참여자만 채팅방에 입장할 수 있습니다.");
+    return;
+  }
+
+  currentChatProjectId = project.id;
+  selectedChatFile = null;
+
+  chatTitle.textContent = `${project.title} 채팅`;
+  chatProjectInfo.textContent = `팀장: ${project.leaderName || "-"}`;
+  msgArea.innerHTML = "";
+  chatInput.value = "";
+  chatFile.value = "";
+  chatFilePreview.style.display = "none";
+  chatFilePreview.innerHTML = "";
+
+  chatWindow.classList.add("open");
+  chatWindow.setAttribute("aria-hidden", "false");
+
+  connectChatSocket(project.id);
+
+  loadChatHistory(project.id).then(() => {
+    appendSystemMessage("채팅방에 입장했습니다.");
+  });
+}
+
+function closeChatWindow() {
+  chatWindow.classList.remove("open");
+  chatWindow.setAttribute("aria-hidden", "true");
+
+  disconnectChatSocket();
+
+  currentChatProjectId = null;
+  selectedChatFile = null;
+}
+
+function appendSystemMessage(text) {
+  const div = document.createElement("div");
+  div.className = "chat-message-system";
+  div.textContent = text;
+  msgArea.appendChild(div);
+  scrollChatBottom();
+}
+
+function appendChatMessage(chat) {
+  const nickname = getNickname();
+  const isMine = String(chat.senderNickname || "") === nickname;
+
+  const div = document.createElement("div");
+  div.className = `chat-message ${isMine ? "mine" : "other"}`;
+
+  const sender = escapeHtml(chat.senderNickname || "알 수 없음");
+  const time = chat.createdAt ? formatChatTime(chat.createdAt) : formatChatTime(new Date());
+
+  let contentHtml = "";
+
+  if (chat.messageType === "IMAGE") {
+    const fileUrl = escapeHtml(chat.fileUrl || "");
+    const fileName = escapeHtml(chat.originalFileName || "이미지");
+    contentHtml = `
+      <span class="chat-sender">${sender}</span>
+      <a href="${fileUrl}" target="_blank" rel="noopener">
+        <img class="chat-image" src="${fileUrl}" alt="${fileName}">
+      </a>
+      <span class="chat-time">${time}</span>
+    `;
+  } else if (chat.messageType === "FILE") {
+    const fileUrl = escapeHtml(chat.fileUrl || "#");
+    const fileName = escapeHtml(chat.originalFileName || "첨부파일");
+    contentHtml = `
+      <span class="chat-sender">${sender}</span>
+      <a class="chat-file-link" href="${fileUrl}" target="_blank" rel="noopener">${fileName}</a>
+      <span class="chat-time">${time}</span>
+    `;
+  } else {
+    contentHtml = `
+      <span class="chat-sender">${sender}</span>
+      ${escapeHtml(chat.content || "")}
+      <span class="chat-time">${time}</span>
+    `;
+  }
+
+  div.innerHTML = contentHtml;
+  msgArea.appendChild(div);
+  scrollChatBottom();
+}
+
+function scrollChatBottom() {
+  msgArea.scrollTop = msgArea.scrollHeight;
+}
+
+function formatChatTime(value) {
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return "";
+
+  const hh = String(d.getHours()).padStart(2, "0");
+  const mm = String(d.getMinutes()).padStart(2, "0");
+  return `${hh}:${mm}`;
+}
+
+async function sendChatMessage() {
+  if (!currentChatProjectId) {
+    alert("채팅방 정보가 없습니다.");
+    return;
+  }
+
+  const content = chatInput.value.trim();
+
+  if (!content && !selectedChatFile) {
+    alert("메시지 또는 파일을 입력해주세요.");
+    return;
+  }
+
+  if (selectedChatFile) {
+    await uploadChatFileAndSend();
+    return;
+  }
+
+  const payload = {
+    projectId: currentChatProjectId,
+    senderNickname: getNickname(),
+    content,
+    messageType: "TEXT",
+  };
+
+  if (stompClient && stompClient.connected) {
+    stompClient.publish({
+      destination: `/app/teamproject/${currentChatProjectId}/chat/send`,
+      body: JSON.stringify(payload),
+    });
+  } else {
+    appendChatMessage({
+      ...payload,
+      createdAt: new Date().toISOString(),
+    });
+  }
+
+  chatInput.value = "";
+}
+
+async function uploadChatFileAndSend() {
+  if (!selectedChatFile) return;
+
+  const isImage = selectedChatFile.type.startsWith("image/");
+
+  if (!stompClient || !stompClient.connected) {
+    appendChatMessage({
+      projectId: currentChatProjectId,
+      senderNickname: getNickname(),
+      messageType: isImage ? "IMAGE" : "FILE",
+      fileUrl: URL.createObjectURL(selectedChatFile),
+      originalFileName: selectedChatFile.name,
+      createdAt: new Date().toISOString(),
+    });
+
+    clearSelectedFile();
+    return;
+  }
+
+  const formData = new FormData();
+  formData.append("file", selectedChatFile);
+
+  try {
+    const res = await fetch(`/api/teamproject/${currentChatProjectId}/chat/files`, {
+      method: "POST",
+      body: formData,
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      throw new Error(data?.message || "파일 업로드 실패");
+    }
+
+    const payload = {
+      projectId: currentChatProjectId,
+      senderNickname: getNickname(),
+      content: "",
+      messageType: isImage ? "IMAGE" : "FILE",
+      fileUrl: data.fileUrl,
+      originalFileName: data.originalFileName,
+    };
+
+    stompClient.publish({
+      destination: `/app/teamproject/${currentChatProjectId}/chat/send`,
+      body: JSON.stringify(payload),
+    });
+
+    clearSelectedFile();
+  } catch (e) {
+    alert(`파일 업로드 실패: ${e.message}`);
+  }
+}
+
+function clearSelectedFile() {
+  selectedChatFile = null;
+  chatFile.value = "";
+  chatFilePreview.style.display = "none";
+  chatFilePreview.innerHTML = "";
+}
+
+/* WebSocket 연결 */
+function connectChatSocket(projectId) {
+  if (typeof StompJs === "undefined" || typeof SockJS === "undefined") {
+    console.warn("STOMP/SockJS 라이브러리가 없습니다. 프론트 테스트 모드로 동작합니다.");
+    return;
+  }
+
+  if (stompClient && stompClient.connected) {
+    subscribeChatRoom(projectId);
+    return;
+  }
+
+  stompClient = new StompJs.Client({
+    webSocketFactory: () => new SockJS("/ws-chat"),
+    reconnectDelay: 5000,
+    heartbeatIncoming: 4000,
+    heartbeatOutgoing: 4000,
+  });
+
+  stompClient.onConnect = () => {
+    subscribeChatRoom(projectId);
+  };
+
+  stompClient.onStompError = (frame) => {
+    console.error("STOMP ERROR", frame);
+    appendSystemMessage("채팅 서버 연결 중 오류가 발생했습니다.");
+  };
+
+  stompClient.activate();
+}
+
+function subscribeChatRoom(projectId) {
+  if (!stompClient || !stompClient.connected) return;
+
+  if (chatSubscription) {
+    chatSubscription.unsubscribe();
+    chatSubscription = null;
+  }
+
+  chatSubscription = stompClient.subscribe(`/topic/teamproject/${projectId}`, (message) => {
+    const chat = JSON.parse(message.body);
+    appendChatMessage(chat);
+  });
+}
+
+function disconnectChatSocket() {
+  if (chatSubscription) {
+    chatSubscription.unsubscribe();
+    chatSubscription = null;
+  }
+
+  if (stompClient) {
+    stompClient.deactivate();
+    stompClient = null;
+  }
+}
+
+async function loadChatHistory(projectId) {
+  try {
+    const res = await fetch(`/api/teamproject/${projectId}/chat/messages`);
+    if (!res.ok) return;
+
+    const data = await res.json();
+    const messages = Array.isArray(data) ? data : data.content || [];
+
+    msgArea.innerHTML = "";
+    messages.forEach(appendChatMessage);
+  } catch (e) {
+    console.warn("채팅 내역 조회 실패:", e.message);
+  }
+}
+
+detailChatBtn?.addEventListener("click", () => {
+  if (!currentDetailProjectId) {
+    alert("프로젝트 정보가 없습니다.");
+    return;
+  }
+
+  const project = getProjectById(currentDetailProjectId);
+
+  if (!project) {
+    alert("프로젝트를 찾을 수 없습니다.");
+    return;
+  }
+
+  openChatWindow(project);
+});
+
+chatCloseBtn?.addEventListener("click", closeChatWindow);
+
+chatSendBtn?.addEventListener("click", sendChatMessage);
+
+chatInput?.addEventListener("keydown", (e) => {
+  if (e.key === "Enter") {
+    e.preventDefault();
+    sendChatMessage();
+  }
+});
+
+chatFileBtn?.addEventListener("click", () => {
+  chatFile.click();
+});
+
+chatFile?.addEventListener("change", (e) => {
+  const file = e.target.files?.[0];
+  if (!file) return;
+
+  selectedChatFile = file;
+
+  chatFilePreview.style.display = "block";
+  chatFilePreview.innerHTML = `
+    선택된 파일: <strong>${escapeHtml(file.name)}</strong>
+    <button type="button" id="removeSelectedFile" class="file-btn" style="margin-left:8px;">삭제</button>
+  `;
+
+  document.getElementById("removeSelectedFile")?.addEventListener("click", clearSelectedFile);
+});
