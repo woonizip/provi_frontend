@@ -1560,7 +1560,7 @@ function connectChatSocket(projectId) {
   }
 
   stompClient = new StompJs.Client({
-    webSocketFactory: () => new SockJS("/ws-chat"),
+    webSocketFactory: () => new SockJS("http://localhost:8082/ws-chat"),
     reconnectDelay: 5000,
     heartbeatIncoming: 4000,
     heartbeatOutgoing: 4000,
