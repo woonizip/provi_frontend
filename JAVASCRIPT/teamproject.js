@@ -1367,8 +1367,11 @@ function openChatWindow(project) {
 
   connectChatSocket(project.id);
 
-  loadChatHistory(project.id).then(() => {
-    appendSystemMessage("채팅방에 입장했습니다.");
+  loadChatHistory(project.id).then(async () => {
+    await markCurrentRoomAsRead();
+    await loadChatRoomsSilently();
+
+    connectChatSocket(project.id, true);
   });
 }
 
@@ -1391,6 +1394,11 @@ function appendSystemMessage(text) {
 }
 
 function appendChatMessage(chat) {
+  if (chat.messageType === "SYSTEM") {
+    appendSystemMessage(chat.content || "");
+    return;
+  }
+
   const nickname = getNickname();
   const isMine = String(chat.senderNickname || "") === nickname;
 
@@ -1423,9 +1431,23 @@ function appendChatMessage(chat) {
   } else {
     contentHtml = `
       <span class="chat-sender">${sender}</span>
-      ${escapeHtml(chat.content || "")}
+      ${renderMentionText(chat.content || "")}
       <span class="chat-time">${time}</span>
     `;
+  }
+
+  const unreadCount = Number(chat.unreadCount || 0);
+  const readCount = Number(chat.readCount || 0);
+  const mentionedMe = !!chat.mentionedMe;
+
+  if (mentionedMe) {
+    div.classList.add("mentioned");
+  }
+
+  if (unreadCount > 0) {
+    contentHtml += `<span class="chat-read-info">안 읽음 ${unreadCount}</span>`;
+  } else if (readCount > 0) {
+    contentHtml += `<span class="chat-read-info">${readCount}명 읽음</span>`;
   }
 
   div.innerHTML = contentHtml;
@@ -1469,6 +1491,7 @@ async function sendChatMessage() {
     senderNickname: getNickname(),
     content,
     messageType: "TEXT",
+    mentionedNicknames: extractMentionedNicknames(content),
   };
 
   if (stompClient && stompClient.connected) {
@@ -1489,35 +1512,52 @@ async function sendChatMessage() {
 async function uploadChatFileAndSend() {
   if (!selectedChatFile) return;
 
+  if (!currentChatProjectId) {
+    alert("채팅방 정보가 없습니다.");
+    return;
+  }
+
   const isImage = selectedChatFile.type.startsWith("image/");
 
   if (!stompClient || !stompClient.connected) {
-    appendChatMessage({
-      projectId: currentChatProjectId,
-      senderNickname: getNickname(),
-      messageType: isImage ? "IMAGE" : "FILE",
-      fileUrl: URL.createObjectURL(selectedChatFile),
-      originalFileName: selectedChatFile.name,
-      createdAt: new Date().toISOString(),
-    });
-
-    clearSelectedFile();
+    alert("채팅 서버에 연결되지 않았습니다. WebSocket 연결 상태를 확인해주세요.");
     return;
   }
 
   const formData = new FormData();
   formData.append("file", selectedChatFile);
 
+  const token = sessionStorage.getItem("token");
+  const headers = {};
+
+  if (token) {
+    headers["Authorization"] = `Bearer ${token}`;
+  }
+
   try {
     const res = await fetch(`/api/teamproject/${currentChatProjectId}/chat/files`, {
       method: "POST",
+      headers,
       body: formData,
+      credentials: "include",
     });
 
-    const data = await res.json();
+    const contentType = res.headers.get("content-type") || "";
+    let data = null;
+
+    if (contentType.includes("application/json")) {
+      data = await res.json();
+    } else {
+      const text = await res.text();
+      throw new Error(text || `HTTP ${res.status}`);
+    }
 
     if (!res.ok) {
-      throw new Error(data?.message || "파일 업로드 실패");
+      throw new Error(data?.message || data?.error || `HTTP ${res.status}`);
+    }
+
+    if (!data.fileUrl) {
+      throw new Error("파일 URL이 응답에 없습니다.");
     }
 
     const payload = {
@@ -1526,7 +1566,7 @@ async function uploadChatFileAndSend() {
       content: "",
       messageType: isImage ? "IMAGE" : "FILE",
       fileUrl: data.fileUrl,
-      originalFileName: data.originalFileName,
+      originalFileName: data.originalFileName || selectedChatFile.name,
     };
 
     stompClient.publish({
@@ -1535,7 +1575,11 @@ async function uploadChatFileAndSend() {
     });
 
     clearSelectedFile();
+
+    await loadChatRoomsSilently?.();
+
   } catch (e) {
+    console.error("파일 업로드 실패:", e);
     alert(`파일 업로드 실패: ${e.message}`);
   }
 }
@@ -1548,7 +1592,7 @@ function clearSelectedFile() {
 }
 
 /* WebSocket 연결 */
-function connectChatSocket(projectId) {
+function connectChatSocket(projectId, sendEnter = false) {
   if (typeof StompJs === "undefined" || typeof SockJS === "undefined") {
     console.warn("STOMP/SockJS 라이브러리가 없습니다. 프론트 테스트 모드로 동작합니다.");
     return;
@@ -1556,6 +1600,11 @@ function connectChatSocket(projectId) {
 
   if (stompClient && stompClient.connected) {
     subscribeChatRoom(projectId);
+
+    if (sendEnter) {
+      sendEnterMessage();
+    }
+
     return;
   }
 
@@ -1568,6 +1617,10 @@ function connectChatSocket(projectId) {
 
   stompClient.onConnect = () => {
     subscribeChatRoom(projectId);
+
+    if (sendEnter) {
+      sendEnterMessage();
+    }
   };
 
   stompClient.onStompError = (frame) => {
@@ -1586,9 +1639,15 @@ function subscribeChatRoom(projectId) {
     chatSubscription = null;
   }
 
-  chatSubscription = stompClient.subscribe(`/topic/teamproject/${projectId}`, (message) => {
+  chatSubscription = stompClient.subscribe(`/topic/teamproject/${projectId}`, async (message) => {
     const chat = JSON.parse(message.body);
     appendChatMessage(chat);
+
+    if (String(chat.projectId) === String(currentChatProjectId)) {
+      await markCurrentRoomAsRead();
+    }
+
+    await loadChatRoomsSilently();
   });
 }
 
@@ -1606,7 +1665,13 @@ function disconnectChatSocket() {
 
 async function loadChatHistory(projectId) {
   try {
-    const res = await fetch(`/api/teamproject/${projectId}/chat/messages`);
+    const nickname = encodeURIComponent(getNickname());
+    const res = await fetch(
+      `/api/teamproject/${projectId}/chat/messages?nickname=${nickname}&participantCount=0`,
+      {
+        credentials: "include",
+      }
+    );
     if (!res.ok) return;
 
     const data = await res.json();
@@ -1664,3 +1729,366 @@ chatFile?.addEventListener("change", (e) => {
 
   document.getElementById("removeSelectedFile")?.addEventListener("click", clearSelectedFile);
 });
+
+const chatRoomListBtn = document.getElementById("chatRoomListBtn");
+const totalUnreadBadge = document.getElementById("totalUnreadBadge");
+const chatRoomListPanel = document.getElementById("chatRoomListPanel");
+const chatRoomListCloseBtn = document.getElementById("chatRoomListCloseBtn");
+const chatRoomList = document.getElementById("chatRoomList");
+
+const chatFilesBtn = document.getElementById("chatFilesBtn");
+const chatFilesPanel = document.getElementById("chatFilesPanel");
+const chatFilesCloseBtn = document.getElementById("chatFilesCloseBtn");
+const chatFilesList = document.getElementById("chatFilesList");
+
+const mentionSuggestList = document.getElementById("mentionSuggestList");
+
+function extractMentionedNicknames(text) {
+  const matches = String(text || "").match(/@([가-힣a-zA-Z0-9_]+)/g) || [];
+
+  return [
+    ...new Set(
+      matches
+        .map((m) => m.replace("@", "").trim())
+        .filter(Boolean)
+    ),
+  ];
+}
+
+function renderMentionText(text) {
+  return escapeHtml(text).replace(
+    /@([가-힣a-zA-Z0-9_]+)/g,
+    '<span class="mention-text">@$1</span>'
+  );
+}
+
+function getCurrentProjectMembers() {
+  if (!currentChatProjectId) return [];
+
+  const project = getProjectById(currentChatProjectId);
+  if (!project) return [];
+
+  return (project.members || [])
+    .map((m) => String(m.userName || "").trim())
+    .filter(Boolean);
+}
+
+function getMentionKeyword(value) {
+  const cursorText = String(value || "");
+  const match = cursorText.match(/@([가-힣a-zA-Z0-9_]*)$/);
+  return match ? match[1] : null;
+}
+
+function showMentionSuggestions() {
+  if (!mentionSuggestList || !chatInput) return;
+
+  const keyword = getMentionKeyword(chatInput.value);
+
+  if (keyword === null) {
+    mentionSuggestList.style.display = "none";
+    mentionSuggestList.innerHTML = "";
+    return;
+  }
+
+  const members = getCurrentProjectMembers();
+  const filtered = members
+    .filter((name) => name !== getNickname())
+    .filter((name) => name.toLowerCase().includes(keyword.toLowerCase()))
+    .slice(0, 6);
+
+  if (filtered.length === 0) {
+    mentionSuggestList.style.display = "none";
+    mentionSuggestList.innerHTML = "";
+    return;
+  }
+
+  mentionSuggestList.innerHTML = filtered
+    .map(
+      (name) => `
+        <button type="button" class="mention-suggest-item" data-mention="${escapeHtml(name)}">
+          @${escapeHtml(name)}
+        </button>
+      `
+    )
+    .join("");
+
+  mentionSuggestList.style.display = "flex";
+}
+
+function insertMention(nickname) {
+  const value = chatInput.value;
+  const nextValue = value.replace(/@([가-힣a-zA-Z0-9_]*)$/, `@${nickname} `);
+
+  chatInput.value = nextValue;
+  mentionSuggestList.style.display = "none";
+  mentionSuggestList.innerHTML = "";
+  chatInput.focus();
+}
+
+async function markCurrentRoomAsRead() {
+  if (!currentChatProjectId) return;
+
+  const nickname = getNickname();
+  if (!nickname) return;
+
+  try {
+    await authFetch(
+      `/api/teamproject/${currentChatProjectId}/chat/read?nickname=${encodeURIComponent(nickname)}`,
+      {
+        method: "PATCH",
+      }
+    );
+  } catch (e) {
+    console.warn("읽음 처리 실패:", e.message);
+  }
+}
+
+async function loadChatRoomsSilently() {
+  try {
+    await loadChatRooms();
+  } catch (e) {
+    console.warn("채팅방 목록 갱신 실패:", e.message);
+  }
+}
+
+async function loadChatRooms() {
+  const nickname = getNickname();
+  if (!nickname) return;
+
+  const myProjects = mergedProjects().filter((p) => {
+    return isOwner(p, nickname) || isMember(p, nickname);
+  });
+
+  const rooms = [];
+
+  for (const project of myProjects) {
+    try {
+      const roomName = encodeURIComponent(project.title || "팀 프로젝트 채팅");
+
+      const summary = await authFetch(
+        `/api/teamproject/${project.id}/chat/summary?roomName=${roomName}&nickname=${encodeURIComponent(nickname)}`,
+        {
+          method: "GET",
+        }
+      );
+
+      rooms.push({
+        ...summary,
+        project,
+      });
+    } catch (e) {
+      rooms.push({
+        projectId: project.id,
+        roomName: project.title || "팀 프로젝트 채팅",
+        lastMessage: "메시지가 없습니다.",
+        lastMessageTime: project.createdAt,
+        unreadCount: 0,
+        mentionCount: 0,
+        project,
+      });
+    }
+  }
+
+  updateTotalUnreadBadge(rooms);
+  renderChatRoomList(rooms);
+}
+
+function updateTotalUnreadBadge(rooms) {
+  if (!totalUnreadBadge) return;
+
+  const totalUnread = rooms.reduce(
+    (sum, room) => sum + Number(room.unreadCount || 0),
+    0
+  );
+
+  if (totalUnread > 0) {
+    totalUnreadBadge.style.display = "inline-flex";
+    totalUnreadBadge.textContent = totalUnread > 99 ? "99+" : String(totalUnread);
+  } else {
+    totalUnreadBadge.style.display = "none";
+    totalUnreadBadge.textContent = "0";
+  }
+}
+
+function renderChatRoomList(rooms) {
+  if (!chatRoomList) return;
+
+  if (!rooms.length) {
+    chatRoomList.innerHTML = `<div class="detail-empty">참여 중인 채팅방이 없습니다.</div>`;
+    return;
+  }
+
+  rooms.sort((a, b) => {
+    const at = new Date(a.lastMessageTime || 0).getTime();
+    const bt = new Date(b.lastMessageTime || 0).getTime();
+    return bt - at;
+  });
+
+  chatRoomList.innerHTML = rooms
+    .map((room) => {
+      const unreadCount = Number(room.unreadCount || 0);
+      const mentionCount = Number(room.mentionCount || 0);
+
+      return `
+        <div class="chat-room-item" data-project-id="${escapeHtml(String(room.projectId))}">
+          <div>
+            <div class="chat-room-title">
+              ${escapeHtml(room.roomName || "팀 프로젝트 채팅")}
+              ${
+                mentionCount > 0
+                  ? `<span class="mention-badge">@${mentionCount}</span>`
+                  : ``
+              }
+            </div>
+            <div class="chat-room-last">
+              ${escapeHtml(room.lastMessage || "메시지가 없습니다.")}
+            </div>
+          </div>
+
+          <div class="chat-room-right">
+            <div class="chat-room-time">
+              ${escapeHtml(formatDate(room.lastMessageTime || ""))}
+            </div>
+            ${
+              unreadCount > 0
+                ? `<span class="chat-room-badge">${unreadCount > 99 ? "99+" : unreadCount}</span>`
+                : ``
+            }
+          </div>
+        </div>
+      `;
+    })
+    .join("");
+}
+
+async function loadChatFiles(projectId) {
+  if (!chatFilesList) return;
+
+  try {
+    const files = await authFetch(`/api/teamproject/${projectId}/chat/files`, {
+      method: "GET",
+    });
+
+    const list = Array.isArray(files) ? files : files.content || [];
+
+    if (!list.length) {
+      chatFilesList.innerHTML = `<div class="detail-empty">업로드된 파일이 없습니다.</div>`;
+      return;
+    }
+
+    chatFilesList.innerHTML = list
+      .map((file) => {
+        const isImage = String(file.fileType || "").toUpperCase() === "IMAGE";
+
+        return `
+          <div class="chat-file-item">
+            ${
+              isImage
+                ? `<img class="chat-file-thumb" src="${escapeHtml(file.fileUrl)}" alt="${escapeHtml(file.originalFileName || "이미지")}" />`
+                : ``
+            }
+            <a href="${escapeHtml(file.fileUrl)}" target="_blank" rel="noopener">
+              ${escapeHtml(file.originalFileName || "첨부파일")}
+            </a>
+            <div class="chat-file-meta">
+              ${escapeHtml(file.uploaderNickname || "-")} · ${escapeHtml(formatDate(file.createdAt || ""))}
+            </div>
+          </div>
+        `;
+      })
+      .join("");
+  } catch (e) {
+    console.warn("파일 모아보기 조회 실패:", e.message);
+    chatFilesList.innerHTML = `<div class="detail-empty">파일 목록을 불러오지 못했습니다.</div>`;
+  }
+}
+
+chatRoomListBtn?.addEventListener("click", async () => {
+  if (!requireLoginOrRedirect()) return;
+
+  chatRoomListPanel.classList.add("open");
+  chatRoomListPanel.setAttribute("aria-hidden", "false");
+
+  await loadChatRooms();
+});
+
+chatRoomListCloseBtn?.addEventListener("click", () => {
+  chatRoomListPanel.classList.remove("open");
+  chatRoomListPanel.setAttribute("aria-hidden", "true");
+});
+
+chatRoomList?.addEventListener("click", (e) => {
+  const item = e.target.closest(".chat-room-item");
+  if (!item) return;
+
+  const projectId = item.dataset.projectId;
+  const project = getProjectById(projectId);
+
+  if (!project) {
+    alert("프로젝트 정보를 찾을 수 없습니다. 프로젝트 목록을 새로고침해주세요.");
+    return;
+  }
+
+  chatRoomListPanel.classList.remove("open");
+  chatRoomListPanel.setAttribute("aria-hidden", "true");
+
+  openChatWindow(project);
+});
+
+chatFilesBtn?.addEventListener("click", async () => {
+  if (!currentChatProjectId) {
+    alert("채팅방을 먼저 열어주세요.");
+    return;
+  }
+
+  chatFilesPanel.classList.add("open");
+  chatFilesPanel.setAttribute("aria-hidden", "false");
+
+  await loadChatFiles(currentChatProjectId);
+});
+
+chatFilesCloseBtn?.addEventListener("click", () => {
+  chatFilesPanel.classList.remove("open");
+  chatFilesPanel.setAttribute("aria-hidden", "true");
+});
+
+chatInput?.addEventListener("input", showMentionSuggestions);
+
+mentionSuggestList?.addEventListener("click", (e) => {
+  const btn = e.target.closest("[data-mention]");
+  if (!btn) return;
+
+  insertMention(btn.dataset.mention);
+});
+
+document.addEventListener("click", (e) => {
+  if (!mentionSuggestList || !chatInput) return;
+
+  if (
+    e.target === chatInput ||
+    mentionSuggestList.contains(e.target)
+  ) {
+    return;
+  }
+
+  mentionSuggestList.style.display = "none";
+});
+
+function sendEnterMessage() {
+  if (!currentChatProjectId) return;
+  if (!stompClient || !stompClient.connected) return;
+
+  const nickname = getNickname();
+
+  const payload = {
+    projectId: currentChatProjectId,
+    senderNickname: nickname,
+    content: `${nickname}님이 채팅방에 입장했습니다.`,
+    messageType: "SYSTEM",
+  };
+
+  stompClient.publish({
+    destination: `/app/teamproject/${currentChatProjectId}/chat/send`,
+    body: JSON.stringify(payload),
+  });
+}
