@@ -1510,22 +1510,26 @@ async function sendChatMessage() {
 }
 
 async function uploadChatFileAndSend() {
-  if (!selectedChatFile) return;
+  if (!selectedChatFile) {
+    alert("선택된 파일이 없습니다.");
+    return;
+  }
 
   if (!currentChatProjectId) {
     alert("채팅방 정보가 없습니다.");
     return;
   }
 
-  const isImage = selectedChatFile.type.startsWith("image/");
-
   if (!stompClient || !stompClient.connected) {
     alert("채팅 서버에 연결되지 않았습니다. WebSocket 연결 상태를 확인해주세요.");
     return;
   }
 
+  const isImage = selectedChatFile.type.startsWith("image/");
+
   const formData = new FormData();
-  formData.append("file", selectedChatFile);
+
+  formData.append("file", selectedChatFile, selectedChatFile.name);
 
   const token = sessionStorage.getItem("token");
   const headers = {};
@@ -1535,6 +1539,17 @@ async function uploadChatFileAndSend() {
   }
 
   try {
+    console.log("===== 파일 업로드 요청 확인 =====");
+    console.log("projectId:", currentChatProjectId);
+    console.log("selectedChatFile:", selectedChatFile);
+    console.log("file name:", selectedChatFile.name);
+    console.log("file size:", selectedChatFile.size);
+    console.log("file type:", selectedChatFile.type);
+
+    for (const pair of formData.entries()) {
+      console.log("FormData:", pair[0], pair[1]);
+    }
+
     const res = await fetch(`/api/teamproject/${currentChatProjectId}/chat/files`, {
       method: "POST",
       headers,
@@ -1542,21 +1557,24 @@ async function uploadChatFileAndSend() {
       credentials: "include",
     });
 
-    const contentType = res.headers.get("content-type") || "";
+    const text = await res.text();
+
+    console.log("파일 업로드 status:", res.status);
+    console.log("파일 업로드 response:", text);
+
     let data = null;
 
-    if (contentType.includes("application/json")) {
-      data = await res.json();
-    } else {
-      const text = await res.text();
-      throw new Error(text || `HTTP ${res.status}`);
+    try {
+      data = text ? JSON.parse(text) : null;
+    } catch {
+      data = null;
     }
 
     if (!res.ok) {
-      throw new Error(data?.message || data?.error || `HTTP ${res.status}`);
+      throw new Error(data?.message || data?.error || text || `HTTP ${res.status}`);
     }
 
-    if (!data.fileUrl) {
+    if (!data?.fileUrl) {
       throw new Error("파일 URL이 응답에 없습니다.");
     }
 
@@ -1576,8 +1594,9 @@ async function uploadChatFileAndSend() {
 
     clearSelectedFile();
 
-    await loadChatRoomsSilently?.();
-
+    if (typeof loadChatRoomsSilently === "function") {
+      await loadChatRoomsSilently();
+    }
   } catch (e) {
     console.error("파일 업로드 실패:", e);
     alert(`파일 업로드 실패: ${e.message}`);
