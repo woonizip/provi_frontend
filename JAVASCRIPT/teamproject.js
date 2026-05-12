@@ -1392,8 +1392,11 @@ function appendSystemMessage(text) {
 }
 
 function appendChatMessage(chat) {
-  if (chat.messageType === "SYSTEM") {
-    appendSystemMessage(chat.content || "");
+  const messageType = String(chat.messageType || "").trim().toUpperCase();
+  const content = String(chat.content || "");
+
+  if (messageType === "SYSTEM" || content.includes("님이 채팅방에 입장했습니다.")) {
+    appendSystemMessage(content);
     return;
   }
 
@@ -2095,7 +2098,7 @@ function sendEnterMessage() {
   if (!currentChatProjectId) return;
   if (!stompClient || !stompClient.connected) return;
 
-  const nickname = getNickname();
+  const nickname = getNickname() || "사용자";
 
   const payload = {
     projectId: currentChatProjectId,
