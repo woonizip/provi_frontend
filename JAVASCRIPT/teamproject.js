@@ -1365,8 +1365,6 @@ function openChatWindow(project) {
   chatWindow.classList.add("open");
   chatWindow.setAttribute("aria-hidden", "false");
 
-  connectChatSocket(project.id);
-
   loadChatHistory(project.id).then(async () => {
     await markCurrentRoomAsRead();
     await loadChatRoomsSilently();
