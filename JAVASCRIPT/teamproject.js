@@ -1589,6 +1589,10 @@ async function uploadChatFileAndSend() {
   // selectedChatFile.type이 비어 있을 경우 기본값 사용
   const contentType = selectedChatFile.type || "application/octet-stream";
   const isImage = contentType.startsWith("image/");
+  const encodedFileName = encodeURIComponent(selectedChatFile.name);
+
+  const contentDisposition =
+    `attachment; filename="${selectedChatFile.name}"; filename*=UTF-8''${encodedFileName}`;
 
   try {
     console.log("===== Presigned URL 요청 =====");
@@ -1667,6 +1671,7 @@ async function uploadChatFileAndSend() {
       method: "PUT",
       headers: {
         "Content-Type": contentType,
+        "Content-Disposition": contentDisposition,
       },
       body: selectedChatFile,
     });
