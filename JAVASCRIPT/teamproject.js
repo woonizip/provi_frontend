@@ -1343,6 +1343,12 @@ let selectedChatFile = null;
 let stompClient = null;
 let chatSubscription = null;
 
+// 같은 브라우저 세션에서 같은 채팅방 입장 메시지를 중복 전송하지 않기 위한 기록
+const enteredChatRoomKeys = new Set();
+
+// 화면에 같은 시스템 메시지가 반복 표시되는 것 방지
+const renderedSystemMessages = new Set();
+
 function openChatWindow(project) {
   const nickname = getNickname();
 
@@ -1369,7 +1375,8 @@ function openChatWindow(project) {
     await markCurrentRoomAsRead();
     await loadChatRoomsSilently();
 
-    connectChatSocket(project.id, true);
+    const sendEnter = shouldSendEnterMessage(project.id);
+    connectChatSocket(project.id, sendEnter);
   });
 }
 
@@ -1384,9 +1391,23 @@ function closeChatWindow() {
 }
 
 function appendSystemMessage(text) {
+  const message = String(text || "").trim();
+  if (!message) return;
+
+  // 같은 채팅방에서 같은 입장 메시지가 여러 번 저장되어 있어도 화면에는 한 번만 표시
+  const key = `${currentChatProjectId || "unknown"}::${message}`;
+
+  if (message.includes("님이 채팅방에 입장했습니다.")) {
+    if (renderedSystemMessages.has(key)) {
+      return;
+    }
+
+    renderedSystemMessages.add(key);
+  }
+
   const div = document.createElement("div");
   div.className = "chat-message-system";
-  div.textContent = text;
+  div.textContent = message;
   msgArea.appendChild(div);
   scrollChatBottom();
 }
@@ -2138,6 +2159,18 @@ document.addEventListener("click", (e) => {
 
   mentionSuggestList.style.display = "none";
 });
+
+function shouldSendEnterMessage(projectId) {
+  const nickname = getNickname() || "사용자";
+  const key = `${projectId}::${nickname}`;
+
+  if (enteredChatRoomKeys.has(key)) {
+    return false;
+  }
+
+  enteredChatRoomKeys.add(key);
+  return true;
+}
 
 function sendEnterMessage() {
   if (!currentChatProjectId) return;
