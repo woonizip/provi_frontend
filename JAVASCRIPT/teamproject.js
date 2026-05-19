@@ -1798,7 +1798,7 @@ async function loadChatHistory(projectId) {
     const res = await fetch(
       `/api/teamproject/${projectId}/chat/messages?nickname=${nickname}&participantCount=0`,
       {
-        credentials: "include"
+        credentials: "include",
       }
     );
     if (!res.ok) return;
