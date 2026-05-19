@@ -1461,6 +1461,12 @@ function appendChatMessage(chat) {
       </button>
       <span class="chat-time">${time}</span>
     `;
+  } else {
+    contentHtml = `
+      <span class="chat-sender">${sender}</span>
+      ${renderMentionText(chat.content || "")}
+      <span class="chat-time">${time}</span>
+    `;
   }
 
   const unreadCount = Number(chat.unreadCount || 0);
@@ -1589,10 +1595,6 @@ async function uploadChatFileAndSend() {
   // selectedChatFile.type이 비어 있을 경우 기본값 사용
   const contentType = selectedChatFile.type || "application/octet-stream";
   const isImage = contentType.startsWith("image/");
-  const encodedFileName = encodeURIComponent(selectedChatFile.name);
-
-  const contentDisposition =
-    `attachment; filename="${selectedChatFile.name}"; filename*=UTF-8''${encodedFileName}`;
 
   try {
     console.log("===== Presigned URL 요청 =====");
@@ -1618,38 +1620,17 @@ async function uploadChatFileAndSend() {
 
     console.log("presignRes:", presignRes);
 
-    /*
-      권장 백엔드 응답 형태:
-      {
-        uploadUrl: "S3에 PUT할 presigned URL",
-        fileUrl: "DB와 채팅 메시지에 저장할 실제 파일 URL",
-        originalFileName: "사용자가 올린 원본 파일명",
-        contentType: "image/png"
-      }
-
-      임시 백엔드 응답 형태도 대응:
-      {
-        fileUrl: "S3 presigned URL",
-        originalFileName: "DB에 저장할 실제 파일 URL"
-      }
-    */
-
     let uploadUrl = "";
     let fileUrl = "";
     let originalFileName = selectedChatFile.name;
+    let uploadContentType = contentType;
+    let contentDisposition = "";
 
-    // 권장 응답 형태
-    if (presignRes.uploadUrl) {
-      uploadUrl = presignRes.uploadUrl;
-      fileUrl = presignRes.fileUrl;
-      originalFileName = presignRes.originalFileName || selectedChatFile.name;
-    } 
-    // 현재 임시 응답 형태 대응
-    else {
-      uploadUrl = presignRes.fileUrl;
-      fileUrl = presignRes.originalFileName;
-      originalFileName = selectedChatFile.name;
-    }
+    // 백엔드 ChatFileResponse 기준
+    uploadUrl = presignRes.fileUrl;
+    fileUrl = presignRes.originalFileName;
+    uploadContentType = presignRes.fileType || contentType;
+    contentDisposition = presignRes.disposition || "";
 
     if (!uploadUrl) {
       throw new Error("S3 업로드용 presigned URL이 응답에 없습니다.");
@@ -1662,17 +1643,23 @@ async function uploadChatFileAndSend() {
     console.log("uploadUrl:", uploadUrl);
     console.log("db fileUrl:", fileUrl);
     console.log("originalFileName:", originalFileName);
-    console.log("upload contentType:", contentType);
+    console.log("upload contentType:", uploadContentType);
+    console.log("contentDisposition:", contentDisposition);
 
-    // 2. S3 presigned URL로 직접 업로드
-    // 중요: FormData 사용 금지
+    const s3Headers = {
+      "Content-Type": uploadContentType,
+    };
+
+    if (contentDisposition) {
+      s3Headers["Content-Disposition"] = contentDisposition;
+    }
+
+    // S3 presigned URL로 직접 업로드
+    // FormData 사용 금지
     // File 객체를 그대로 body에 넣어야 함
     const s3Res = await fetch(uploadUrl, {
       method: "PUT",
-      headers: {
-        "Content-Type": contentType,
-        "Content-Disposition": contentDisposition,
-      },
+      headers: s3Headers,
       body: selectedChatFile,
     });
 
@@ -1692,7 +1679,7 @@ async function uploadChatFileAndSend() {
       messageType: isImage ? "IMAGE" : "FILE",
       fileUrl: fileUrl,
       originalFileName: originalFileName,
-      contentType: contentType,
+      contentType: uploadContentType,
     };
 
     console.log("파일 메시지 전송 payload:", payload);
