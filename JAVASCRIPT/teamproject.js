@@ -1526,67 +1526,112 @@ async function uploadChatFileAndSend() {
     return;
   }
 
-  const isImage = selectedChatFile.type.startsWith("image/");
-
-  const formData = new FormData();
-
-  formData.append("file", selectedChatFile, selectedChatFile.name);
-
-  const token = sessionStorage.getItem("token");
-  const headers = {};
-
-  if (token) {
-    headers["Authorization"] = `Bearer ${token}`;
-  }
+  // S3에 저장될 Content-Type
+  // selectedChatFile.type이 비어 있을 경우 기본값 사용
+  const contentType = selectedChatFile.type || "application/octet-stream";
+  const isImage = contentType.startsWith("image/");
 
   try {
-    console.log("===== 파일 업로드 요청 확인 =====");
+    console.log("===== Presigned URL 요청 =====");
     console.log("projectId:", currentChatProjectId);
-    console.log("selectedChatFile:", selectedChatFile);
-    console.log("file name:", selectedChatFile.name);
-    console.log("file size:", selectedChatFile.size);
-    console.log("file type:", selectedChatFile.type);
+    console.log("fileName:", selectedChatFile.name);
+    console.log("contentType:", contentType);
+    console.log("fileSize:", selectedChatFile.size);
 
-    for (const pair of formData.entries()) {
-      console.log("FormData:", pair[0], pair[1]);
+    // 1. 백엔드에는 파일 자체를 보내지 않고, 파일명 + 파일 타입만 보냄
+    const presignRes = await authFetch(
+      `/api/teamproject/${currentChatProjectId}/chat/files`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          fileName: selectedChatFile.name,
+          contentType: contentType,
+        }),
+      }
+    );
+
+    console.log("presignRes:", presignRes);
+
+    /*
+      권장 백엔드 응답 형태:
+      {
+        uploadUrl: "S3에 PUT할 presigned URL",
+        fileUrl: "DB와 채팅 메시지에 저장할 실제 파일 URL",
+        originalFileName: "사용자가 올린 원본 파일명",
+        contentType: "image/png"
+      }
+
+      임시 백엔드 응답 형태도 대응:
+      {
+        fileUrl: "S3 presigned URL",
+        originalFileName: "DB에 저장할 실제 파일 URL"
+      }
+    */
+
+    let uploadUrl = "";
+    let fileUrl = "";
+    let originalFileName = selectedChatFile.name;
+
+    // 권장 응답 형태
+    if (presignRes.uploadUrl) {
+      uploadUrl = presignRes.uploadUrl;
+      fileUrl = presignRes.fileUrl;
+      originalFileName = presignRes.originalFileName || selectedChatFile.name;
+    } 
+    // 현재 임시 응답 형태 대응
+    else {
+      uploadUrl = presignRes.fileUrl;
+      fileUrl = presignRes.originalFileName;
+      originalFileName = selectedChatFile.name;
     }
 
-    const res = await fetch(`/api/teamproject/${currentChatProjectId}/chat/files`, {
-      method: "POST",
-      headers,
-      body: formData,
-      credentials: "include",
+    if (!uploadUrl) {
+      throw new Error("S3 업로드용 presigned URL이 응답에 없습니다.");
+    }
+
+    if (!fileUrl) {
+      throw new Error("DB에 저장할 fileUrl이 응답에 없습니다.");
+    }
+
+    console.log("uploadUrl:", uploadUrl);
+    console.log("db fileUrl:", fileUrl);
+    console.log("originalFileName:", originalFileName);
+    console.log("upload contentType:", contentType);
+
+    // 2. S3 presigned URL로 직접 업로드
+    // 중요: FormData 사용 금지
+    // File 객체를 그대로 body에 넣어야 함
+    const s3Res = await fetch(uploadUrl, {
+      method: "PUT",
+      headers: {
+        "Content-Type": contentType,
+      },
+      body: selectedChatFile,
     });
 
-    const text = await res.text();
-
-    console.log("파일 업로드 status:", res.status);
-    console.log("파일 업로드 response:", text);
-
-    let data = null;
-
-    try {
-      data = text ? JSON.parse(text) : null;
-    } catch {
-      data = null;
+    if (!s3Res.ok) {
+      const errorText = await s3Res.text();
+      throw new Error(`S3 업로드 실패: ${s3Res.status} ${errorText}`);
     }
 
-    if (!res.ok) {
-      throw new Error(data?.message || data?.error || text || `HTTP ${res.status}`);
-    }
+    console.log("S3 업로드 성공");
 
-    if (!data?.fileUrl) {
-      throw new Error("파일 URL이 응답에 없습니다.");
-    }
-
+    // 3. S3 업로드 성공 후 채팅 메시지 전송
+    // 이 값들이 백엔드에서 채팅 메시지 DB에 저장될 내용
     const payload = {
       projectId: currentChatProjectId,
       senderNickname: getNickname(),
       content: "",
       messageType: isImage ? "IMAGE" : "FILE",
-      fileUrl: data.fileUrl,
-      originalFileName: data.originalFileName || selectedChatFile.name,
+      fileUrl: fileUrl,
+      originalFileName: originalFileName,
+      contentType: contentType,
     };
+
+    console.log("파일 메시지 전송 payload:", payload);
 
     stompClient.publish({
       destination: `/app/teamproject/${currentChatProjectId}/chat/send`,
