@@ -1432,7 +1432,7 @@ function appendChatMessage(chat) {
 
   let contentHtml = "";
 
-  if (chat.messageType === "IMAGE") {
+  if (messageType === "IMAGE") {
     const fileUrl = escapeHtml(chat.fileUrl || "");
     const fileName = escapeHtml(chat.originalFileName || "이미지");
     contentHtml = `
@@ -1442,18 +1442,23 @@ function appendChatMessage(chat) {
       </a>
       <span class="chat-time">${time}</span>
     `;
-  } else if (chat.messageType === "FILE") {
-    const fileUrl = escapeHtml(chat.fileUrl || "#");
-    const fileName = escapeHtml(chat.originalFileName || "첨부파일");
+  } else if (messageType === "FILE") {
+    const rawFileUrl = chat.fileUrl || "";
+    const rawFileName = chat.originalFileName || "첨부파일";
+
+    const fileUrl = escapeHtml(rawFileUrl);
+    const fileName = escapeHtml(rawFileName);
+
     contentHtml = `
       <span class="chat-sender">${sender}</span>
-      <a class="chat-file-link" href="${fileUrl}" target="_blank" rel="noopener">${fileName}</a>
-      <span class="chat-time">${time}</span>
-    `;
-  } else {
-    contentHtml = `
-      <span class="chat-sender">${sender}</span>
-      ${renderMentionText(chat.content || "")}
+      <button
+        type="button"
+        class="chat-file-download-btn"
+        data-file-url="${fileUrl}"
+        data-file-name="${fileName}"
+      >
+        📎 ${fileName} 다운로드
+      </button>
       <span class="chat-time">${time}</span>
     `;
   }
@@ -1529,6 +1534,39 @@ async function sendChatMessage() {
   }
 
   chatInput.value = "";
+}
+
+async function downloadChatFile(fileUrl, fileName = "download") {
+  if (!fileUrl) {
+    alert("파일 주소가 없습니다.");
+    return;
+  }
+
+  try {
+    const res = await fetch(fileUrl, {
+      method: "GET",
+    });
+
+    if (!res.ok) {
+      throw new Error(`다운로드 실패: ${res.status}`);
+    }
+
+    const blob = await res.blob();
+    const blobUrl = window.URL.createObjectURL(blob);
+
+    const a = document.createElement("a");
+    a.href = blobUrl;
+    a.download = fileName || "download";
+    document.body.appendChild(a);
+    a.click();
+
+    a.remove();
+    window.URL.revokeObjectURL(blobUrl);
+  } catch (e) {
+    console.error("파일 다운로드 실패:", e);
+
+    window.open(fileUrl, "_blank", "noopener,noreferrer");
+  }
 }
 
 async function uploadChatFileAndSend() {
@@ -1816,6 +1854,16 @@ chatFile?.addEventListener("change", (e) => {
   document.getElementById("removeSelectedFile")?.addEventListener("click", clearSelectedFile);
 });
 
+msgArea?.addEventListener("click", async (e) => {
+  const btn = e.target.closest(".chat-file-download-btn");
+  if (!btn) return;
+
+  const fileUrl = btn.dataset.fileUrl;
+  const fileName = btn.dataset.fileName || "download";
+
+  await downloadChatFile(fileUrl, fileName);
+});
+
 const chatRoomListBtn = document.getElementById("chatRoomListBtn");
 const totalUnreadBadge = document.getElementById("totalUnreadBadge");
 const chatRoomListPanel = document.getElementById("chatRoomListPanel");
@@ -2073,9 +2121,14 @@ async function loadChatFiles(projectId) {
                 ? `<img class="chat-file-thumb" src="${escapeHtml(file.fileUrl)}" alt="${escapeHtml(file.originalFileName || "이미지")}" />`
                 : ``
             }
-            <a href="${escapeHtml(file.fileUrl)}" target="_blank" rel="noopener">
-              ${escapeHtml(file.originalFileName || "첨부파일")}
-            </a>
+            <button
+              type="button"
+              class="chat-file-download-btn"
+              data-file-url="${escapeHtml(file.fileUrl)}"
+              data-file-name="${escapeHtml(file.originalFileName || "첨부파일")}"
+            >
+              📎 ${escapeHtml(file.originalFileName || "첨부파일")} 다운로드
+            </button>
             <div class="chat-file-meta">
               ${escapeHtml(file.uploaderNickname || "-")} · ${escapeHtml(formatDate(file.createdAt || ""))}
             </div>
@@ -2139,6 +2192,16 @@ chatFilesCloseBtn?.addEventListener("click", () => {
 });
 
 chatInput?.addEventListener("input", showMentionSuggestions);
+
+chatFilesList?.addEventListener("click", async (e) => {
+  const btn = e.target.closest(".chat-file-download-btn");
+  if (!btn) return;
+
+  const fileUrl = btn.dataset.fileUrl;
+  const fileName = btn.dataset.fileName || "download";
+
+  await downloadChatFile(fileUrl, fileName);
+});
 
 mentionSuggestList?.addEventListener("click", (e) => {
   const btn = e.target.closest("[data-mention]");

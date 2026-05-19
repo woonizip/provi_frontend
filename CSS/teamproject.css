@@ -1878,3 +1878,24 @@ body {
   outline: 2px solid rgba(139, 92, 246, 0.55);
   box-shadow: 0 0 0 4px rgba(139, 92, 246, 0.12);
 }
+
+.chat-file-download-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  max-width: 100%;
+  padding: 8px 10px;
+  border: 1px solid rgba(191, 219, 254, 0.28);
+  border-radius: 12px;
+  background: rgba(59, 130, 246, 0.14);
+  color: #bfdbfe;
+  font-size: 13px;
+  font-weight: 800;
+  cursor: pointer;
+  text-align: left;
+  word-break: break-all;
+}
+
+.chat-file-download-btn:hover {
+  background: rgba(59, 130, 246, 0.24);
+}
