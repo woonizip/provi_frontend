@@ -1627,10 +1627,10 @@ async function uploadChatFileAndSend() {
     let contentDisposition = "";
 
     // 백엔드 ChatFileResponse 기준
-    uploadUrl = presignRes.fileUrl;
-    fileUrl = presignRes.originalFileName;
-    uploadContentType = presignRes.fileType || contentType;
-    contentDisposition = presignRes.disposition || "";
+    uploadUrl = presignRes.uploadUrl;
+    fileUrl = presignRes.fileUrl;
+    uploadContentType = presignRes.originalFileName || selectedChatFile.name;
+    contentDisposition = presignRes.fileType || contentType;
 
     if (!uploadUrl) {
       throw new Error("S3 업로드용 presigned URL이 응답에 없습니다.");
