@@ -178,7 +178,8 @@ function formatDate(dateString) {
 }
 
 function getCategoryLabel(categoryCode) {
-  return COMMUNITY_CATEGORY_LABEL_MAP[categoryCode] || categoryCode || "";
+  const code = normalizeCommunityCategory(categoryCode);
+  return COMMUNITY_CATEGORY_LABEL_MAP[code] || categoryCode || "";
 }
 
 function escapeHtml(value) {
@@ -261,23 +262,16 @@ async function fetchCommunityPostList() {
     keyword: searchKeyword,
   });
 
-  const res = await fetch(`${API.COMMUNITY_POSTS}?${params.toString()}`, {
+  const data = await authFetch(`${API.COMMUNITY_POSTS}?${params.toString()}`, {
     method: "GET",
   });
-
-  if (!res.ok) {
-    throw new Error(`게시글 목록 조회 실패: HTTP ${res.status}`);
-  }
-
-  const data = await res.json();
 
   let rawList = Array.isArray(data.content) ? data.content : [];
 
   // 카테고리 프론트 보정
   if (selectedCategoryCode !== "ALL") {
     rawList = rawList.filter((post) => {
-      const code = String(post.category || "").trim().toUpperCase();
-      return code === selectedCategoryCode;
+      return getPostCategoryCode(post) === selectedCategoryCode;
     });
   }
 
@@ -344,15 +338,10 @@ async function fetchHotPostList() {
     keyword: "",
   });
 
-  const res = await fetch(`${API.COMMUNITY_POSTS}?${params.toString()}`, {
+  const data = await authFetch(`${API.COMMUNITY_POSTS}?${params.toString()}`, {
     method: "GET",
   });
-
-  if (!res.ok) {
-    throw new Error(`인기 게시글 조회 실패: HTTP ${res.status}`);
-  }
-
-  const data = await res.json();
+  
   const rawList = data.content || [];
 
   hotPostList = sortPostsForHot(rawList).slice(0, 3);
@@ -360,15 +349,10 @@ async function fetchHotPostList() {
 
 // 게시글 상세 조회
 async function fetchCommunityPostDetail(postId) {
-  const res = await fetch(API.COMMUNITY_POST_DETAIL(postId), {
+  const data = await authFetch(API.COMMUNITY_POST_DETAIL(postId), {
     method: "GET",
   });
 
-  if (!res.ok) {
-    throw new Error(`게시글 상세 조회 실패: HTTP ${res.status}`);
-  }
-
-  const data = await res.json();
   selectedPostDetail = data;
 }
 
@@ -1018,6 +1002,30 @@ async function handleDeleteComment(commentId) {
     console.error(error);
     alert("댓글 삭제에 실패했습니다.");
   }
+}
+
+function normalizeCommunityCategory(value) {
+  const raw = String(value || "").trim();
+
+  if (!raw) return "";
+
+  if (COMMUNITY_CATEGORY_MAP[raw]) {
+    return COMMUNITY_CATEGORY_MAP[raw];
+  }
+
+  const upper = raw.toUpperCase();
+
+  if (COMMUNITY_CATEGORY_LABEL_MAP[upper]) {
+    return upper;
+  }
+
+  return raw;
+}
+
+function getPostCategoryCode(post) {
+  return normalizeCommunityCategory(
+    post.category ?? post.categoryCode ?? post.categoryLabel ?? ""
+  );
 }
 
 // 카테고리 클릭
