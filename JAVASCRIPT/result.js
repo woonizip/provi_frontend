@@ -236,6 +236,34 @@ document.addEventListener("DOMContentLoaded", async () => {
     // 같은 조건으로 다시 분석 → 단순 새로고침
     window.location.reload();
   });
+  
+  const saveAndGoMypage = document.getElementById("saveAndGoMypage");
+
+  saveAndGoMypage?.addEventListener("click", () => {
+    try {
+      // 1. 현재 화면에 노출 중인 최종 AI 추천 결과 객체 수집
+      const currentResult = sessionStorage.getItem("quizResult");
+      const currentPayload = sessionStorage.getItem("quizResultPayload");
+
+      if (currentResult) {
+        // 2. 마이페이지가 로컬/세션 어디서든 읽을 수 있도록 양방향 스토리지 동기화 락킹
+        localStorage.setItem("quizResult", currentResult);
+        sessionStorage.setItem("quizResult", currentResult);
+      }
+      if (currentPayload) {
+        localStorage.setItem("quizResultPayload", currentPayload);
+        sessionStorage.setItem("quizResultPayload", currentPayload);
+      }
+
+      alert("🎉 추천 결과와 5단계 로드맵이 내 마이페이지에 안전하게 보관되었습니다!");
+      
+      // 3. 마이페이지 대시보드로 안전하게 라우팅 이동
+      window.location.href = "mypage.html";
+    } catch (e) {
+      console.error("마이페이지 데이터 보관 중 오작동 발생:", e);
+      window.location.href = "mypage.html";
+    }
+  });
 });
 
 document.addEventListener("DOMContentLoaded", function () {

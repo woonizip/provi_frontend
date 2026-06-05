@@ -16,19 +16,46 @@
   --grid-item-bg: #f8fafc;
 }
 
-.home_content {
-  padding: 40px 20px;
+body {
+  background-color: var(--bg-core);
+  color: var(--text-core);
+  font-family: 'Pretendard', system-ui, sans-serif;
+  margin: 0;
+  padding: 0;
   min-height: 100vh;
 }
 
+.home_content {
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  /* 부모 단에서 내부 자식 박스를 수평 정중앙으로 배치 */
+  padding: 40px 24px;
+  min-height: 100vh;
+  box-sizing: border-box;
+
+  /* 사이드바 기본 너비 제외 자동 리사이징 */
+  margin-left: 78px;
+  width: calc(100% - 78px);
+  transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+
+.sidebar.active~.home_content,
+.sidebar.open~.home_content {
+  margin-left: 240px;
+  width: calc(100% - 240px);
+}
+
 .result-wrap {
-  width: min(1100px, calc(100% - 40px));
+  width: 100%;
+  max-width: 1100px;
+  margin: 0 auto !important;
   background: var(--panel-bg);
   border: 1px solid var(--panel-border);
   border-radius: 24px;
   padding: 40px;
   box-shadow: 0 30px 60px rgba(0, 0, 0, 0.2);
-  backdrop-filter: blur(16px);
+  box-sizing: border-box;
 }
 
 .result-role-row {
@@ -65,6 +92,14 @@
   line-height: 1.5;
 }
 
+.section-title {
+  font-size: 1.3rem;
+  font-weight: 800;
+  margin-top: 0;
+  margin-bottom: 16px;
+  letter-spacing: -0.01em;
+}
+
 .stack-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
@@ -96,12 +131,19 @@
   color: var(--text-muted);
 }
 
-/* 하단 영역 정대칭 가공 락킹 */
+/* 하단 스플릿 영역 정대칭 가공 락킹 */
 .result-bottom-row {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 24px;
   margin-bottom: 32px;
+}
+
+@media (max-width: 900px) {
+  .result-bottom-row {
+    grid-template-columns: 1fr;
+    /* 모바일이나 태블릿 해상도 가드 대응 */
+  }
 }
 
 .roadmap-box,
@@ -117,6 +159,8 @@
   display: flex;
   flex-direction: column;
   gap: 16px;
+  padding: 0;
+  margin: 0;
 }
 
 .roadmap-item {
@@ -148,6 +192,8 @@
   flex-direction: column;
   gap: 16px;
   list-style: none;
+  padding: 0;
+  margin: 0;
 }
 
 .reason-item-title {
@@ -168,6 +214,7 @@
   align-items: center;
   border-top: 1px solid var(--panel-border);
   padding-top: 24px;
+  margin-top: 16px;
 }
 
 .result-link-left {
@@ -176,6 +223,7 @@
   color: var(--text-muted);
   cursor: pointer;
   text-decoration: underline;
+  font-size: 0.9rem;
 }
 
 .result-footer-buttons {
@@ -189,6 +237,12 @@
   font-weight: 700;
   cursor: pointer;
   border: none;
+  transition: all 0.2s ease;
+}
+
+.result-btn:hover {
+  transform: translateY(-1px);
+  filter: brightness(1.08);
 }
 
 .result-btn.primary {
