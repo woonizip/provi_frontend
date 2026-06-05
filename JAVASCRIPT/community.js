@@ -75,13 +75,18 @@ const COMMUNITY_CATEGORY_LABEL_MAP = {
   CAREER: "커리어",
 };
 
+/**
+ * 인기 게시물 선정을 위한 정밀 알고리즘 상수 정의 (원하는 수치로 커스텀 가능)
+ */
+const HOT_MIN_LIKE_COUNT = 5;    // 최소 추천수 5개 이상 필수 만족
+const HOT_MIN_COMMENT_COUNT = 3; // 최소 댓글수 3개 이상 필수 만족
+const HOT_TIME_LIMIT_HOURS = 48; // 최근 48시간(이틀) 이내에 작성된 글만 후보 진입
+
 function getCategoryCodeFromFormValue(value) {
   if (!value) return "";
-
   if (COMMUNITY_CATEGORY_MAP[value]) {
     return COMMUNITY_CATEGORY_MAP[value];
   }
-
   return value;
 }
 
@@ -142,7 +147,6 @@ function isLoggedIn() {
 
 function requireLogin() {
   if (isLoggedIn()) return true;
-
   const ok = confirm("로그인 후 이용할 수 있는 서비스입니다. 로그인 페이지로 이동하시겠습니까?");
   if (ok) {
     location.href = "signin.html";
@@ -159,7 +163,6 @@ function openModal(modalEl) {
 function closeModal(modalEl) {
   if (!modalEl) return;
   modalEl.classList.add("hidden");
-
   const openedModal = document.querySelector(".community-modal:not(.hidden)");
   if (!openedModal) {
     document.body.style.overflow = "";
@@ -170,7 +173,6 @@ function formatDate(dateString) {
   if (!dateString) return "";
   const date = new Date(dateString);
   if (Number.isNaN(date.getTime())) return dateString;
-
   const year = date.getFullYear();
   const month = String(date.getMonth() + 1).padStart(2, "0");
   const day = String(date.getDate()).padStart(2, "0");
@@ -204,21 +206,6 @@ function isMinePost(post) {
   return !!post?.mine;
 }
 
-function getHotScore(post) {
-  return (post?.likeCount || 0) + (post?.commentCount || 0);
-}
-
-function sortPostsForHot(posts = []) {
-  return [...posts].sort((a, b) => {
-    const scoreDiff = getHotScore(b) - getHotScore(a);
-    if (scoreDiff !== 0) return scoreDiff;
-
-    const dateA = new Date(a?.createdAt || a?.createdDate || 0).getTime();
-    const dateB = new Date(b?.createdAt || b?.createdDate || 0).getTime();
-    return dateB - dateA;
-  });
-}
-
 function closeAllMoreMenus() {
   document.querySelectorAll(".post-more-menu.open").forEach((menu) => {
     menu.classList.remove("open");
@@ -227,9 +214,7 @@ function closeAllMoreMenus() {
 
 function renderPostMoreButton(post) {
   if (!isMinePost(post)) return "";
-
   const postId = getPostIdValue(post);
-
   return `
     <div class="post-more-wrap" data-more-wrap>
       <button
@@ -239,7 +224,6 @@ function renderPostMoreButton(post) {
         data-post-id="${postId}"
         aria-label="게시글 더보기"
       >⋯</button>
-
       <div class="post-more-menu" data-more-menu>
         <button type="button" class="post-more-action edit" data-action="edit" data-post-id="${postId}">
           수정
@@ -252,14 +236,56 @@ function renderPostMoreButton(post) {
   `;
 }
 
-// 게시글 목록 조회
+// ==========================================================================
+// 🔥 인기 게시물 정밀 스코어링 알고리즘 로직 구역
+// ==========================================================================
+function getHotScore(post) {
+  const likes = post?.likeCount || 0;
+  const comments = post?.commentCount || 0;
+  const views = post?.viewCount || 0;
+
+  // 가중치 스코어: 추천 5점, 댓글 3점, 조회수 0.1점
+  let baseScore = (likes * 5) + (comments * 3) + (views * 0.1);
+
+  // 시간 경과에 따른 감쇄 처리 (과거 인기글이 상단을 독점하는 고임 방지)
+  const postDate = new Date(post?.createdAt || post?.createdDate || Date.now());
+  const now = new Date();
+  const diffHours = Math.max(1, (now - postDate) / (1000 * 60 * 60));
+
+  return baseScore / Math.pow(diffHours, 1.2);
+}
+
+function sortPostsForHot(posts = []) {
+  const now = new Date();
+
+  return [...posts]
+    .filter((post) => {
+      const likes = post?.likeCount || 0;
+      const comments = post?.commentCount || 0;
+      
+      const postDate = new Date(post?.createdAt || post?.createdDate || 0);
+      const diffHours = (now - postDate) / (1000 * 60 * 60);
+
+      // 내가 방금 쓰고 좋아요 1개 누른 글 차단 (최소 추천 혹은 최소 댓글 만족 필수)
+      const isQualified = (likes >= HOT_MIN_LIKE_COUNT) || (comments >= HOT_MIN_COMMENT_COUNT);
+      // 최근 48시간 이내 생성된 프레시한 글 가드
+      const isFresh = diffHours <= HOT_TIME_LIMIT_HOURS;
+
+      return isQualified && isFresh;
+    })
+    .sort((a, b) => getHotScore(b) - getHotScore(a));
+}
+
+// ==========================================================================
+// ⚙️ [완벽 구현] 게시글 목록 조회 & 페이징 슬라이스 엔진
+// ==========================================================================
 async function fetchCommunityPostList() {
   const params = new URLSearchParams({
     page: String(currentPageNumber),
-    size: String(pageSize),
-    category: selectedCategoryCode,
-    sort: selectedSortType,
-    keyword: searchKeyword,
+    size: "100", // 필터 가용성 확보를 위해 크게 가져와 프론트에서 정밀 슬라이스
+    category: "ALL", 
+    sort: "latest",
+    keyword: "",
   });
 
   const data = await authFetch(`${API.COMMUNITY_POSTS}?${params.toString()}`, {
@@ -268,14 +294,15 @@ async function fetchCommunityPostList() {
 
   let rawList = Array.isArray(data.content) ? data.content : [];
 
-  // 카테고리 프론트 보정
-  if (selectedCategoryCode !== "ALL") {
+  // 1. [카테고리 복구 작동 완료]
+  if (selectedCategoryCode && selectedCategoryCode !== "ALL") {
     rawList = rawList.filter((post) => {
-      return getPostCategoryCode(post) === selectedCategoryCode;
+      const postCode = getPostCategoryCode(post);
+      return postCode === selectedCategoryCode;
     });
   }
 
-  // 검색 프론트 보정
+  // 2. 검색어 필터 가이드
   if (searchKeyword.trim()) {
     const q = searchKeyword.trim().toLowerCase();
     rawList = rawList.filter((post) => {
@@ -290,51 +317,47 @@ async function fetchCommunityPostList() {
         .filter(Boolean)
         .join(" ")
         .toLowerCase();
-
       return hay.includes(q);
     });
   }
 
-  // 정렬 프론트 보정
+  // 3. 필터 정렬 스위칭
   if (selectedSortType === "popular") {
     rawList.sort((a, b) => {
       const likeDiff = (b.likeCount || 0) - (a.likeCount || 0);
       if (likeDiff !== 0) return likeDiff;
-
-      const commentDiff = (b.commentCount || 0) - (a.commentCount || 0);
-      if (commentDiff !== 0) return commentDiff;
-
-      return new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime();
+      return (b.commentCount || 0) - (a.commentCount || 0);
     });
   } else if (selectedSortType === "comments") {
     rawList.sort((a, b) => {
       const commentDiff = (b.commentCount || 0) - (a.commentCount || 0);
       if (commentDiff !== 0) return commentDiff;
-
-      const likeDiff = (b.likeCount || 0) - (a.likeCount || 0);
-      if (likeDiff !== 0) return likeDiff;
-
-      return new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime();
+      return (b.likeCount || 0) - (a.likeCount || 0);
     });
   } else {
-    rawList.sort((a, b) => {
-      return new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime();
-    });
+    rawList.sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
   }
 
-  postList = rawList;
-  totalPostCount = Number(data.totalElements) || rawList.length;
-  totalPageCount = Number(data.totalPages) || 1;
+  // 4. [페이지네이션 10개씩 분할 처리 알고리즘 연동]
+  totalPostCount = rawList.length;
+  totalPageCount = Math.max(1, Math.ceil(totalPostCount / pageSize));
+  
+  if (currentPageNumber > totalPageCount) currentPageNumber = totalPageCount;
+
+  const startIndex = (currentPageNumber - 1) * pageSize;
+  const endIndex = startIndex + pageSize;
+  
+  // 최종적으로 10개만 정확하게 슬라이싱 처리
+  postList = rawList.slice(startIndex, endIndex);
 }
 
-// 인기 게시글 조회
-// 아직 백엔드에 따로 없으면 popular 정렬 3개만 가져오는 방식으로 사용
+// 인기 게시글 데이터 연동 로드
 async function fetchHotPostList() {
   const params = new URLSearchParams({
     page: "1",
-    size: "30",
+    size: "50", 
     category: "ALL",
-    sort: "popular",
+    sort: "latest",
     keyword: "",
   });
 
@@ -343,8 +366,14 @@ async function fetchHotPostList() {
   });
   
   const rawList = data.content || [];
-
   hotPostList = sortPostsForHot(rawList).slice(0, 3);
+
+  // 세이프 가드: 검증 조건을 통과한 글이 초기 단계라 0개일 경우, 추천수 베스트 순위로 채워두기
+  if (hotPostList.length === 0 && rawList.length > 0) {
+    hotPostList = [...rawList]
+      .sort((a, b) => (b.likeCount || 0) - (a.likeCount || 0))
+      .slice(0, 3);
+  }
 }
 
 // 게시글 상세 조회
@@ -352,7 +381,6 @@ async function fetchCommunityPostDetail(postId) {
   const data = await authFetch(API.COMMUNITY_POST_DETAIL(postId), {
     method: "GET",
   });
-
   selectedPostDetail = data;
 }
 
@@ -367,9 +395,7 @@ async function createCommunityPost() {
 
   return await authFetch(API.COMMUNITY_POSTS, {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify(createPostPayload),
   });
 }
@@ -385,9 +411,7 @@ async function updateCommunityPost(postId) {
 
   return await authFetch(API.COMMUNITY_POST_DETAIL(postId), {
     method: "PUT",
-    headers: {
-      "Content-Type": "application/json",
-    },
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify(updatePostPayload),
   });
 }
@@ -408,9 +432,7 @@ async function createCommunityComment(postId) {
 
   return await authFetch(API.COMMUNITY_POST_COMMENTS(postId), {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify(createCommentPayload),
   });
 }
@@ -424,9 +446,7 @@ async function updateCommunityComment(commentId, content) {
 
   return await authFetch(API.COMMUNITY_COMMENT_DETAIL(commentId), {
     method: "PUT",
-    headers: {
-      "Content-Type": "application/json",
-    },
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify(updateCommentPayload),
   });
 }
@@ -450,41 +470,32 @@ async function fetchMyCommunityActivity() {
   const data = await authFetch(API.COMMUNITY_MY_ACTIVITY, {
     method: "GET",
   });
-
   myPostList = data?.myPosts || [];
   myCommentedPostList = data?.myCommentedPosts || [];
 }
 
 function renderHotPostList() {
   if (!hotPostGridEl) return;
-
   if (!hotPostList.length) {
-    hotPostGridEl.innerHTML = `
-      <div class="empty-message">인기 게시글이 없습니다.</div>
-    `;
+    hotPostGridEl.innerHTML = `<div class="empty-message">인기 게시글이 없습니다.</div>`;
     return;
   }
 
   hotPostGridEl.innerHTML = hotPostList
     .map((post) => {
       const postId = getPostIdValue(post);
-      const score = getHotScore(post);
-
       return `
         <article class="highlight-card" data-post-id="${postId ?? ""}">
           <div class="highlight-card-top">
             ${post.hot ? `<div class="highlight-badge hot">HOT</div>` : `<div class="highlight-badge recommend">TOP</div>`}
             ${isAnonymousPost(post) ? `<div class="highlight-badge anonymous">익명</div>` : ""}
           </div>
-
           <h3>${escapeHtml(post.title)}</h3>
           <p>${escapeHtml(post.summary || getSummaryText(post.content || ""))}</p>
-
           <div class="highlight-meta">
             <span>${escapeHtml(post.categoryLabel || getCategoryLabel(post.category))}</span>
             <span>추천 ${post.likeCount || 0}</span>
             <span>댓글 ${post.commentCount || 0}</span>
-            <span>점수 ${score}</span>
           </div>
         </article>
       `;
@@ -494,13 +505,8 @@ function renderHotPostList() {
 
 function renderPostList() {
   if (!communityPostListEl) return;
-
   if (!postList.length) {
-    communityPostListEl.innerHTML = `
-      <div class="empty-message">
-        게시글이 없습니다.
-      </div>
-    `;
+    communityPostListEl.innerHTML = `<div class="empty-message">선택하신 조건에 맞는 게시글이 없습니다.</div>`;
     renderPagination();
     return;
   }
@@ -510,7 +516,6 @@ function renderPostList() {
       const postId = getPostIdValue(post);
       const authorNickname = post.authorNickname || "알 수 없음";
       const displayNickname = isAnonymousPost(post) ? "익명" : authorNickname;
-
       return `
         <article class="community-post-item" data-post-id="${postId ?? ""}">
           <div class="community-post-top">
@@ -521,16 +526,13 @@ function renderPostList() {
               ${post.hot ? `<span class="community-post-badge hot">HOT</span>` : ""}
               ${isAnonymousPost(post) ? `<span class="community-post-badge anonymous">익명</span>` : ""}
             </div>
-
             <div class="community-post-top-right">
               <span class="community-post-date">${formatDate(post.createdAt)}</span>
               ${renderPostMoreButton(post)}
             </div>
           </div>
-
           <h3 class="community-post-title">${escapeHtml(post.title)}</h3>
           <p class="community-post-content">${escapeHtml(post.summary || getSummaryText(post.content || ""))}</p>
-
           <div class="community-post-bottom">
             <div class="community-post-author">
               <div class="community-post-avatar">${escapeHtml(displayNickname.slice(0, 2))}</div>
@@ -539,7 +541,6 @@ function renderPostList() {
                 <span class="community-post-author-role">${escapeHtml(post.authorRoleLabel || "")}</span>
               </div>
             </div>
-
             <div class="community-post-stats">
               <span>추천 ${post.likeCount || 0}</span>
               <span>댓글 ${post.commentCount || 0}</span>
@@ -556,7 +557,6 @@ function renderPostList() {
 
 function renderPagination() {
   if (!communityPaginationEl) return;
-
   communityPaginationEl.innerHTML = "";
 
   for (let i = 1; i <= totalPageCount; i += 1) {
@@ -568,6 +568,7 @@ function renderPagination() {
     button.addEventListener("click", async () => {
       currentPageNumber = i;
       await loadPostList();
+      window.scrollTo({ top: 350, behavior: "smooth" }); 
     });
 
     communityPaginationEl.appendChild(button);
@@ -576,7 +577,6 @@ function renderPagination() {
 
 function renderWriterRankList() {
   if (!writerRankListEl) return;
-
   const merged = [...postList, ...hotPostList];
   const uniquePosts = [];
   const seenPostIds = new Set();
@@ -589,20 +589,14 @@ function renderWriterRankList() {
   });
 
   const authorScoreMap = {};
-
   uniquePosts.forEach((post) => {
     if (isAnonymousPost(post)) return;
-
     const nickname = post.authorNickname;
     if (!nickname) return;
 
     if (!authorScoreMap[nickname]) {
-      authorScoreMap[nickname] = {
-        score: 0,
-        postCount: 0,
-      };
+      authorScoreMap[nickname] = { score: 0, postCount: 0 };
     }
-
     authorScoreMap[nickname].score += (post.likeCount || 0) + (post.commentCount || 0);
     authorScoreMap[nickname].postCount += 1;
   });
@@ -644,9 +638,7 @@ function renderPostDetail() {
   `;
 
   detailTitleEl.textContent = selectedPostDetail.title || "";
-  const detailDisplayNickname = isAnonymousPost(selectedPostDetail)
-    ? "익명"
-    : (selectedPostDetail.authorNickname || "");
+  const detailDisplayNickname = isAnonymousPost(selectedPostDetail) ? "익명" : (selectedPostDetail.authorNickname || "");
   detailAuthorEl.textContent = `작성자 ${detailDisplayNickname}`;
   detailAuthorRoleEl.textContent = selectedPostDetail.authorRoleLabel || "";
   detailDateEl.textContent = formatDate(selectedPostDetail.createdAt);
@@ -661,14 +653,12 @@ function renderPostDetail() {
 
 function renderDetailOwnerActions() {
   if (!detailOwnerActionsEl || !selectedPostDetail) return;
-
   if (!selectedPostDetail.mine) {
     detailOwnerActionsEl.innerHTML = "";
     return;
   }
 
   const postId = getPostIdValue(selectedPostDetail);
-
   detailOwnerActionsEl.innerHTML = `
     <div class="post-more-wrap detail-more" data-more-wrap>
       <button
@@ -678,7 +668,6 @@ function renderDetailOwnerActions() {
         data-post-id="${postId}"
         aria-label="상세 더보기"
       >⋯</button>
-
       <div class="post-more-menu" data-more-menu>
         <button type="button" class="post-more-action edit" data-action="edit" data-post-id="${postId}">
           수정
@@ -693,13 +682,10 @@ function renderDetailOwnerActions() {
 
 function renderCommentList() {
   if (!detailCommentListEl || !selectedPostDetail) return;
-
   const comments = selectedPostDetail.comments || [];
 
   if (!comments.length) {
-    detailCommentListEl.innerHTML = `
-      <div class="empty-message">아직 댓글이 없습니다.</div>
-    `;
+    detailCommentListEl.innerHTML = `<div class="empty-message">아직 댓글이 없습니다.</div>`;
     return;
   }
 
@@ -741,7 +727,6 @@ function renderMyActivity() {
     myPostsPanelEl.innerHTML = myPostList
       .map((post) => {
         const postId = getPostIdValue(post);
-
         return `
           <div class="my-activity-item" data-post-id="${postId ?? ""}">
             <div class="my-activity-item-top">
@@ -764,7 +749,6 @@ function renderMyActivity() {
     myCommentsPanelEl.innerHTML = myCommentedPostList
       .map((post) => {
         const postId = getPostIdValue(post);
-
         return `
           <div class="my-activity-item" data-post-id="${postId ?? ""}">
             <div class="my-activity-item-top">
@@ -790,9 +774,7 @@ async function loadPostList() {
   } catch (error) {
     console.error(error);
     if (communityPostListEl) {
-      communityPostListEl.innerHTML = `
-        <div class="empty-message">게시글 목록을 불러오지 못했습니다.</div>
-      `;
+      communityPostListEl.innerHTML = `<div class="empty-message">게시글 목록을 불러오지 못했습니다.</div>`;
     }
   }
 }
@@ -805,9 +787,7 @@ async function loadHotPostList() {
   } catch (error) {
     console.error(error);
     if (hotPostGridEl) {
-      hotPostGridEl.innerHTML = `
-        <div class="empty-message">인기 게시글을 불러오지 못했습니다.</div>
-      `;
+      hotPostGridEl.innerHTML = `<div class="empty-message">인기 게시글을 불러오지 못했습니다.</div>`;
     }
   }
 }
@@ -843,7 +823,6 @@ async function loadCommunityPage() {
 
 function openWriteModal() {
   if (!requireLogin()) return;
-
   editingPostId = null;
   postFormTitleEl.textContent = "게시글 작성";
   postFormSubmitBtnEl.textContent = "등록";
@@ -873,7 +852,6 @@ function openEditModal() {
 
 async function handleSubmitPostForm(event) {
   event.preventDefault();
-
   if (!requireLogin()) return;
 
   const category = postCategoryEl.value;
@@ -954,12 +932,10 @@ async function handleToggleLike() {
 
   try {
     const data = await toggleCommunityPostLike(selectedPostId);
-
     if (selectedPostDetail) {
       selectedPostDetail.likeCount = data.likeCount ?? selectedPostDetail.likeCount;
       selectedPostDetail.likedByMe = data.liked ?? selectedPostDetail.likedByMe;
     }
-
     detailLikeBtnEl.textContent = `추천 ${selectedPostDetail.likeCount || 0}`;
     await loadPostList();
     await loadHotPostList();
@@ -971,7 +947,6 @@ async function handleToggleLike() {
 
 async function handleEditComment(commentId, oldContent) {
   if (!requireLogin()) return;
-
   const newContent = prompt("댓글을 수정하세요.", oldContent || "");
   if (newContent === null) return;
   if (!newContent.trim()) {
@@ -990,7 +965,6 @@ async function handleEditComment(commentId, oldContent) {
 
 async function handleDeleteComment(commentId) {
   if (!requireLogin()) return;
-
   const ok = confirm("댓글을 삭제하시겠습니까?");
   if (!ok) return;
 
@@ -1006,19 +980,14 @@ async function handleDeleteComment(commentId) {
 
 function normalizeCommunityCategory(value) {
   const raw = String(value || "").trim();
-
   if (!raw) return "";
-
   if (COMMUNITY_CATEGORY_MAP[raw]) {
     return COMMUNITY_CATEGORY_MAP[raw];
   }
-
   const upper = raw.toUpperCase();
-
   if (COMMUNITY_CATEGORY_LABEL_MAP[upper]) {
     return upper;
   }
-
   return raw;
 }
 
@@ -1028,7 +997,7 @@ function getPostCategoryCode(post) {
   );
 }
 
-// 카테고리 클릭
+// 상단 카테고리 클릭 핸들러 (실시간 동적 렌더링 동기화)
 categoryButtons.forEach((button) => {
   button.addEventListener("click", async () => {
     categoryButtons.forEach((btn) => btn.classList.remove("active"));
@@ -1036,7 +1005,7 @@ categoryButtons.forEach((button) => {
 
     const categoryLabel = button.dataset.category || "전체";
     selectedCategoryCode = COMMUNITY_CATEGORY_MAP[categoryLabel] || "ALL";
-    currentPageNumber = 1;
+    currentPageNumber = 1; // 카테고리 변경 시 항상 1페이지 가이드 스위칭
 
     await loadPostList();
   });
@@ -1084,7 +1053,6 @@ openMyActivityBtn?.addEventListener("click", async () => {
 showHotPostsBtn?.addEventListener("click", async () => {
   selectedSortType = "popular";
   currentPageNumber = 1;
-
   filterButtons.forEach((btn) => btn.classList.remove("active"));
   document.querySelector('.post-filter-btn[data-sort="popular"]')?.classList.add("active");
 
@@ -1095,16 +1063,13 @@ showHotPostsBtn?.addEventListener("click", async () => {
 // 게시글 목록 클릭 -> 상세
 communityPostListEl?.addEventListener("click", async (event) => {
   if (event.target.closest("[data-more-wrap]")) return;
-
   const postItem = event.target.closest(".community-post-item");
   if (!postItem) return;
-
   const postId = postItem.dataset.postId;
   if (!postId || postId === "undefined" || postId === "null") {
     console.error("잘못된 postId:", postId);
     return;
   }
-
   await loadPostDetail(postId);
 });
 
@@ -1112,13 +1077,11 @@ communityPostListEl?.addEventListener("click", async (event) => {
 hotPostGridEl?.addEventListener("click", async (event) => {
   const postItem = event.target.closest(".highlight-card");
   if (!postItem) return;
-
   const postId = postItem.dataset.postId;
   if (!postId || postId === "undefined" || postId === "null") {
     console.error("잘못된 postId:", postId);
     return;
   }
-
   await loadPostDetail(postId);
 });
 
@@ -1153,13 +1116,11 @@ detailCommentListEl?.addEventListener("click", async (event) => {
 document.addEventListener("click", async (event) => {
   const activityItem = event.target.closest(".my-activity-item");
   if (!activityItem) return;
-
   const postId = activityItem.dataset.postId;
   if (!postId || postId === "undefined" || postId === "null") {
     console.error("잘못된 postId:", postId);
     return;
   }
-
   closeModal(myActivityModalEl);
   await loadPostDetail(postId);
 });
@@ -1171,7 +1132,6 @@ myActivityTabs.forEach((tab) => {
     tab.classList.add("active");
 
     const targetTab = tab.dataset.tab;
-
     document.querySelectorAll(".my-activity-panel").forEach((panel) => {
       panel.classList.remove("active");
     });
@@ -1210,7 +1170,6 @@ document.addEventListener("click", async (event) => {
 
   if (moreBtn) {
     event.stopPropagation();
-
     const wrap = moreBtn.closest("[data-more-wrap]");
     const menu = wrap?.querySelector("[data-more-menu]");
     if (!menu) return;
@@ -1226,7 +1185,6 @@ document.addEventListener("click", async (event) => {
 
   if (moreAction) {
     event.stopPropagation();
-
     const action = moreAction.dataset.action;
     const postId = moreAction.dataset.postId;
     if (!postId) return;
@@ -1238,7 +1196,6 @@ document.addEventListener("click", async (event) => {
         openEditModal();
         return;
       }
-
       await loadPostDetail(postId);
       openEditModal();
       return;
