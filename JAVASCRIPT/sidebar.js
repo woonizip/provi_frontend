@@ -1,15 +1,36 @@
 document.addEventListener("DOMContentLoaded", function () {
+  const savedTheme = localStorage.getItem("theme");
+  const currentTheme = savedTheme || "dark"; 
+  document.documentElement.setAttribute("data-theme", currentTheme);
+  
+  // 만약 다른 페이지(사이드바가 있는 서브페이지)에서도 테마 토글 버튼을 공통으로 쓴다면 
+  // 아래 주석을 풀어서 연동해 주시면 됩니다.
+  /*
+  const subThemeBtn = document.getElementById("theme-toggle");
+  if (subThemeBtn) {
+    subThemeBtn.addEventListener("click", function() {
+      const activeTheme = document.documentElement.getAttribute("data-theme");
+      const nextTheme = activeTheme === "dark" ? "light" : "dark";
+      document.documentElement.setAttribute("data-theme", nextTheme);
+      localStorage.setItem("theme", nextTheme);
+    });
+  }
+  */
 
   let btn = document.querySelector("#btn");
   let sidebar = document.querySelector(".sidebar");
   let searchBtn = document.querySelector(".bx-search");
 
-  btn.onclick = function() {
-    sidebar.classList.toggle("active");
+  if (btn) {
+    btn.onclick = function() {
+      sidebar.classList.toggle("active");
+    }
   }
 
-  searchBtn.onclick = function() {
-    sidebar.classList.toggle("active");
+  if (searchBtn) {
+    searchBtn.onclick = function() {
+      sidebar.classList.add("active");
+    }
   }
 
   const loggedInUser = sessionStorage.getItem("loggedInUser");
@@ -17,44 +38,39 @@ document.addEventListener("DOMContentLoaded", function () {
 
   const logInIcon = document.getElementById("log_in");
   const logOutIcon = document.getElementById("log_out");
-
   const nameElement = document.querySelector(".profile .name");
   const jobElement = document.querySelector(".profile .job");
 
-// 상태에 따라 로그인/로그아웃 아이콘 표시 제어
   if (isLoggedIn) {
-    logInIcon.style.display = "none";
-    logOutIcon.style.display = "block";
+    if (logInIcon) logInIcon.style.display = "none";
+    if (logOutIcon) logOutIcon.style.display = "block";
 
     const nickname = sessionStorage.getItem("nickname") || "";
     const job = sessionStorage.getItem("job") || "";
 
-    nameElement.textContent = nickname;
-    jobElement.textContent = job;
+    if (nameElement) nameElement.textContent = nickname;
+    if (jobElement) jobElement.textContent = job;
   } else {
-    logInIcon.style.display = "block";
-    logOutIcon.style.display = "none";
+    if (logInIcon) logInIcon.style.display = "block";
+    if (logOutIcon) logOutIcon.style.display = "none";
 
-    nameElement.textContent = "로그인을 해주세요.";
-    jobElement.textContent = "";
+    if (nameElement) nameElement.textContent = "로그인을 해주세요.";
+    if (jobElement) jobElement.textContent = "";
   }
 
-// 로그인 아이콘 클릭 시 로그인 페이지로 이동
-  logInIcon.addEventListener("click", () => {
-    window.location.href = "../HTML/signin.html";
-  });
+  if (logInIcon) {
+    logInIcon.addEventListener("click", () => {
+      window.location.href = "../HTML/signin.html";
+    });
+  }
 
-// 로그아웃 아이콘 클릭 시 처리
-  logOutIcon.addEventListener("click", () => {
-    // localStorage.removeItem("token"); 같은 코드 넣을 수 있음
-    sessionStorage.removeItem("loggedInUser");
-    sessionStorage.removeItem("nickname");
-    sessionStorage.removeItem("job");
-    sessionStorage.removeItem("isAdmin");
-
-    alert("로그아웃 되었습니다.");
-    location.reload();
-  });
+  if (logOutIcon) {
+    logOutIcon.addEventListener("click", () => {
+      sessionStorage.clear();
+      alert("로그아웃 되었습니다.");
+      location.reload();
+    });
+  }
 
   const isAdmin = sessionStorage.getItem("isAdmin") === "true";
   const adminMenu = document.getElementById("adminMenu");
