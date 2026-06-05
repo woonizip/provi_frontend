@@ -86,3 +86,26 @@ document.addEventListener(
   },
   true
 );
+
+// 기존 mainpage.js 내부에 추가해주세요
+document.addEventListener("DOMContentLoaded", function () {
+  const themeToggleBtn = document.getElementById("theme-toggle");
+  
+  // 1. 기존에 저장된 테마 세팅이 있는지 확인, 없으면 시스템 다크모드 선호도 확인
+  const savedTheme = localStorage.getItem("theme");
+  const systemPrefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+  
+  // 기본값을 다크모드로 우선 지정 (원래 감성 유지)
+  const defaultTheme = savedTheme || (systemPrefersDark ? "dark" : "dark");
+  document.documentElement.setAttribute("data-theme", defaultTheme);
+  
+  if (themeToggleBtn) {
+    themeToggleBtn.addEventListener("click", function () {
+      const currentTheme = document.documentElement.getAttribute("data-theme");
+      const newTheme = currentTheme === "dark" ? "light" : "dark";
+      
+      document.documentElement.setAttribute("data-theme", newTheme);
+      localStorage.setItem("theme", newTheme);
+    });
+  }
+});
