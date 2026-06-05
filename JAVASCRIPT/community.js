@@ -282,25 +282,22 @@ function sortPostsForHot(posts = []) {
 async function fetchCommunityPostList() {
   const params = new URLSearchParams({
     page: String(currentPageNumber),
-    size: "100", // 필터 가용성 확보를 위해 크게 가져와 프론트에서 정밀 슬라이스
-    category: "ALL", 
-    sort: "latest",
-    keyword: "",
+    size: String(pageSize),
+    category: selectedCategoryCode || "ALL",
+    sort: selectedSortType || "latest",
+    keyword: searchKeyword || "",
   });
 
   const data = await authFetch(`${API.COMMUNITY_POSTS}?${params.toString()}`, {
     method: "GET",
   });
 
-  let rawList = Array.isArray(data.content) ? data.content : [];
+  const rawList = Array.isArray(data.content) ? data.content : [];
 
-  // 1. [카테고리 복구 작동 완료]
-  if (selectedCategoryCode && selectedCategoryCode !== "ALL") {
-    rawList = rawList.filter((post) => {
-      const postCode = getPostCategoryCode(post);
-      return postCode === selectedCategoryCode;
-    });
-  }
+  postList = rawList;
+  totalPostCount = data.totalElements ?? rawList.length;
+  totalPageCount = data.totalPages ?? Math.max(1, Math.ceil(totalPostCount / pageSize));
+}
 
   // 2. 검색어 필터 가이드
   if (searchKeyword.trim()) {
