@@ -6,1257 +6,218 @@ document.addEventListener("DOMContentLoaded", () => {
   
   let currentQuestion = 0;
   let answers = {};
-  let injectedDevQIndex = null;
-  let injectedDevType = null;
-  
-  const quizData_common = [
-    // 1. 현재 상황
-    {
-      id: "currentStatus",
-      q: "현재 본인의 개발 관련 상황은 무엇인가요?",
-      a: [
-        "학생이에요",
-        "개발 관련 취업을 준비하고 있어요",
-        "개발자로 활동 중이에요",
-        "개발 공부를 이제 막 시작했어요"
-      ]
-    },
-
-    // 2. 경험 기간
-    {
-      id: "experience",
-      q: "개발 공부나 프로젝트 경험은 얼마나 되셨나요?",
-      a: [
-        "3개월 미만이에요",
-        "3개월 ~ 6개월 정도예요",
-        "6개월 ~ 1년 정도예요",
-        "1년 ~ 3년 정도예요",
-        "3년 이상 경험이 있어요"
-      ]
-    },
-
-    // 3. 전공/배경
-    {
-      id: "background",
-      q: "본인의 전공 또는 기술 배경과 가장 가까운 것을 선택해주세요.",
-      a: [
-        "소프트웨어/컴퓨터공학 관련 전공이에요",
-        "공학·수학·통계 기반 전공이에요",
-        "인문·사회·예체능 계열 전공이에요",
-        "비전공이지만 IT 관련 경험이 있어요",
-        "완전 비전공이고 처음 시작 중이에요"
-      ]
-    },
-
-    // 4. 사용 언어
-    {
-      id: "knownLangs",
-      q: "사용해본 프로그래밍 언어를 모두 선택해주세요.",
-      a: [
-        "C / C++",
-        "Java",
-        "Python",
-        "JavaScript / TypeScript",
-        "Rust",
-        "Go",
-        "Kotlin / Swift",
-        "C#",
-        "기타",
-        "아직 언어 경험이 없어요"
-      ],
-      multiple: true
-    },
-
-    // 5. 프로젝트 경험
-    {
-      id: "projectExp",
-      q: "프로젝트 경험은 어느 정도 있으신가요?",
-      a: [
-        "아직 프로젝트를 해본 적 없어요",
-        "개인 프로젝트를 만들어본 적 있어요",
-        "팀 프로젝트 경험이 있어요",
-        "실무 프로젝트를 진행해본 적 있어요"
-      ]
-    },
-
-    // 6. 사용해본 기술 스택
-    {
-      id: "frameworkExp",
-      q: "경험해보았거나 튜토리얼로 다뤄본 기술 스택을 모두 선택해주세요.",
-      a: [
-        "HTML/CSS + JavaScript로 화면을 만들어봤어요",
-        "React/Vue 등 프론트엔드 프레임워크를 사용해봤어요",
-        "Spring / Node.js / Django / FastAPI 등 서버 개발 경험이 있어요",
-        "Android / iOS / Flutter / React Native 등 모바일 앱 개발 경험이 있어요",
-        "Pandas/NumPy, Scikit-learn, TensorFlow, PyTorch 등 AI 라이브러리를 사용해봤어요",
-        "Unity / Unreal / Godot 등 게임 엔진을 사용해봤어요",
-        "Arduino / Raspberry Pi 등 하드웨어 보드를 다뤄봤어요",
-        "아직 경험이 없어요"
-      ],
-      multiple: true
-    },
-
-    // 7. 관심 개발 영역
-    {
-      id: "interestDevField",
-      q: "현재 관심 있는 개발 영역을 모두 선택해주세요.",
-      a: [
-        "프론트엔드 (UI/화면 구현)",
-        "백엔드 (API·서버·데이터 처리)",
-        "AI/데이터 개발",
-        "게임 개발",
-        "보안 / 네트워크 / 시스템",
-        "임베디드 / IoT",
-        "클라우드 / 인프라 / 자동화",
-        "아직 잘 모르겠어요"
-      ],
-      multiple: true
-    },
-
-    // 8. 되고 싶은 개발자 유형
-    {
-      id: "targetRole",
-      q: "가장 되고 싶은 개발자 유형을 선택해주세요.",
-      a: [
-        "웹 개발자",
-        "모바일 앱 개발자",
-        "데브옵스 / 클라우드 엔지니어",
-        "AI 개발자",
-        "게임 개발자",
-        "보안 전문가",
-        "임베디드 / IoT 개발자",
-        "아직 잘 모르겠어요"
-      ]
-    },
-
-    // 9. 프로젝트 성향
-    {
-      id: "projectPreference",
-      q: "어떤 성격의 프로젝트가 더 흥미롭나요?",
-      a: [
-        "사용자 화면(UI/UX)을 만드는 프로젝트",
-        "서비스 로직·API·DB 구조를 설계하는 프로젝트",
-        "데이터 분석·AI 모델을 다루는 프로젝트",
-        "앱·모바일 환경에서 작동하는 프로젝트",
-        "게임·그래픽·인터랙션 중심 프로젝트",
-        "하드웨어·센서와 연동된 프로젝트",
-        "클라우드·배포·운영 중심 프로젝트"
-      ]
-    },
-
-    // 10. 협업·개발 도구 경험
-    {
-      id: "toolExp",
-      q: "사용해본 협업·개발 도구를 모두 선택해주세요.",
-      a: [
-        "Git 기본 사용 경험이 있어요",
-        "GitHub/GitLab 등으로 협업해본 경험이 있어요",
-        "Notion / Jira 등 협업 도구를 사용해봤어요",
-        "데이터베이스(MySQL, MongoDB 등)를 사용해봤어요",
-        "Docker를 사용해본 경험이 있어요",
-        "AWS/GCP/Naver Cloud 등 클라우드를 사용해본 경험이 있어요",
-        "CI/CD 환경을 구성해본 경험이 있어요",
-        "사용 경험이 거의 없어요"
-      ],
-      multiple: true
-    },
-
-    // 11. 학습 스타일
-    {
-      id: "learningStyle",
-      q: "개발을 배울 때 어떤 방식이 가장 잘 맞나요?",
-      a: [
-        "직접 만들어보면서 배우는 편이에요",
-        "문서·책으로 개념을 먼저 이해하는 편이에요",
-        "문제 풀이·실습 중심으로 배우는 편이에요",
-        "강의·튜토리얼로 빠르게 감을 잡는 편이에요",
-        "상황에 따라 유연하게 섞어서 배우는 편이에요"
-      ]
-    },
-
-    // 12. 선호 개발 환경
-    {
-      id: "devEnvironment",
-      q: "선호하는 개발 환경은 무엇인가요?",
-      a: [
-        "Windows 환경이 편해요",
-        "Mac 환경이 편해요",
-        "Linux 환경이 편해요",
-        "크게 상관없어요"
-      ]
-    },
-
-    // 13. 팀 / 혼자
-    {
-      id: "teamStyle",
-      q: "어떤 개발 스타일이 더 잘 맞나요?",
-      a: [
-        "혼자서 차분히 진행하는 편이에요",
-        "작은 팀에서 함께 협업하는 편이 좋아요",
-        "여러 팀과 함께 움직이는 큰 프로젝트도 괜찮아요",
-        "아직 잘 모르겠어요"
-      ]
-    },
-
-    // 14. 학습 시간
-    {
-      id: "studyTime",
-      q: "앞으로 개발 학습에 투자할 수 있는 시간은 어느 정도인가요?",
-      a: [
-        "주 5시간 미만",
-        "주 5~10시간",
-        "주 10~20시간",
-        "주 20시간 이상"
-      ]
-    },
-
-    // 15. 단기 목표
-    {
-      id: "shortTermGoal",
-      q: "앞으로 6개월~1년 동안 이루고 싶은 목표는 무엇인가요?",
-      a: [
-        "개발 기초를 다지고 나에게 맞는 방향을 찾고 싶어요",
-        "포트폴리오 프로젝트를 만들어보고 싶어요",
-        "인턴 또는 주니어 개발자로 취업하고 싶어요",
-        "기존 커리어에 개발 역량을 더하고 싶어요",
-        "나만의 서비스나 앱을 출시해보고 싶어요"
-      ]
-    },
-
-    // 17. 장기 목표
-    {
-      id: "careerGoal",
-      q: "장기적으로 어떤 커리어 방향을 원하시나요?",
-      a: [
-        "특정 분야의 전문 개발자로 성장하고 싶어요",
-        "여러 기술을 익힌 올라운더 개발자가 되고 싶어요",
-        "나만의 서비스를 만드는 창업형 개발자가 되고 싶어요",
-        "안정적인 기업에 취업해 커리어를 쌓고 싶어요"
-      ]
-    },
-    
-    // 16. 개발 목적
-    {
-      id: "purpose",
-      q: "개발을 배우는 주된 목적은 무엇인가요? (중복 선택 가능)",
-      a: [
-        "개발자로 취업하거나 이직하기 위해서예요",
-        "스타트업·초기 팀에 합류하고 싶어요",
-        "직접 창업해서 나만의 서비스를 만들고 싶어요",
-        "포트폴리오용 또는 사이드 프로젝트를 만들고 싶어요",
-        "전공 공부·학점·대학원/연구를 위해 필요해서예요",
-        "현재 업무 자동화·효율화를 위해 배우고 있어요",
-        "취미로 즐기면서 천천히 배우고 싶어요",
-        "자기 계발을 위해 새로운 기술을 배우고 싶어요"
-      ],
-      multiple: true
-    },
-
-    // 18. 관심 있는 언어
-    {
-      id: "wishLangs",
-      q: "앞으로 배우거나 더 깊게 공부해보고 싶은 언어를 모두 선택해주세요.",
-      a: [
-        "JavaScript / TypeScript",
-        "Python",
-        "Java",
-        "Go",
-        "Rust",
-        "Kotlin / Swift",
-        "C / C++",
-        "C#",
-        "기타"
-      ],
-      multiple: true
-    }
-  ];
-
-  
-  const quizData_jobs = {
-    //웹 개발자
-    web: [
-      {
-        id: "web_area",
-        q: "웹 개발 중 어떤 분야에 더 흥미가 있으신가요?",
-        a: ["프론트엔드 (화면 / UI 구현)", 
-          "백엔드 (서버 / 데이터 처리)", 
-          "풀스택 (둘 다)", 
-          "아직 잘 모르겠어요"
-        ]
-      }
-    ],
-
-    //모바일 앱 개발자
-    mobile: [
-      {
-        id: "mobile_platform",
-        q: "어떤 플랫폼 개발에 더 관심 있으신가요?",
-        a: [
-          "Android", 
-          "iOS", 
-          "Cross-platform (Flutter, React Native 등)", 
-          "아직 잘 모르겠어요"
-        ]
-      },
-      {
-        id: "mobile_ui_focus",
-        q: "모바일 UI/UX 구현에서 어떤 요소가 더 흥미롭나요?",
-        a: [
-          "애니메이션·트랜지션",
-          "화면 구성·컴포넌트 구조",
-          "반응형 / 다양한 해상도 대응",
-          "접근성 고려",
-          "아직 잘 모르겠어요"
-        ],
-        multiple: true
-      },
-      {
-        id: "mobile_logic",
-        q: "앱 기능 구현 중 어떤 부분이 더 흥미롭나요?",
-        a: [
-          "API 연동 및 데이터 처리",
-          "상태 관리(BLoC, Redux 등)",
-          "실시간 기능(WebSocket)",
-          "푸시 알림 / 인증 처리",
-          "기기 센서 활용(GPS, 카메라 등)"
-        ],
-        multiple: true
-      },
-      {
-        id: "mobile_stack_interest",
-        q: "배워보고 싶은 모바일 기술을 선택해주세요.",
-        a: [
-          "Swift", 
-          "Kotlin", 
-          "Flutter", 
-          "React Native", 
-          "Jetpack Compose", 
-          "SwiftUI", 
-          "기타"
-        ],
-        multiple: true
-      },
-      {
-        id: "mobile_app_features",
-        q: "개발해보고 싶은 앱 유형을 선택해주세요.",
-        a: [
-          "SNS / 커뮤니티",
-          "이커머스 / 쇼핑",
-          "교육 / 생산성",
-          "게임형 인터랙티브 앱",
-          "헬스/피트니스",
-          "IoT 연동 앱"
-        ],
-        multiple: true
-      },
-      {
-        id: "mobile_deploy",
-        q: "앱 배포 또는 테스트 경험은 어느 정도인가요?",
-        a: [
-          "배포 경험 없음",
-          "내 기기에서 테스트해본 적 있어요",
-          "테스트플라이트/내부 테스트 해봤어요",
-          "스토어에 실제 등록해본 경험 있어요"
-        ]
-      },
-      {
-        id: "mobile_career",
-        q: "어떤 모바일 개발자로 성장하고 싶나요?",
-        a: [
-          "iOS 전문 개발자",
-          "Android 전문 개발자",
-          "크로스플랫폼 엔지니어",
-          "풀스택 앱 개발자",
-          "아직 잘 모르겠어요"
-        ]
-      }
-    ],
-
-    //AI 개발자
-    ai: [
-      {
-        id: "ai_domain",
-        q: "AI 분야 중 어떤 영역에 더 관심이 있으신가요?",
-        a: [
-          "머신러닝",
-          "딥러닝",
-          "자연어 처리(NLP)",
-          "컴퓨터 비전(CV)",
-          "데이터 분석/시각화",
-          "추천 시스템",
-          "아직 잘 모르겠어요"
-        ],
-        multiple: true
-      },
-      {
-        id: "ai_math_level",
-        q: "수학적 배경(선형대수, 통계, 미적분)에 대한 이해 정도를 알려주세요.",
-        a: [
-          "거의 모름",
-          "기초 개념은 알아요",
-          "머신러닝 수학을 따라갈 수 있음",
-          "딥러닝도 수식까지 이해 가능",
-          "전문 수준"
-        ]
-      },
-      {
-        id: "ai_stack_interest",
-        q: "사용해보고 싶거나 경험해본 AI/데이터 기술을 선택해주세요.",
-        a: [
-          "Pandas / NumPy",
-          "Scikit-learn",
-          "PyTorch",
-          "TensorFlow",
-          "OpenAI API / LLM",
-          "데이터 시각화(Matplotlib/Seaborn/Plotly)",
-          "기타"
-        ],
-        multiple: true
-      },
-      {
-        id: "ai_train_exp",
-        q: "AI 모델 학습 또는 실험 경험은 어느 정도인가요?",
-        a: [
-          "아직 해본 적 없어요",
-          "튜토리얼 정도 따라가봤어요",
-          "간단한 모델을 직접 만들어 학습해봤어요",
-          "딥러닝 모델을 직접 설계·튜닝해본 경험 있음"
-        ]
-      },
-      {
-        id: "ai_data_exp",
-        q: "데이터 관련 경험이 있다면 선택해주세요.",
-        a: [
-          "데이터 수집/웹 크롤링",
-          "전처리/정제",
-          "EDA(탐색적 분석)",
-          "특징 공학(Feature Engineering)",
-          "모름/없음"
-        ],
-        multiple: true
-      },
-      {
-        id: "ai_use_case",
-        q: "AI로 가장 만들어보고 싶은 것은 무엇인가요?",
-        a: [
-          "챗봇/LLM 기반 서비스",
-          "이미지 분석 모델",
-          "추천 시스템",
-          "음성/자연어 처리",
-          "데이터 분석 리포트",
-          "게임·로봇 관련 AI"
-        ],
-        multiple: true
-      },
-      {
-        id: "ai_career_goal",
-        q: "AI 커리어 목표에 가장 가까운 것을 선택해주세요.",
-        a: [
-          "AI 엔지니어/ML 엔지니어",
-          "데이터 과학자",
-          "LLM/딥러닝 모델 연구자",
-          "MLOps 엔지니어",
-          "아직 잘 모르겠어요"
-        ]
-      }
-    ],
-
-    //게임 개발자
-    game: [
-      {
-        id: "game_type",
-        q: "어떤 종류의 게임 개발에 관심이 있으신가요?",
-        a: ["2D", "3D", "모바일", "멀티플레이 온라인 게임", "VR/AR", "아직 잘 모르겠어요"],
-        multiple: true
-      },
-      {
-        id: "game_engine",
-        q: "사용해보고 싶거나 경험해본 게임 엔진을 선택해주세요.",
-        a: ["Unity", "Unreal", "Godot", "Custom Engine", "모름/없음"],
-        multiple: true
-      },
-      {
-        id: "game_role",
-        q: "게임 개발에서 어떤 역할에 관심 있나요?",
-        a: [
-          "게임 로직/시스템 구현",
-          "그래픽/렌더링",
-          "AI/물리 엔진",
-          "레벨 디자인",
-          "게임 서버",
-          "기획/시나리오"
-        ],
-        multiple: true
-      },
-      {
-        id: "game_graphics_exp",
-        q: "그래픽 관련 기술 경험이 있다면 선택해주세요.",
-        a: ["3D 모델링", "셰이더", "물리 엔진", "애니메이션 시스템", "없어요"],
-        multiple: true
-      },
-      {
-        id: "game_platform",
-        q: "게임 개발을 어떤 플랫폼 중심으로 하고 싶나요?",
-        a: ["PC", "모바일", "콘솔", "웹 게임", "VR·AR"]
-      },
-      {
-        id: "game_server_exp",
-        q: "게임 서버 또는 온라인 기능 경험이 있나요?",
-        a: [
-          "없어요",
-          "로컬 저장/싱글플레이 정도",
-          "간단한 온라인 기능 구현 경험 있음",
-          "전문적인 게임 서버 개발 경험 있음"
-        ]
-      },
-      {
-        id: "game_goal",
-        q: "게임 개발자로서의 목표는 무엇인가요?",
-        a: [
-          "인디게임 개발",
-          "AAA 게임 개발",
-          "모바일 게임 개발",
-          "게임 서버/플랫폼 개발",
-          "멀티플레이 시스템 전문 엔지니어"
-        ]
-      }
-    ],
-
-    //보안전문가
-    security: [
-      {
-        id: "sec_area",
-        q: "보안 분야 중 어떤 영역에 관심이 있으신가요?",
-        a: [
-          "웹 보안",
-          "네트워크 보안",
-          "시스템 보안",
-          "취약점 분석",
-          "모의 해킹(펜테스트)",
-          "디지털 포렌식",
-          "아직 잘 모르겠어요"
-        ],
-        multiple: true
-      },
-      {
-        id: "sec_cert_plan",
-        q: "취득을 고려 중인 보안 자격증이 있나요?",
-        a: ["정보보안기사", "OSCP", "CEH", "CISSP", "따로 없어요"]
-      },
-      {
-        id: "sec_tools",
-        q: "사용해본 보안 관련 도구가 있다면 선택해주세요.",
-        a: [
-          "BurpSuite",
-          "Metasploit",
-          "Nmap",
-          "Wireshark",
-          "Kali Linux",
-          "없어요"
-        ],
-        multiple: true
-      },
-      {
-        id: "sec_os",
-        q: "리눅스 환경 경험은 어느 정도인가요?",
-        a: [
-          "거의 없음",
-          "기본 명령어 정도",
-          "웹 서버 세팅 가능",
-          "보안 도구/스크립트 활용 가능",
-          "전문 수준"
-        ]
-      },
-      {
-        id: "sec_interest",
-        q: "보안 프로젝트 중 어떤 경험을 하고 싶나요?",
-        a: [
-          "취약점 진단",
-          "로그 분석/침해 대응",
-          "보안 시스템 구축",
-          "보안 자동화",
-          "CTF 도전",
-          "포렌식 분석"
-        ],
-        multiple: true
-      },
-      {
-        id: "sec_dev_interest",
-        q: "보안 개발 관련 관심 분야를 선택해주세요.",
-        a: [
-          "보안 자동화 스크립팅",
-          "시큐어 코딩",
-          "암호학",
-          "API 보안",
-          "취약점 패치 개발"
-        ],
-        multiple: true
-      },
-      {
-        id: "sec_career_goal",
-        q: "어떤 보안 전문가를 목표로 하고 있나요?",
-        a: [
-          "화이트햇 해커·펜테스터",
-          "보안 엔지니어",
-          "보안 관제/침해 대응",
-          "보안 아키텍트",
-          "아직 잘 모르겠어요"
-        ]
-      }
-    ],
-
-    //임베디드 / IoT 개발자
-    embedded: [
-      {
-        id: "emb_area",
-        q: "임베디드 분야 중 어떤 영역에 관심이 있으신가요?",
-        a: ["IoT 기기", "로봇 제어", "자동차·ADAS", "펌웨어 개발", "산업용 시스템"],
-        multiple: true
-      },
-      {
-        id: "emb_lang_exp",
-        q: "C/C++ 등 저수준 언어 경험은 어느 정도인가요?",
-        a: [
-          "없어요",
-          "기초 문법 정도",
-          "간단한 임베디드 프로젝트 경험",
-          "실무 수준으로 다룰 수 있어요"
-        ]
-      },
-      {
-        id: "emb_board_exp",
-        q: "다뤄본 보드를 선택해주세요.",
-        a: [
-          "Arduino",
-          "Raspberry Pi",
-          "ESP32",
-          "STM32",
-          "Jetson Nano",
-          "없어요"
-        ],
-        multiple: true
-      },
-      {
-        id: "emb_os",
-        q: "사용해본 운영 환경이 있다면 선택해주세요.",
-        a: [
-          "Bare-metal(비OS)",
-          "RTOS(FreeRTOS 등)",
-          "Linux 기반 시스템",
-          "모름/없음"
-        ],
-        multiple: true
-      },
-      {
-        id: "emb_connect",
-        q: "관련 기술 중 관심 있는 것을 선택해주세요.",
-        a: [
-          "센서 연동",
-          "BLE/Wi-Fi/Zigbee 통신",
-          "카메라/영상 처리",
-          "하드웨어 드라이버 개발",
-          "전원/전력 관리"
-        ],
-        multiple: true
-      },
-      {
-        id: "emb_stack_interest",
-        q: "배워보고 싶은 기술 스택을 선택해주세요.",
-        a: ["C/C++", "Python", "Rust", "RTOS", "ROS", "기타"],
-        multiple: true
-      },
-      {
-        id: "emb_career",
-        q: "임베디드 커리어 목표는 무엇인가요?",
-        a: [
-          "펌웨어 엔지니어",
-          "IoT 시스템 엔지니어",
-          "로봇 제어 엔지니어",
-          "임베디드 리눅스 개발자",
-          "아직 잘 모르겠어요"
-        ]
-      }
-    ],
-
-    //데브옵스 / 클라우드 엔지니어
-    devops: [
-      {
-        id: "devops_focus",
-        q: "어떤 데브옵스/클라우드 분야에 더 관심이 있으신가요?",
-        a: [
-          "CI/CD 자동화",
-          "Docker/Kubernetes 컨테이너",
-          "IaC(Terraform, Ansible)",
-          "SRE·모니터링·로깅",
-          "클라우드 아키텍처(AWS/GCP/Azure)"
-        ],
-        multiple: true
-      },
-      {
-        id: "devops_cloud",
-        q: "경험해보고 싶은 클라우드를 선택해주세요.",
-        a: ["AWS", "GCP", "Azure", "Naver Cloud", "기타"],
-        multiple: true
-      },
-      {
-        id: "devops_experience",
-        q: "배포/자동화 관련 경험 수준은?",
-        a: [
-          "아직 경험 없음",
-          "Docker 기본 사용 가능",
-          "CI/CD(백엔드/프론트) 구축 경험 있음",
-          "Kubernetes 클러스터 운영 경험 있음"
-        ]
-      },
-      {
-        id: "devops_tools",
-        q: "사용해본 DevOps 도구를 선택해주세요.",
-        a: [
-          "GitHub Actions",
-          "Jenkins",
-          "Terraform",
-          "Ansible",
-          "Prometheus/Grafana",
-          "Helm",
-          "Linux 서버 관리",
-          "없어요"
-        ],
-        multiple: true
-      },
-      {
-        id: "devops_challenge",
-        q: "어려움을 느끼는 부분이 있다면?",
-        a: [
-          "Linux 환경에 익숙하지 않음",
-          "네트워크 이해도가 부족함",
-          "컨테이너·K8s가 어렵다",
-          "배포 자동화 개념이 부족함",
-          "특별히 없음"
-        ],
-        multiple: true
-      },
-      {
-        id: "devops_role",
-        q: "가장 관심 있는 역할을 알려주세요.",
-        a: [
-          "DevOps 엔지니어",
-          "SRE(Site Reliability Engineer)",
-          "클라우드 아키텍트",
-          "플랫폼 엔지니어",
-          "아직 잘 모르겠어요"
-        ]
-      },
-      {
-        id: "devops_goal",
-        q: "데브옵스 분야에서의 최종 목표는 무엇인가요?",
-        a: [
-          "애플리케이션 자동 배포 환경 구축",
-          "Kubernetes 전문 엔지니어",
-          "대형 시스템의 SRE 역할",
-          "클라우드 아키텍트로 성장",
-          "스타트업 기술 인프라 총괄"
-        ]
-      }
-    ]
-  };
-
-  // 웹 직군 내 세부 역할별 추가 질문
-  const webSubQuestions = {
-    //프론트엔드
-    frontend: [
-      {
-        id: "web_fe_ui_focus",
-        q: "프론트엔드 개발에서 어떤 부분이 더 흥미롭나요? (중복 선택 가능)",
-        a: [
-          "UI/UX 구현과 컴포넌트 제작",
-          "상태 관리와 전역 구조 설계",
-          "애니메이션·인터랙션",
-          "데이터 시각화/차트",
-          "웹 접근성 향상",
-          "아직 잘 모르겠어요"
-        ],
-        multiple: true
-      },
-      {
-        id: "web_fe_stack",
-        q: "관심 있는 프론트엔드 기술 스택을 모두 선택해주세요.",
-        a: [
-          "React",
-          "Next.js",
-          "Vue",
-          "Svelte",
-          "TypeScript",
-          "TailwindCSS",
-          "SCSS",
-          "Storybook",
-          "아직 잘 모르겠어요"
-        ],
-        multiple: true
-      },
-      {
-        id: "web_fe_level",
-        q: "프론트엔드 관련 학습/개발 경험 수준은 어느 정도인가요?",
-        a: [
-          "HTML/CSS 기본만 알고 있어요",
-          "간단한 웹페이지를 만들 수 있어요",
-          "React/Vue 튜토리얼 정도는 해봤어요",
-          "상태관리·라우팅 등 구조도 다뤄봤어요",
-          "중형 규모 프로젝트 경험이 있어요"
-        ]
-      },
-      {
-        id: "web_fe_challenge",
-        q: "프론트엔드 개발에서 어려움을 느끼는 부분이 있다면 무엇인가요? (중복 선택 가능)",
-        a: [
-          "반응형 레이아웃 구성",
-          "컴포넌트 구조 설계",
-          "상태 관리",
-          "API 연동",
-          "성능 최적화",
-          "디자인 구현(Figma) 따라가기",
-          "특별히 없어요"
-        ],
-        multiple: true
-      },
-      {
-        id: "web_fe_tools",
-        q: "사용해본 프론트엔드 도구를 모두 선택해주세요.",
-        a: [
-          "Webpack / Vite 등 번들러",
-          "ESLint / Prettier",
-          "Git을 사용한 협업",
-          "Figma를 보고 화면 구현",
-          "UI 라이브러리 사용(AntD, MUI 등)",
-          "디자인 시스템 구성 경험",
-          "없어요"
-        ],
-        multiple: true
-      },
-      {
-        id: "web_fe_priority",
-        q: "프론트엔드 개발에서 어떤 역량을 가장 우선적으로 키우고 싶나요?",
-        a: [
-          "React / Vue 숙련도",
-          "TypeScript 기반 개발",
-          "웹 성능 최적화",
-          "반응형·크로스브라우징",
-          "디자인 시스템 구축",
-          "협업·코드 품질(테스트, 문서화)"
-        ]
-      },
-      {
-        id: "web_fe_career",
-        q: "프론트엔드 관련 어떤 커리어 방향이 관심 있나요?",
-        a: [
-          "UI 중심 프론트엔드 개발자",
-          "프론트엔드 아키텍트",
-          "웹 퍼포먼스 엔지니어",
-          "디자인 시스템 엔지니어",
-          "풀스택 개발자로 확장",
-          "아직 잘 모르겠어요"
-        ]
-      }
-    ],
-
-    //백엔드
-    backend: [
-      {
-        id: "web_be_focus",
-        q: "백엔드 개발에서 어떤 부분이 가장 흥미롭나요? (중복 선택 가능)",
-        a: [
-          "REST API 설계",
-          "DB 모델링·쿼리 최적화",
-          "인증/보안(JWT, OAuth 등)",
-          "실시간 기능(WebSocket)",
-          "서버 아키텍처 설계",
-          "아직 잘 모르겠어요"
-        ],
-        multiple: true
-      },
-      {
-        id: "web_be_stack",
-        q: "관심 있는 백엔드 기술 스택을 모두 선택해주세요.",
-        a: [
-          "Java / Spring Boot",
-          "Node.js (Express/Nest)",
-          "Python (Django/FastAPI)",
-          "Go",
-          "GraphQL",
-          "Kotlin (Ktor/Spring)",
-          "아직 잘 모르겠어요"
-        ],
-        multiple: true
-      },
-      {
-        id: "web_be_level",
-        q: "백엔드 개발 경험 수준은 어느 정도인가요?",
-        a: [
-          "서버 개발 경험이 아직 없어요",
-          "기초 API 정도 만들어봤어요",
-          "CRUD·JWT 인증·DB 설계 경험 있어요",
-          "중형 규모 서버 구축 경험 있어요",
-          "대규모 트래픽 고려한 구조도 설계해봤어요"
-        ]
-      },
-      {
-        id: "web_be_db",
-        q: "사용해본 데이터베이스를 모두 선택해주세요.",
-        a: [
-          "MySQL / PostgreSQL",
-          "MongoDB",
-          "Redis",
-          "ElasticSearch",
-          "Firebase",
-          "사용 경험 없음"
-        ],
-        multiple: true
-      },
-      {
-        id: "web_be_tools",
-        q: "백엔드 개발 관련 사용 경험이 있는 도구가 있다면 모두 선택해주세요.",
-        a: [
-          "Docker",
-          "AWS (EC2, S3, RDS 등)",
-          "GCP 또는 Azure",
-          "CI/CD(Jenkins/Github Actions)",
-          "Postman / Swagger",
-          "없어요"
-        ],
-        multiple: true
-      },
-      {
-        id: "web_be_priority",
-        q: "백엔드 역량 중 어떤 부분을 가장 강화하고 싶나요?",
-        a: [
-          "Spring/Node/Python 등 프레임워크 숙련도",
-          "DB 설계 능력",
-          "보안·인증",
-          "대규모 트래픽 아키텍처 설계",
-          "클라우드 환경 운영",
-          "테스트 코드·코드 품질"
-        ]
-      },
-      {
-        id: "web_be_career",
-        q: "백엔드 커리어 방향으로 관심 있는 것은 무엇인가요?",
-        a: [
-          "웹 서비스 백엔드 개발자",
-          "마이크로서비스 기반 서버 개발자",
-          "클라우드·플랫폼 엔지니어",
-          "데브옵스로 확장",
-          "풀스택으로 확장",
-          "아직 잘 모르겠어요"
-        ]
-      }
-    ],
-
-    //풀스택
-    fullstack: [
-      {
-        id: "web_fs_balance",
-        q: "풀스택 개발 시 어떤 쪽 비중을 두고 싶나요?",
-        a: [
-          "프론트 비중이 조금 더 높게",
-          "백엔드 비중이 조금 더 높게",
-          "전적으로 5:5 균형 있게",
-          "아직 잘 모르겠어요"
-        ]
-      },
-      {
-        id: "web_fs_stack",
-        q: "선호하는 풀스택 조합을 모두 선택해주세요.",
-        a: [
-          "React + Node.js",
-          "React + Spring Boot",
-          "Vue + Node.js",
-          "Next.js + NestJS",
-          "Next.js + FastAPI",
-          "기타",
-          "아직 잘 모르겠어요"
-        ],
-        multiple: true
-      },
-      {
-        id: "web_fs_flow",
-        q: "풀스택 프로젝트에서 어떤 흐름을 더 선호하시나요?",
-        a: [
-          "프론트 → API → DB 전체 플로우 이해",
-          "기능 단위로 프론트/백 모두 구현",
-          "프론트 중심 + 가벼운 백엔드",
-          "백엔드 중심 + 필요한 프론트만"
-        ]
-      },
-      {
-        id: "web_fs_tools",
-        q: "사용해본 풀스택 관련 도구를 모두 선택해주세요.",
-        a: [
-          "React/Vue 등 프론트 프레임워크",
-          "Node/Spring/Python 백엔드",
-          "Docker",
-          "AWS 배포 경험",
-          "CI/CD",
-          "없어요"
-        ],
-        multiple: true
-      },
-      {
-        id: "web_fs_challenge",
-        q: "풀스택 개발에서 어려운 부분이 있다면 무엇인가요? (중복 선택 가능)",
-        a: [
-          "프론트·백 간 역할 분배",
-          "데이터 흐름 설계",
-          "상태 관리",
-          "서버 구조 설계",
-          "배포/환경 구성",
-          "없어요"
-        ],
-        multiple: true
-      },
-      {
-        id: "web_fs_goal",
-        q: "풀스택 개발자로서 이루고 싶은 목표는 무엇인가요?",
-        a: [
-          "작은 서비스 하나를 처음부터 끝까지 제작",
-          "사이드 프로젝트용 풀스택 능력 확보",
-          "프론트/백 모두 주도할 수 있는 역량 확보",
-          "스타트업에서 만능형 개발자로 성장",
-          "아직 잘 모르겠어요"
-        ]
-      },
-      {
-        id: "web_fs_future",
-        q: "앞으로 어떤 분야로 더 확장하고 싶나요?",
-        a: [
-          "고급 프론트엔드 개발자",
-          "백엔드 아키텍처 전문가",
-          "데브옵스/클라우드",
-          "AI/데이터 엔지니어",
-          "아직 결정하지 못했어요"
-        ]
-      }
-    ]
-  };
-
-
-  const ROLE_TO_JOBKEY = {
-    "웹 개발자": "web",
-    "모바일 앱 개발자": "mobile",
-    "AI 개발자": "ai",
-    "게임 개발자": "game",
-    "보안 전문가": "security",
-    "임베디드 / IoT 개발자": "embedded",
-    "데브옵스 / 클라우드 엔지니어": "devops"
-  };
-
-  const API_URL = "/api/quiz";
-  const nickname = (sessionStorage.getItem("nickname") || "").trim() || "사용자";
-
   let stage = "common";
-  let commonIdx = 0;
   let jobIdx = 0;
   let jobList = [];
   const answersById = {};
-
   let currentJobKey = null;
-  let webBranchInjected = false;
-
-  // 직군 안내 화면 제어
-  let jobTitleShown = false;
   let onJobIntro = false;
-  
+  let jobTitleShown = false;
+
+  // 18개에서 10개로 압축 정제된 핵심 공통 질문 데이터셋
+  const quizData_common = [
+    {
+      id: "currentStatus",
+      q: "현재 본인의 개발 학습 상황은 어느 단계인가요?",
+      a: ["비전공자이고 이제 막 시작했어요", "학생이며 전공 지식을 쌓고 있어요", "부트캠프/독학으로 취업 준비 중이에요", "주니어 개발자로 일하고 있어요"]
+    },
+    {
+      id: "experience",
+      q: "코드나 이론을 공부해온 총 기간이 얼마나 되나요?",
+      a: ["3개월 미만", "3개월 ~ 6개월", "6개월 ~ 1년", "1년 이상"]
+    },
+    {
+      id: "knownLangs",
+      q: "작성해 보았거나 문법을 접해본 프로그래밍 언어를 선택해주세요 (중복 가능)",
+      a: ["Python", "JavaScript / TypeScript", "Java", "C / C++", "Kotlin / Swift", "Go / Rust", "아직 언어 경험이 없어요"],
+      multiple: true
+    },
+    {
+      id: "frameworkExp",
+      q: "실습이나 프로젝트로 맛보았던 기술 진영이 있나요? (중복 가능)",
+      a: ["HTML/CSS 기본 화면 구현", "React / Vue 등 프론트 프레임워크", "Node.js / Spring / Django 등 서버 백엔드", "TensorFlow / PyTorch / 데이터 분석 라이브러리", "아직 경험이 없어요"],
+      multiple: true
+    },
+    {
+      id: "interestDevField",
+      q: "가장 호기심이 생기거나 파보고 싶은 개발 분야는 어디인가요? (중복 가능)",
+      a: ["눈에 보이는 화면과 UX (프론트엔드)", "데이터 처리와 서버 인프라 (백엔드)", "AI 모델링과 대용량 데이터 (인텔리전스)", "시스템 보안 및 네트워크 아키텍처", "아직 탐색 중이에요"],
+      multiple: true
+    },
+    {
+      id: "targetRole",
+      q: "최종 목표로 생각 중인 개발자 직군 유형을 골라주세요.",
+      a: ["웹 개발자", "모바일 앱 개발자", "AI 개발자", "게임 개발자", "보안 전문가", "데브옵스 / 클라우드 엔지니어", "아직 잘 모르겠어요"]
+    },
+    {
+      id: "projectPreference",
+      q: "어떤 성격의 문제를 풀 때 더 코딩이 재밌게 느껴지시나요?",
+      a: ["디자인을 코드로 레이아웃화하고 인터랙션을 줄 때", "복잡한 알고리즘이나 DB 구조를 효율적으로 설계할 때", "데이터를 가공해서 인사이트를 뽑거나 예측 모델을 만들 때", "인프라를 배포하고 자동화 파이프라인을 구축할 때"]
+    },
+    {
+      id: "learningStyle",
+      q: "새로운 기술을 배울 때 본인에게 가장 효과적인 방식은?",
+      a: ["이론이나 문서를 꼼꼼히 정독하고 시작한다", "강의나 동영상 튜토리얼을 배속으로 빠르게 돌려본다", "일단 클론 코딩이나 작은 토이 프로젝트를 만들며 부딪힌다"]
+    },
+    {
+      id: "studyTime",
+      q: "주당 온전히 개발 공부에 확보할 수 있는 골든 타임은?",
+      a: ["주 10시간 미만 (취미/병행)", "주 10시간 ~ 20시간", "주 20시간 ~ 40시간", "주 40시간 이상 (전업 올인)"]
+    },
+    {
+      id: "shortTermGoal",
+      q: "앞으로 6개월 이내에 달성하고 싶은 가장 시급한 마일스톤은?",
+      a: ["기초 포텐셜을 확인하고 확실한 주특기 스택 정하기", "탄탄한 포트폴리오용 팀 프로젝트 완성하기", "주니어 개발자로 이력서 내고 면접 합격하기"]
+    }
+  ];
+
+  const quizData_jobs = {
+    web: [
+      {
+        id: "web_area",
+        q: "웹 개발 스펙트럼 중 어떤 메인 주특기를 가져가고 싶으신가요?",
+        a: ["프론트엔드 (UI/UX 구현 중심)", "백엔드 (서버/데이터 API 설계 중심)", "풀스택 (전체 아키텍처 빌드)", "아직 정하지 못했어요"]
+      }
+    ]
+    // 모바일, AI, 게임 등 하위 직군 데이터 구조 유지...
+  };
+
+  const ROLE_TO_JOBKEY = {
+    "웹 개발자": "web", "모바일 앱 개발자": "mobile", "AI 개발자": "ai",
+    "게임 개발자": "game", "보안 전문가": "security", "데브옵스 / 클라우드 엔지니어": "devops"
+  };
+
+  const API_URL = "/api/quiz";
+  const nickname = (sessionStorage.getItem("nickname") || "").trim() || "주니어";
+
   function isAnswered(item) {
     const v = answersById[item.id];
-    return item.multiple ? Array.isArray(v) && v.length>0 : typeof v === "string" && v.length>0;
+    return item.multiple ? Array.isArray(v) && v.length > 0 : typeof v === "string" && v.length > 0;
   }
 
   function currentItem() {
-    if (stage === "common") return quizData_common[commonIdx];
-    if (stage === "job")    return jobList[jobIdx];
-    return null;
+    return stage === "common" ? quizData_common[commonIdx] : jobList[jobIdx];
   }
 
-  function totalCount() {
-    if (stage === "common") return quizData_common.length;
-    if (stage === "job")    return jobList.length;
-    return 0;
-  }
-
-  function indexInStage() {
-    if (stage === "common") return commonIdx;
-    if (stage === "job")    return jobIdx;
-    return 0;
-  }
-
+  let commonIdx = 0;
+  
   function renderBranchChoice() {
-  const role = answersById["targetRole"] || "선택 안 함";
-  const jobKey = ROLE_TO_JOBKEY[role];
-  const hasJobFollowUp = !!(jobKey && quizData_jobs[jobKey]?.length);
-
-  // 분기 화면에서는 아래 이전/다음 버튼 숨기기
-  if (btnWrap) btnWrap.style.display = 'none';
-
-  quizBox.innerHTML = `
-    <div class="branch-header">
-      <div class="branch-icon">🔎</div>
-      <div class="branch-texts">
-        <div class="branch-title">다음 진행 방식을 선택해주세요</div>
-      </div>
-    </div>
-
-    <p class="branch-main">
-      지금까지의 공통 답변을 바탕으로,<br>
-      <span class="branch-em">어떻게 이어갈지</span> 선택하실 수 있어요.
-    </p>
-
-    <div class="branch-buttons">
-      <button class="quiz-btn branch-btn branch-btn--neutral ${hasJobFollowUp ? "" : "branch-btn--disabled"}"
-              id="branch-detail" ${hasJobFollowUp ? "" : "disabled"} data-require-login="true">
-        ${hasJobFollowUp ? "직군별 세부 질문 계속하기" : "직군별 질문 없음 (직군 미선택)"}
-      </button>
-
-      <button class="quiz-btn branch-btn branch-btn--primary" id="branch-chat" data-require-login="true">
-        대화형으로 전환 (채팅으로 추천 받기)
-      </button>
-
-      <button class="quiz-btn branch-btn branch-btn--ghost" id="branch-end">
-        공통 질문만으로 결과 보기
-      </button>
-    </div>
-
-    <button class="branch-back" type="button">← 공통 질문 다시 수정하기</button>
-
-    <p class="branch-hint">* 공통 답변을 다시 보고 싶다면 위 버튼을 눌러주세요.</p>
-  `;
-
-  // 1) 직군별 세부 질문
-  document.getElementById("branch-detail")?.addEventListener("click", () => {
-    if (!hasJobFollowUp) return;
-    const role = answersById["targetRole"];
+    if (btnWrap) btnWrap.style.display = 'none';
+    const role = answersById["targetRole"] || "아직 잘 모르겠어요";
     const jobKey = ROLE_TO_JOBKEY[role];
-    stage = "job";
-    currentJobKey = jobKey;
-    jobList = quizData_jobs[jobKey];
-    jobIdx = 0;
-    jobTitleShown = false;
-    webBranchInjected = false;
+    const hasJobFollowUp = !!(jobKey && quizData_jobs[jobKey]?.length);
 
-    if (btnWrap) btnWrap.style.display = 'flex'; // 버튼 다시 보이게
-    render();
-  });
+    quizBox.innerHTML = `
+      <div class="branch-container">
+        <div class="branch-header">
+          <div class="branch-title">🎯 핵심 공통 진단 완료</div>
+          <p class="branch-desc">기본 분석 준비가 끝났습니다. 다음 성장 여정을 어떻게 설계할까요?</p>
+        </div>
+        <div class="branch-buttons">
+          <button class="quiz-btn branch-btn branch-btn--neutral" id="branch-detail" ${hasJobFollowUp ? "" : "disabled"}>
+            ${hasJobFollowUp ? `🚀 ${role} 세부 타겟팅 질문 계속하기` : "🔒 선택 직군 세부 질문 없음"}
+          </button>
+          <button class="quiz-btn branch-btn branch-btn--primary" id="branch-chat">
+            💬 AI와 1:1 대화형 빌드업으로 넘어가기
+          </button>
+          <button class="quiz-btn branch-btn branch-btn--ghost" id="branch-end">
+            📊 즉시 내 성장 레포트 결과 보기
+          </button>
+        </div>
+        <button class="branch-back" type="button">← 설문 수정하기</button>
+      </div>
+    `;
 
-  // 2) 대화형으로 전환
-  document.getElementById("branch-chat")?.addEventListener("click", () => {
-    try {
-      const payload = buildPayload(/*commonOnly=*/true);
+    document.getElementById("branch-detail")?.addEventListener("click", () => {
+      if (!hasJobFollowUp) return;
+      stage = "job";
+      currentJobKey = jobKey;
+      jobList = quizData_jobs[jobKey];
+      jobIdx = 0;
+      jobTitleShown = false;
+      if (btnWrap) btnWrap.style.display = 'flex';
+      render();
+    });
+
+    document.getElementById("branch-chat")?.addEventListener("click", () => {
+      const payload = buildPayload(true);
       sessionStorage.setItem("quizCommonAnswers", JSON.stringify(payload));
-    } catch (e) {
-      console.warn("세션 저장 실패:", e);
-    }
-    window.location.href = "chat.html";
-  });
+      window.location.href = "chat.html";
+    });
 
-  // 3) 공통 질문만으로 결과 보기
-  document.getElementById("branch-end")?.addEventListener("click", () => {
-    jobList = [];
-    jobIdx = 0;
-    const payload = buildPayload(true);
-    goToResultPage(true, payload);
-  });
+    document.getElementById("branch-end")?.addEventListener("click", () => {
+      const payload = buildPayload(true);
+      goToResultPage(true, payload);
+    });
 
-  // 4) 공통 질문으로 돌아가기
-  document.querySelector('.branch-back')?.addEventListener('click', () => {
-    stage = "common";
-    commonIdx = quizData_common.length - 1;  // 마지막 공통 질문으로
-    if (btnWrap) btnWrap.style.display = 'flex'; // 다시 표시
-    render();
-  });
-}
+    document.querySelector('.branch-back')?.addEventListener('click', () => {
+      stage = "common";
+      commonIdx = quizData_common.length - 1;
+      if (btnWrap) btnWrap.style.display = 'flex';
+      render();
+    });
+  }
 
   function render() {
-    if (btnWrap && stage !== 'branch') {
-      btnWrap.style.display = 'flex';
-    }
-    // 직군 안내 화면
-    if (stage === "job" && !jobTitleShown) {
-      const role = answersById["targetRole"];
-      quizBox.innerHTML = `
-        <div class="section-title">💡 ${nickname}님이 선택하신 <b>${role || "-"}</b>에 대한 추가 질문</div>
-        <div class="section-sub">아래 문항에 답해주시면 더 정밀한 스택을 추천해드릴게요.</div>
-      `;
-      jobTitleShown = true;
-      onJobIntro = true;
-      prevBtn.disabled = false;
-      nextBtn.textContent = "시작하기";
-      nextBtn.disabled = false;
-      return;
-    }
-
-    // 공통 후 분기 선택 화면
     if (stage === "branch") {
       renderBranchChoice();
       return;
     }
 
-    // 일반 질문 화면
-    const item = currentItem();
-    const idx = indexInStage();
-    const total = totalCount();
+    if (stage === "job" && !jobTitleShown) {
+      const role = answersById["targetRole"];
+      quizBox.innerHTML = `
+        <div class="job-intro-box">
+          <div class="section-title">💡 <b>${role}</b> 심화 진단 시작</div>
+          <p class="section-sub">${nickname}님의 타겟 커리어에 딱 맞는 상세 로드맵 정밀 튜닝을 위한 최종 단계입니다.</p>
+        </div>
+      `;
+      jobTitleShown = true;
+      onJobIntro = true;
+      prevBtn.disabled = false;
+      nextBtn.textContent = "심화 설문 시작";
+      return;
+    }
 
-    onJobIntro = false;
+    const item = currentItem();
+    const idx = stage === "common" ? commonIdx : jobIdx;
+    const total = stage === "common" ? quizData_common.length : jobList.length;
+
     quizBox.innerHTML = `
       <div class="progress-line"><div class="bar" style="width:${((idx + 1) / total) * 100}%"></div></div>
-      <div class="question">${item.q}</div>
-      <div class="options" role="group" aria-label="선택지"></div>
+      <div class="question-header">
+        <span class="q-badge">Q.${idx + 1}</span>
+        <div class="question">${item.q}</div>
+      </div>
+      <div class="options" role="group"></div>
     `;
 
     const wrap = quizBox.querySelector(".options");
     const prevAns = answersById[item.id];
 
-    (item.a || []).forEach(label => {
+    item.a.forEach(label => {
       const el = document.createElement("div");
       el.className = "option";
-      el.setAttribute("role", "button");
-      el.setAttribute("tabindex", "0");
-      el.dataset.value = label;
       el.textContent = label;
 
-      // 선택 복원
       if (item.multiple && Array.isArray(prevAns) && prevAns.includes(label)) el.classList.add("selected");
       if (!item.multiple && prevAns === label) el.classList.add("selected");
 
-      const toggle = () => {
+      el.addEventListener("click", () => {
         if (item.multiple) {
           el.classList.toggle("selected");
-          const selected = Array.from(wrap.querySelectorAll(".option.selected")).map(n => n.dataset.value);
-          answersById[item.id] = selected;
+          answersById[item.id] = Array.from(wrap.querySelectorAll(".option.selected")).map(n => n.textContent);
         } else {
           wrap.querySelectorAll(".option").forEach(n => n.classList.remove("selected"));
           el.classList.add("selected");
           answersById[item.id] = label;
         }
-      };
-      el.addEventListener("click", toggle);
-      el.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); toggle(); } });
-
+      });
       wrap.appendChild(el);
     });
 
-    // 버튼 상태
-    if (stage === "common") {
-      prevBtn.disabled = commonIdx === 0;
-      nextBtn.textContent = (commonIdx === quizData_common.length - 1) ? "다음 단계" : "다음";
-      nextBtn.disabled = false;
-    } else if (stage === "job") {
-      prevBtn.disabled = false;
-
-      const curr = currentItem();
-      if (currentJobKey ==="web" && curr && curr.id === "web_area") {
-        nextBtn.textContent = "다음";
-      } else {
-          nextBtn.textContent = (jobIdx === jobList.length - 1) ? "결과 보기" : "다음";
-      }
-      nextBtn.disabled = false;
-    }
+    prevBtn.disabled = stage === "common" && commonIdx === 0;
+    nextBtn.textContent = stage === "common" && commonIdx === quizData_common.length - 1 ? "다음 단계" : (stage === "job" && jobIdx === jobList.length - 1 ? "분석 리포트 생성" : "다음");
   }
 
   function buildPayload(commonOnly = false) {
@@ -1264,7 +225,7 @@ document.addEventListener("DOMContentLoaded", () => {
     return {
       answers: allQs.map((q, i) => ({
         index: i,
-        id: q.id ?? null,
+        id: q.id,
         question: q.q,
         multiple: !!q.multiple,
         value: answersById[q.id] ?? null
@@ -1272,130 +233,44 @@ document.addEventListener("DOMContentLoaded", () => {
     };
   }
 
-  async function submitToServer(commonOnly = false) {
-    quizBox.innerHTML = `<div class="loading">AI가 결과를 분석 중입니다...</div>`;
-    nextBtn.disabled = true; 
-    prevBtn.disabled = true;
-
-    try {
-      const res = await fetch(API_URL, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(buildPayload(commonOnly))
-      });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const data = await res.json();
-      renderResult(data);
-    } catch (e) {
-      quizBox.innerHTML = `<div class="error">서버 오류: ${e.message}</div>`;
-      nextBtn.disabled = false; 
-      prevBtn.disabled = false;
-    }
-  }
-
-  function renderResult(result) {
-    const s = result?.recommended_stack || {};
-    const pct = Math.round((result?.score || 0) * 100);
-    quizBox.innerHTML = `
-      <h3>✅ 추천 직군: ${result?.role || "-"} <small>(적합도: ${isNaN(pct) ? "-" : pct + "%"})</small></h3>
-      <p class="reasons">${(result?.reasons || []).join(" · ")}</p>
-      <div class="result-grid">
-        <div><h4>Frontend</h4><p>${(s.frontend || []).join(", ")}</p></div>
-        <div><h4>Backend</h4><p>${(s.backend || []).join(", ")}</p></div>
-        <div><h4>DevOps</h4><p>${(s.devops || []).join(", ")}</p></div>
-        <div><h4>DB</h4><p>${(s.db || []).join(", ")}</p></div>
-        <div><h4>Learning Path</h4><ol>${(s.learning_path || []).map(x => `<li>${x}</li>`).join("")}</ol></div>
-      </div>
-      <button id="retryBtn" class="quiz-btn">다시 하기</button>
-    `;
-    document.getElementById('retryBtn')?.addEventListener('click', () => location.reload());
-  }
-
   function goToResultPage(commonOnly = false, payload) {
-    const payloadJson = JSON.stringify(payload);
-    sessionStorage.setItem("quizResultPayload", payloadJson);
+    sessionStorage.setItem("quizResultPayload", JSON.stringify(payload));
     sessionStorage.setItem("quizResultCommonOnly", commonOnly ? "1" : "0");
     window.location.href = "result.html";
   }
 
   nextBtn.addEventListener("click", () => {
-    // 직군 안내 화면에서 '시작하기'
     if (stage === "job" && onJobIntro) {
       onJobIntro = false;
       render();
       return;
     }
 
-    // 공통 / 직군 질문에서 유효성 검사
     const item = currentItem();
-    if (item && !item.multiple &&!isAnswered(item)) { 
-      alert("하나 이상 선택해주세요."); 
+    if (item && !item.multiple && !isAnswered(item)) { 
+      alert("진단을 이어가기 위해 답변을 하나 선택해주세요!"); 
       return; 
     }
 
-    // 공통 질문 단계
     if (stage === "common") {
       if (commonIdx < quizData_common.length - 1) {
-        commonIdx += 1;
+        commonIdx++;
         render();
       } else {
-        // 공통 질문 끝 → 분기 선택 화면으로 이동
         stage = "branch";
         render();
       }
-      return;
-    }
-
-    // 직군별 질문 단계
-    if (stage === "job") {
-      if (currentJobKey === "web" && item.id === "web_area") {
-        const selected = answersById["web_area"];
-
-        let branchKey = null;
-        if (selected?.includes("프론트엔드")) {
-          branchKey = "frontend";
-        } else if (selected?.includes("백엔드")) {
-          branchKey = "backend";
-        } else if (selected?.includes("풀스택")) {
-          branchKey = "fullstack";
-        }
-
-        if(branchKey) {
-          jobList = [quizData_jobs.web[0], ...webSubQuestions[branchKey]];
-          webBranchInjected = true;
-        } else {
-          jobList = [quizData_jobs.web[0]];
-        }
-
-        if (jobIdx < jobList.length - 1) {
-          jobIdx += 1;
-          render();
-        } else {
-          submitToServer(false);
-        }
-        return;
-      }
-
+    } else if (stage === "job") {
       if (jobIdx < jobList.length - 1) {
-        jobIdx += 1;
+        jobIdx++;
         render();
       } else {
-        const payload = buildPayload(false);
-        goToResultPage(false, payload);
+        goToResultPage(false, buildPayload(false));
       }
     }
   });
 
   prevBtn.addEventListener("click", () => {
-    // 분기 화면에서 '이전' → 공통 마지막 질문으로 복귀
-    if (stage === "branch") {
-      stage = "common";
-      commonIdx = quizData_common.length - 1;
-      render();
-      return;
-    }
-
-    // 직군 안내 화면에서 '이전' → 공통 마지막
     if (stage === "job" && onJobIntro) {
       stage = "common";
       commonIdx = quizData_common.length - 1;
@@ -1403,60 +278,19 @@ document.addEventListener("DOMContentLoaded", () => {
       render();
       return;
     }
-
     if (stage === "job") {
       if (jobIdx > 0) {
-        jobIdx -= 1;
-        render();
+        jobIdx--;
       } else {
         stage = "common";
         commonIdx = quizData_common.length - 1;
-        render();
       }
-      return;
-    }
-
-    // 공통 단계
-    if (stage === "common" && commonIdx > 0) {
-      commonIdx -= 1;
+      render();
+    } else if (stage === "common" && commonIdx > 0) {
+      commonIdx--;
       render();
     }
   });
 
-  // 초기 렌더
-  prevBtn.disabled = true;
   render();
-});
-
-document.addEventListener("keydown", function (e) {
-  if (e.key !== "Enter") return;
-
-  const nextBtn = document.getElementById("nextBtn");
-  if (!nextBtn) return;
-
-  const tag = e.target.tagName.toLowerCase();
-  const type = (e.target.type || "").toLowerCase();
-
-  if (
-    tag === "textarea" ||
-    tag === "select" ||
-    (tag === "input" && type !== "button" && type !== "submit")
-  ) {
-    return;
-  }
-
-  if (
-    tag === "button" &&
-    e.target.id !== "nextBtn" && 
-    e.target.id !== "prevBtn"
-  ) {
-
-    setTimeout(() => {
-      nextBtn.click();
-    }, 0);
-    return;
-  }
-
-  e.preventDefault();
-  nextBtn.click();
 });

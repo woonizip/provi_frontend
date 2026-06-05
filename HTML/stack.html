@@ -1,13 +1,15 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ko">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PROVI — 주니어 성장 진단 홈</title>
   <link rel="stylesheet" href="../CSS/sidebar.css">
   <link rel="stylesheet" href="../CSS/stack.css">
   <link rel="stylesheet" href="https://cdn.boxicons.com/fonts/basic/boxicons.min.css">
-  <title>PROVI</title>
 </head>
+
 <body>
   <div class="sidebar">
     <div class="logo_content">
@@ -87,49 +89,59 @@
       </div>
     </div>
   </div>
-  
+
   <div class="home_content">
     <main class="wrap">
       <header class="header">
         <div class="page-logo" aria-hidden="true"></div>
-        <h1>AI 기반 개발자 스택 추천</h1>
+        <h1>AI 맞춤형 커리어 성장 진단</h1>
       </header>
 
       <p class="lead">
-        PROVI가 당신의 <strong>현재 상황 · 목표 · 관심 분야</strong>를 바탕으로<br>
-        적합한 개발자 직군과 기술 스택을 추천해드려요.
+        PROVI 인텔리전스가 당신의 <strong>현재 상황 · 학습 스타일 · 커리어 지향점</strong>을 정밀 분석하여<br>
+        최적의 주니어 직군 트랙과 성장 로드맵 기술 스택을 설계합니다.
       </p>
 
-      <!-- 시작 안내 & 버튼 영역 -->
       <section class="start-section" aria-label="스택 추천 설문 시작">
         <p class="start-desc">
-          설문은 먼저 <strong>공통 질문</strong>을 진행한 뒤,<br>
-          마지막에 아래 3가지 중 하나를 선택하게 됩니다.
+          설문은 먼저 핵심 역량을 파악하는 <strong>공통 포텐셜 질문</strong>을 진행한 뒤,<br>
+          마지막 단계에서 3가지 트랙을 직접 선택하여 확장해 나갈 수 있습니다.
         </p>
-        <ul class="start-flow">
-          <ol>① 선택한 직군에 대해 <strong>세부 질문</strong>까지 이어서 받기</ol>
-          <ol>② 공통 답변을 바탕으로 <strong>대화형 추천</strong>으로 전환</ol>
-          <ol>③ <strong>공통 질문만으로</strong> 바로 결과 받아보기</ol>
-        </ul>
+
+        <div class="start-flow">
+          <div class="flow-item">
+            <span class="flow-num">1</span>
+            <p>선택한 주특기 직군에 대한 <strong>심화 질문 튜닝</strong> 이어받기</p>
+          </div>
+          <div class="flow-item">
+            <span class="flow-num">2</span>
+            <p>공통 답변을 바인딩하여 <strong>1:1 실시간 대화형 AI 추천</strong>으로 튜닝</p>
+          </div>
+          <div class="flow-item">
+            <span class="flow-num">3</span>
+            <p>바쁜 일정을 위해 <strong>핵심 질문만으로 빠르게</strong> 즉시 결과지 추출</p>
+          </div>
+        </div>
 
         <button class="start-btn" type="button" onclick="location.href='quiz.html'">
-          설문 시작하기
+          성장 여정 진단 시작하기
         </button>
 
         <p class="start-hint">
-          * 설문 도중 언제든 뒤로 돌아가 답변을 수정할 수 있어요.
+          * 진단 도중 언제든지 이전 문항으로 돌아가 유연하게 답변을 수정할 수 있습니다.
         </p>
       </section>
 
-      <!-- 예시 스택 영역 (기존 유지) -->
       <section class="examples">
-        <p>💡 예시: “프론트엔드 개발자에게 추천되는 스택”</p>
+        <p>💡 실시간 추천 트렌드 키워드</p>
         <div class="stack-tags">
-          <span>React</span>
-          <span>TypeScript</span>
-          <span>Angular</span>
+          <span>React.js</span>
           <span>Next.js</span>
-          <span>TailwindCSS</span>
+          <span>Spring Boot</span>
+          <span>FastAPI</span>
+          <span>TypeScript</span>
+          <span>Docker</span>
+          <span>Kubernetes</span>
         </div>
       </section>
     </main>
@@ -140,4 +152,5 @@
   <script src="../JAVASCRIPT/stack.js"></script>
   <script src="../JAVASCRIPT/mainpage.js"></script>
 </body>
+
 </html>
