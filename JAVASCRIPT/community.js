@@ -346,7 +346,6 @@ async function fetchCommunityPostList() {
   
   // 최종적으로 10개만 정확하게 슬라이싱 처리
   postList = rawList.slice(startIndex, endIndex);
-}
 
 // 인기 게시글 데이터 연동 로드
 async function fetchHotPostList() {
