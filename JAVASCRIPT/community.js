@@ -297,7 +297,6 @@ async function fetchCommunityPostList() {
   postList = rawList;
   totalPostCount = data.totalElements ?? rawList.length;
   totalPageCount = data.totalPages ?? Math.max(1, Math.ceil(totalPostCount / pageSize));
-}
 
   // 2. 검색어 필터 가이드
   if (searchKeyword.trim()) {
@@ -346,7 +345,7 @@ async function fetchCommunityPostList() {
   
   // 최종적으로 10개만 정확하게 슬라이싱 처리
   postList = rawList.slice(startIndex, endIndex);
-
+}
 // 인기 게시글 데이터 연동 로드
 async function fetchHotPostList() {
   const params = new URLSearchParams({
