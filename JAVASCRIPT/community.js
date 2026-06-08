@@ -900,6 +900,7 @@ async function handleDeletePost() {
   }
 }
 
+// [실시간 보완] 내가 댓글을 등록하는 순간, 타인이 쓴 댓글까지 결합하여 스크롤 리프레시
 async function handleSubmitComment() {
   if (!requireLogin()) return;
   if (!selectedPostId) return;
@@ -911,29 +912,42 @@ async function handleSubmitComment() {
   }
 
   try {
+    // 1. 내가 작성한 댓글을 먼저 백엔드 포스트 엔드포인트로 전송
     await createCommunityComment(selectedPostId);
+    
+    // 2. 인풋을 비우기 전 서버로부터 최신 댓글 데이터베이스 리스트를 통째로 다시 긁어옴 (레이스 컨디션 동기화)
+    await fetchCommunityPostDetail(selectedPostId);
+    
+    // 3. 인풋 청소 및 UI 자동 reload 그리프팅
     detailCommentInputEl.value = "";
-    await loadPostDetail(selectedPostId);
+    renderPostDetail();
     await loadPostList();
+    
   } catch (error) {
     console.error(error);
     alert("댓글 등록에 실패했습니다.");
   }
 }
 
+// [실시간 보완] 추천 토글 처리 후 즉시 새로고침 반영
 async function handleToggleLike() {
   if (!requireLogin()) return;
   if (!selectedPostId) return;
 
   try {
     const data = await toggleCommunityPostLike(selectedPostId);
+    
+    // 서버에서 리턴된 최신 스펙을 즉시 주입
     if (selectedPostDetail) {
       selectedPostDetail.likeCount = data.likeCount ?? selectedPostDetail.likeCount;
       selectedPostDetail.likedByMe = data.liked ?? selectedPostDetail.likedByMe;
     }
-    detailLikeBtnEl.textContent = `추천 ${selectedPostDetail.likeCount || 0}`;
-    await loadPostList();
-    await loadHotPostList();
+    
+    // 상세 모달 데이터와 백그라운드 전체 메인 게시판 목록 동시 릴레이 새로고침
+    await fetchCommunityPostDetail(selectedPostId);
+    renderPostDetail();
+    await loadCommunityPage();
+    
   } catch (error) {
     console.error(error);
     alert("추천 처리에 실패했습니다.");
@@ -1055,7 +1069,7 @@ showHotPostsBtn?.addEventListener("click", async () => {
   window.scrollTo({ top: 350, behavior: "smooth" });
 });
 
-// 게시글 목록 클릭 -> 상세
+// [실시간 보완] 게시글 목록 클릭 -> 상세 모달 열기 및 자동 갱신
 communityPostListEl?.addEventListener("click", async (event) => {
   if (event.target.closest("[data-more-wrap]")) return;
   const postItem = event.target.closest(".community-post-item");
@@ -1065,10 +1079,14 @@ communityPostListEl?.addEventListener("click", async (event) => {
     console.error("잘못된 postId:", postId);
     return;
   }
+  
+  // 상세 데이터 조회 후 모달을 열고, 목록의 조회수 수치도 실시간 동기화
   await loadPostDetail(postId);
+  await fetchCommunityPostList();
+  renderPostList();
 });
 
-// 인기 게시글 클릭 -> 상세
+// 인기 게시글 클릭 -> 상세 동일 적용
 hotPostGridEl?.addEventListener("click", async (event) => {
   const postItem = event.target.closest(".highlight-card");
   if (!postItem) return;
@@ -1078,6 +1096,8 @@ hotPostGridEl?.addEventListener("click", async (event) => {
     return;
   }
   await loadPostDetail(postId);
+  await fetchCommunityPostList();
+  renderPostList();
 });
 
 // 게시글 작성/수정 submit
@@ -1139,23 +1159,36 @@ myActivityTabs.forEach((tab) => {
   });
 });
 
-// 모달 닫기
+// [실시간 보완] 상세창을 닫을 때 최종 데이터를 메인 대시보드 리스트에 새로고침 바인딩
 document.querySelectorAll("[data-close]").forEach((button) => {
-  button.addEventListener("click", () => {
+  button.addEventListener("click", async () => {
     const modalId = button.dataset.close;
     const modalEl = document.getElementById(modalId);
     closeModal(modalEl);
+    
+    // 상세 창이나 글쓰기 창이 닫히면 전체 메인 보드를 무조건 리로드
+    if (modalId === "postDetailModal" || modalId === "postFormModal") {
+      await loadCommunityPage();
+    }
   });
 });
 
-// ESC 닫기
-document.addEventListener("keydown", (event) => {
+// ESC 버튼 클로저 가드 대응
+document.addEventListener("keydown", async (event) => {
   if (event.key === "Escape") {
+    let needRefresh = false;
     [postDetailModalEl, postFormModalEl, myActivityModalEl].forEach((modalEl) => {
       if (modalEl && !modalEl.classList.contains("hidden")) {
+        if (modalEl.id === "postDetailModal" || modalEl.id === "postFormModal") {
+          needRefresh = true;
+        }
         closeModal(modalEl);
       }
     });
+    
+    if (needRefresh) {
+      await loadCommunityPage();
+    }
   }
 });
 

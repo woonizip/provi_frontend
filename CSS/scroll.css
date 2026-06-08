@@ -1,0 +1,44 @@
+/* 1. 웹 브라우저 전체 (body 등) 및 모든 스크롤 컨테이너에 적용 */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+/* 2. 스크롤바가 지나가는 레일(배경) 트랙 */
+::-webkit-scrollbar-track {
+  background: rgba(3, 7, 18, 0.4);
+  border-radius: 10px;
+}
+
+[data-theme="light"] ::-webkit-scrollbar-track {
+  background: rgba(241, 245, 249, 0.5);
+}
+
+/* 3. 실제로 사용자가 잡고 움직이는 스크롤바 막대(Thumb) */
+::-webkit-scrollbar-thumb {
+  background: rgba(99, 102, 241, 0.25);
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  transition: background 0.3s ease;
+}
+
+[data-theme="light"] ::-webkit-scrollbar-thumb {
+  background: rgba(99, 102, 241, 0.3);
+}
+
+/* 4. 스크롤바에 마우스를 올렸을 때(Hover) 피드백 효과 */
+::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, #6366f1, #06b6d4);
+  box-shadow: 0 0 8px rgba(6, 182, 212, 0.5);
+}
+
+[data-theme="light"] ::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, #4f46e5, #0891b2);
+  box-shadow: 0 0 8px rgba(8, 145, 178, 0.3);
+}
+
+/* Firefox 브라우저 표준 스크롤바 대응 (선택 사항) */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(99, 102, 241, 0.25) rgba(3, 7, 18, 0.4);
+}

@@ -523,31 +523,103 @@ select:focus {
   font-size: 0.9rem;
 }
 
+/* 참여 역할 라디오 리스트 래퍼 */
 .join-role-list {
   display: flex;
   flex-direction: column;
   gap: 10px;
+  margin-top: 12px;
 }
 
+/* 개별 라디오 버튼 항목을 세련된 카드형으로 변환 */
 .join-role-item {
+  position: relative;
   display: flex;
   align-items: center;
-  gap: 8px;
+  justify-content: space-between;
+  padding: 14px 18px;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid var(--card-border);
+  border-radius: 12px;
   cursor: pointer;
-  font-size: 0.9rem;
+  font-size: 0.92rem;
+  font-weight: 600;
+  color: var(--text-main);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-/* 7. 우측 하단 고정 UI - 실시간 채팅방 대화창 */
+[data-theme="light"] .join-role-item {
+  background: rgba(15, 23, 42, 0.02);
+}
+
+/* 마우스 호버 시 살짝 밝아지며 테두리 하이라이트 */
+.join-role-item:hover {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(99, 102, 241, 0.3);
+  transform: translateY(-1px);
+}
+
+[data-theme="light"] .join-role-item:hover {
+  background: rgba(15, 23, 42, 0.04);
+}
+
+/* 실제 input[type="radio"] 숨기기 (디자인 커스텀을 위함) */
+.join-role-item input[type="radio"] {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+/* 선택된 상태(Checked)의 세련된 인디고-시안 액티브 스타일 */
+.join-role-item:has(input[type="radio"]:checked) {
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.15), rgba(6, 182, 212, 0.08));
+  border-color: #6366f1;
+  box-shadow: 0 0 12px rgba(99, 102, 241, 0.15);
+  color: #ffffff;
+}
+
+[data-theme="light"] .join-role-item:has(input[type="radio"]:checked) {
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.08), rgba(6, 182, 212, 0.04));
+  border-color: #4f46e5;
+  color: #4f46e5;
+}
+
+/* 선택되었을 때 우측에 나타날 체크 표시 효과 (가상 요소) */
+.join-role-item::after {
+  content: "✓";
+  font-size: 1rem;
+  font-weight: 800;
+  color: #06b6d4;
+  opacity: 0;
+  transform: scale(0.5);
+  transition: all 0.2s ease;
+}
+
+.join-role-item:has(input[type="radio"]:checked)::after {
+  opacity: 1;
+  transform: scale(1);
+}
+
+/* 안내 및 도움말 텍스트 정돈 */
+.help-text {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  margin-top: 10px;
+  padding-left: 4px;
+}
+
+/* 7. 우측 하단 고정 UI - 실시간 모던 채팅방 (전면 리팩토링) */
 #chatWindow {
   position: fixed;
   bottom: 24px;
   right: 24px;
-  width: 380px;
-  height: 560px;
+  width: 390px;
+  height: 580px;
   background: #0f1322;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  border-radius: 20px;
-  box-shadow: 0 15px 40px rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 24px;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.4);
   display: none;
   flex-direction: column;
   z-index: 3000 !important;
@@ -558,15 +630,17 @@ select:focus {
 
 [data-theme="light"] #chatWindow {
   background: #ffffff;
-  border: 1px solid rgba(0, 0, 0, 0.08);
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  box-shadow: 0 20px 50px rgba(15, 23, 42, 0.15);
 }
 
 #chatWindow.open {
   display: flex;
 }
 
+/* 채팅 헤더 정돈 */
 .chat-header {
-  padding: 16px 20px;
+  padding: 18px 20px;
   background: rgba(255, 255, 255, 0.02);
   border-bottom: 1px solid var(--card-border);
   display: flex;
@@ -574,20 +648,26 @@ select:focus {
   align-items: center;
 }
 
+[data-theme="light"] .chat-header {
+  background: rgba(15, 23, 42, 0.01);
+}
+
 #chatTitle {
-  font-weight: 700;
+  font-weight: 800;
   color: var(--text-main);
-  font-size: 1.05rem;
+  font-size: 1.1rem;
+  letter-spacing: -0.01em;
 }
 
 #chatProjectInfo {
   font-size: 0.8rem;
   color: var(--text-muted);
+  margin-top: 2px;
 }
 
 .chat-header-actions {
   display: flex;
-  gap: 10px;
+  gap: 12px;
   align-items: center;
 }
 
@@ -598,104 +678,323 @@ select:focus {
   color: var(--text-sub);
   cursor: pointer;
   font-weight: 600;
+  transition: color 0.2s;
+}
+
+.chat-small-btn:hover,
+.chat-close-btn:hover {
+  color: var(--text-main);
 }
 
 .chat-close-btn {
   font-size: 1.1rem;
 }
 
+/* 대화창 내부 메인 영역 */
 .chat-message-area {
   flex: 1;
   padding: 20px;
   overflow-y: auto;
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 16px;
+  background: rgba(0, 0, 0, 0.1);
 }
 
-/* 채팅 메시지 버블 객체화 */
+/* [핵심 수정] 말풍선 객체 정밀 튜닝 */
 .chat-message {
   display: flex;
   flex-direction: column;
   max-width: 75%;
-  gap: 4px;
+  position: relative;
 }
 
+/* 내 메시지 - 우측 정렬 */
 .chat-message.mine {
   align-self: flex-end;
   align-items: flex-end;
 }
 
+/* 상대방 메시지 - 좌측 정렬 */
 .chat-message.other {
   align-self: flex-start;
   align-items: flex-start;
 }
 
+/* 보낸 사람 닉네임 */
 .chat-sender {
-  font-size: 0.75rem;
-  color: var(--text-muted);
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--text-sub);
+  margin-bottom: 4px;
+  padding-left: 4px;
 }
 
 .chat-message.mine .chat-sender {
   display: none;
+  /* 내 화면에서 내 닉네임은 가려서 깔끔하게 함 */
 }
 
-/* 텍스트 내용 버블 */
-.chat-message::shadow,
-.chat-message {
+/* [버그 수정] 글래스모피즘 입체 말풍선 주입 */
+.chat-message .chat-text-wrapper {
+  padding: 11px 16px;
+  border-radius: 16px;
   font-size: 0.92rem;
-  line-height: 1.4;
-}
-
-/* 꼼수 없는 순수 텍스트 영역 가독성 보강 */
-.chat-message.mine {
+  line-height: 1.5;
+  word-break: break-all;
   color: #ffffff;
 }
 
-.chat-time {
-  font-size: 0.7rem;
+/* 내 말풍선: 인디고 그라데이션 */
+.chat-message.mine .chat-text-wrapper {
+  background: linear-gradient(135deg, #4f46e5, #6366f1);
+  border-radius: 16px 16px 2px 16px;
+  box-shadow: 0 4px 12px rgba(79, 70, 229, 0.2);
+}
+
+/* 상대방 말풍선: 은은한 다크 그레이 */
+.chat-message.other .chat-text-wrapper {
+  background: rgba(255, 255, 255, 0.07);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 16px 16px 16px 2px;
+  color: var(--text-main);
+}
+
+/* 라이트모드 셋업 */
+[data-theme="light"] .chat-message.other .chat-text-wrapper {
+  background: #f1f5f9;
+  border: 1px solid rgba(0, 0, 0, 0.03);
+  color: #0f172a;
+}
+
+[data-theme="light"] .chat-message.mine .chat-text-wrapper {
+  color: #ffffff;
+}
+
+/* [버그 수정] 읽음 숫자 및 시간 메타 데이터 크기 최소화 정돈 */
+.chat-meta-container {
+  display: flex;
+  align-items: flex-end;
+  gap: 6px;
+  margin-top: 4px;
+  font-size: 0.72rem;
   color: var(--text-muted);
 }
 
+.chat-message.mine .chat-meta-container {
+  flex-direction: row-reverse;
+}
+
+/* 읽음 카운트 인디게이터 포인트 컬러 */
+.chat-read-info {
+  color: #06b6d4;
+  font-weight: 700;
+}
+
+.chat-time {
+  color: var(--text-muted);
+}
+
+/* 시스템 메시지 (입장/퇴장) */
 .chat-message-system {
   align-self: center;
   background: rgba(255, 255, 255, 0.05);
-  padding: 6px 14px;
-  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.03);
+  padding: 6px 16px;
+  border-radius: 20px;
   font-size: 0.8rem;
   color: var(--text-sub);
   text-align: center;
+  margin: 8px 0;
 }
 
+[data-theme="light"] .chat-message-system {
+  background: rgba(0, 0, 0, 0.04);
+  color: var(--text-sub);
+}
+
+/* [디자인 고도화] 파일 다운로드 컴포넌트 */
+.chat-file-download-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--card-border);
+  border-radius: 12px;
+  color: #06b6d4 !important;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-align: left;
+}
+
+.chat-file-download-btn:hover {
+  background: rgba(6, 182, 212, 0.1);
+  border-color: #06b6d4;
+}
+
+.chat-message.mine .chat-file-download-btn {
+  background: rgba(0, 0, 0, 0.15);
+  border-color: rgba(255, 255, 255, 0.1);
+  color: #06b6d4 !important;
+}
+
+/* 하단 폼 컨트롤 푸터 영역 */
 .chat-footer {
   padding: 16px;
   border-top: 1px solid var(--card-border);
   display: flex;
-  gap: 8px;
+  gap: 10px;
   align-items: center;
-  background: rgba(0, 0, 0, 0.1);
+  background: rgba(0, 0, 0, 0.15);
+}
+
+[data-theme="light"] .chat-footer {
+  background: #f8fafc;
 }
 
 .file-btn {
   background: var(--card-border);
-  border: none;
+  border: 1px solid transparent;
   color: var(--text-main);
-  padding: 10px 12px;
-  border-radius: 8px;
+  padding: 12px 14px;
+  border-radius: 10px;
   cursor: pointer;
   white-space: nowrap;
   font-size: 0.85rem;
+  font-weight: 600;
+  transition: all 0.2s;
+}
+
+.file-btn:hover {
+  background: rgba(255, 255, 255, 0.15);
 }
 
 .chat-input-wrap {
   display: flex;
   flex: 1;
-  gap: 6px;
+  gap: 8px;
 }
 
 .chat-input-wrap input {
   flex: 1;
-  padding: 10px 12px;
+  padding: 12px;
+  background: var(--input-bg);
+  border: 1px solid var(--card-border);
+  color: var(--text-main);
+  border-radius: 10px;
+  font-size: 0.9rem;
+}
+
+.chat-input-wrap input:focus {
+  outline: none;
+  border-color: var(--primary-color);
+}
+
+/* ============================================================
+   7-A. 파일 모아보기 사이드 패널 내부 아이템 디자인 (최종)
+   ============================================================ */
+.chat-files-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px;
+  overflow-y: auto;
+  height: calc(100% - 60px);
+}
+
+/* 개별 파일이 노출되는 세련된 글래스모피즘 카드 */
+.chat-file-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 16px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--card-border);
+  border-radius: 14px;
+  transition: all 0.2s ease;
+}
+
+[data-theme="light"] .chat-file-item {
+  background: #f8fafc;
+  border-color: rgba(15, 23, 42, 0.05);
+}
+
+.chat-file-item:hover {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(6, 182, 212, 0.3);
+}
+
+[data-theme="light"] .chat-file-item:hover {
+  background: #f1f5f9;
+}
+
+/* 파일 아이콘 및 메타 정보 배치 구획 */
+.chat-file-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+  /* 파일명이 길어질 때 말줄임표(...) 가동을 위한 방어 코드 */
+  flex: 1;
+}
+
+/* 사이버틱한 파일 아이콘 배경 배지 */
+.chat-file-icon {
+  font-size: 1.25rem;
+  background: rgba(6, 182, 212, 0.1);
+  padding: 8px;
+  border-radius: 10px;
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.chat-file-meta {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+/* 파일 제목 말줄임 방어 레이어 */
+.chat-file-name {
+  font-size: 0.88rem;
+  color: var(--text-main);
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* 업로더 및 생성일자 포맷 크기 최적화 */
+.chat-file-sub {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  margin-top: 3px;
+}
+
+/* 패널 전용 우측 다운로드 단추 고도화 */
+.chat-file-download-btn.panel-download {
+  background: #06b6d4;
+  color: #ffffff !important;
+  border: none;
+  padding: 8px 14px;
+  border-radius: 8px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.2s ease;
+}
+
+.chat-file-download-btn.panel-download:hover {
+  background: #0891b2;
+  box-shadow: 0 0 10px rgba(6, 182, 212, 0.4);
+  transform: translateY(-1px);
 }
 
 /* 8. 우측 레이어 패널 - 채팅방 목록 / 파일 모아보기 */

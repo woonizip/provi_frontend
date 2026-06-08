@@ -1430,60 +1430,53 @@ function appendChatMessage(chat) {
   const sender = escapeHtml(chat.senderNickname || "알 수 없음");
   const time = chat.createdAt ? formatChatTime(chat.createdAt) : formatChatTime(new Date());
 
-  let contentHtml = "";
+  const unreadCount = Number(chat.unreadCount || 0);
+  const readCount = Number(chat.readCount || 0);
+  
+  // 읽음 가이드 텍스트 빌드
+  let readInfoHtml = "";
+  if (unreadCount > 0) {
+    readInfoHtml = `<span class="chat-read-info">${unreadCount}명 읽음</span>`;
+  } else if (readCount > 0) {
+    readInfoHtml = `<span class="chat-read-info">${readCount}명 읽음</span>`;
+  }
 
+  // 1. 메시지 본문 콘텐츠 구성
+  let bodyHtml = "";
   if (messageType === "IMAGE") {
     const fileUrl = escapeHtml(chat.fileUrl || "");
     const fileName = escapeHtml(chat.originalFileName || "이미지");
-    contentHtml = `
-      <span class="chat-sender">${sender}</span>
+    bodyHtml = `
       <a href="${fileUrl}" target="_blank" rel="noopener">
-        <img class="chat-image" src="${fileUrl}" alt="${fileName}">
+        <img class="chat-image" src="${fileUrl}" alt="${fileName}" style="max-width:200px; border-radius:10px;">
       </a>
-      <span class="chat-time">${time}</span>
     `;
   } else if (messageType === "FILE") {
-    const rawFileUrl = chat.fileUrl || "";
-    const rawFileName = chat.originalFileName || "첨부파일";
-
-    const fileUrl = escapeHtml(rawFileUrl);
-    const fileName = escapeHtml(rawFileName);
-
-    contentHtml = `
-      <span class="chat-sender">${sender}</span>
-      <button
-        type="button"
-        class="chat-file-download-btn"
-        data-file-url="${fileUrl}"
-        data-file-name="${fileName}"
-      >
-        📎 ${fileName} 다운로드
+    const fileUrl = escapeHtml(chat.fileUrl || "");
+    const fileName = escapeHtml(chat.originalFileName || "첨부파일");
+    bodyHtml = `
+      <button type="button" class="chat-file-download-btn" data-file-url="${fileUrl}" data-file-name="${fileName}">
+        📁 ${fileName} 다운로드
       </button>
-      <span class="chat-time">${time}</span>
     `;
   } else {
-    contentHtml = `
-      <span class="chat-sender">${sender}</span>
-      ${renderMentionText(chat.content || "")}
-      <span class="chat-time">${time}</span>
-    `;
+    bodyHtml = renderMentionText(chat.content || "");
   }
 
-  const unreadCount = Number(chat.unreadCount || 0);
-  const readCount = Number(chat.readCount || 0);
-  const mentionedMe = !!chat.mentionedMe;
+  // 2. 최종 구조화 바인딩
+  div.innerHTML = `
+    <span class="chat-sender">${sender}</span>
+    <div class="chat-text-wrapper">${bodyHtml}</div>
+    <div class="chat-meta-container">
+      ${readInfoHtml}
+      <span class="chat-time">${time}</span>
+    </div>
+  `;
 
-  if (mentionedMe) {
+  if (chat.mentionedMe) {
     div.classList.add("mentioned");
   }
 
-  if (unreadCount > 0) {
-    contentHtml += `<span class="chat-read-info">안 읽음 ${unreadCount}</span>`;
-  } else if (readCount > 0) {
-    contentHtml += `<span class="chat-read-info">${readCount}명 읽음</span>`;
-  }
-
-  div.innerHTML = contentHtml;
   msgArea.appendChild(div);
   scrollChatBottom();
 }
@@ -2088,49 +2081,50 @@ function renderChatRoomList(rooms) {
 }
 
 async function loadChatFiles(projectId) {
-  if (!chatFilesList) return;
+  const filesListEl = document.getElementById("chatFilesList");
+  if (!filesListEl) return;
 
   try {
     const files = await authFetch(`/api/teamproject/${projectId}/chat/files`, {
       method: "GET",
     });
 
-    const list = Array.isArray(files) ? files : files.content || [];
+    // 스프링 백엔드 DTO 바인딩 대응 (배열이거나 페이징 content 객체인 경우 예외처리)
+    const list = Array.isArray(files) ? files : (files.content || files.list || []);
 
     if (!list.length) {
-      chatFilesList.innerHTML = `<div class="detail-empty">업로드된 파일이 없습니다.</div>`;
+      filesListEl.innerHTML = `<div class="detail-empty">업로드된 파일이 없습니다.</div>`;
       return;
     }
 
-    chatFilesList.innerHTML = list
+    // [버그 수정 완료] 세련된 글래스모피즘 카드 레이아웃 데이터 렌더링
+    filesListEl.innerHTML = list
       .map((file) => {
-        const isImage = String(file.fileType || "").toUpperCase() === "IMAGE";
+        const fileUrl = escapeHtml(file.fileUrl || "");
+        const fileName = escapeHtml(file.originalFileName || "첨부파일");
+        const sender = escapeHtml(file.uploaderNickname || file.senderNickname || "알 수 없음");
+        const time = file.createdAt ? formatDate(file.createdAt) : "-";
 
         return `
           <div class="chat-file-item">
-            ${
-              isImage
-                ? `<img class="chat-file-thumb" src="${escapeHtml(file.fileUrl)}" alt="${escapeHtml(file.originalFileName || "이미지")}" />`
-                : ``
-            }
-            <button
-              type="button"
-              class="chat-file-download-btn"
-              data-file-url="${escapeHtml(file.fileUrl)}"
-              data-file-name="${escapeHtml(file.originalFileName || "첨부파일")}"
-            >
-              📎 ${escapeHtml(file.originalFileName || "첨부파일")} 다운로드
-            </button>
-            <div class="chat-file-meta">
-              ${escapeHtml(file.uploaderNickname || "-")} · ${escapeHtml(formatDate(file.createdAt || ""))}
+            <div class="chat-file-info">
+              <span class="chat-file-icon">📁</span>
+              <div class="chat-file-meta">
+                <strong class="chat-file-name" title="${fileName}">${fileName}</strong>
+                <span class="chat-file-sub">${sender} · ${time}</span>
+              </div>
             </div>
+            <button type="button" class="chat-file-download-btn panel-download" data-file-url="${fileUrl}" data-file-name="${fileName}">
+              다운로드
+            </button>
           </div>
         `;
       })
       .join("");
+
   } catch (e) {
     console.warn("파일 모아보기 조회 실패:", e.message);
-    chatFilesList.innerHTML = `<div class="detail-empty">파일 목록을 불러오지 못했습니다.</div>`;
+    filesListEl.innerHTML = `<div class="detail-empty">파일 목록을 불러오지 못했습니다.</div>`;
   }
 }
 
