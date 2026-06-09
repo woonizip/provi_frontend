@@ -1580,18 +1580,21 @@ async function uploadChatFileAndSend() {
   }
 
   if (!stompClient || !stompClient.connected) {
-    alert("채팅 서버(WebSocket)에 연결되지 않은 상태입니다.");
+    alert("채팅 서버에 연결되지 않았습니다. WebSocket 연결 상태를 확인해주세요.");
     return;
   }
 
-  // S3 저장소 구획 정의용 파일 Content-Type (MIME) 추출
   const contentType = selectedChatFile.type || "application/octet-stream";
   const isImage = contentType.startsWith("image/");
 
   try {
-    console.log("[PROVI] Presigned URL 발급 요청 시작...");
+    console.log("===== Presigned URL 요청 =====");
+    console.log("projectId:", currentChatProjectId);
+    console.log("fileName:", selectedChatFile.name);
+    console.log("contentType:", contentType);
+    console.log("fileSize:", selectedChatFile.size);
 
-    // 1. 스프링 백엔드 서버에 파일 정보 전달하여 S3 일회용 업로드 주소 요청
+    // 1. 백엔드에 Presigned URL 요청
     const presignRes = await authFetch(
       `/api/teamproject/${currentChatProjectId}/chat/files`,
       {
@@ -1606,72 +1609,76 @@ async function uploadChatFileAndSend() {
       }
     );
 
-    console.log("[PROVI] 백엔드 Presigned URL 응답 완료:", presignRes);
+    console.log("presignRes:", presignRes);
 
-    const uploadUrl = presignRes.uploadUrl; // AWS S3에 PUT할 타겟 주소
-    const fileUrl = presignRes.fileUrl;     // DB 저장 및 메시지 렌더링용 최종 고유 파일 경로
-    const originalFileName = presignRes.originalFileName || selectedChatFile.name; // 실제 저장된 원본 명칭
-    const fileType = presignRes.fileType || contentType; // 백엔드가 지정한 파일 타입 규격
-    const disposition = presignRes.disposition || "";    // 다운로드 속성 헤더 제어 규격
+    const uploadUrl = presignRes.uploadUrl;                  // S3 업로드용 주소
+    const fileUrl = presignRes.fileUrl;                      // DB 저장 및 다운로드용 최종 경로
+    const originalFileName = presignRes.originalFileName || selectedChatFile.name; // 실제 파일명
+    const uploadContentType = presignRes.fileType || contentType; // 백엔드가 지정한 정확한 타입 규격
+    const contentDisposition = presignRes.disposition || "";     // S3 다운로드 헤더 속성
 
     if (!uploadUrl) {
-      throw new Error("S3 업로드용 presigned URL(uploadUrl)이 응답 데이터에 누락되었습니다.");
+      throw new Error("S3 업로드용 presigned URL이 응답에 없습니다.");
     }
 
     if (!fileUrl) {
-      throw new Error("최종 조회용 파일 경로(fileUrl)가 응답 데이터에 누락되었습니다.");
+      throw new Error("DB에 저장할 fileUrl이 응답에 없습니다.");
     }
+
+    console.log("uploadUrl:", uploadUrl);
+    console.log("db fileUrl:", fileUrl);
+    console.log("originalFileName:", originalFileName);
+    console.log("upload contentType:", uploadContentType);
+    console.log("contentDisposition:", contentDisposition);
 
     const s3Headers = {
-      "Content-Type": fileType,
+      "Content-Type": uploadContentType,
     };
 
-    if (disposition) {
-      s3Headers["Content-Disposition"] = disposition;
+    if (contentDisposition) {
+      s3Headers["Content-Disposition"] = contentDisposition;
     }
 
+    // 2. S3 presigned URL로 직접 업로드 (바이너리 본문 매핑)
     const s3Res = await fetch(uploadUrl, {
       method: "PUT",
       headers: s3Headers,
-      body: selectedChatFile, // 순수 파일 바이너리 밀어넣기
+      body: selectedChatFile,
     });
 
     if (!s3Res.ok) {
       const errorText = await s3Res.text();
-      throw new Error(`AWS S3 스토리지 업로드 실패 (상태코드: ${s3Res.status}) ${errorText}`);
+      throw new Error(`S3 업로드 실패: ${s3Res.status} ${errorText}`);
     }
 
-    console.log("[PROVI] AWS S3 버킷 파일 안착 성공");
+    console.log("S3 업로드 성공");
 
-    const chatMessageDto = {
+    // 3. 웹소켓(STOMP)을 통한 실시간 채팅방 공유 브로드캐스트
+    const payload = {
       projectId: currentChatProjectId,
       senderNickname: getNickname(),
-      content: `[파일 공유] ${originalFileName}`, // 채팅방 요약 명세 텍스트
+      content: `[파일 공유] ${originalFileName}`, // 채팅방 말풍선에 가시성을 높여줄 요약 문구
       messageType: isImage ? "IMAGE" : "FILE",
-      fileUrl: fileUrl,                           // 백엔드 ChatFileResponse 기준 필드 일치
-      originalFileName: originalFileName,         // 백엔드 ChatFileResponse 기준 필드 일치
-      contentType: fileType,
+      fileUrl: fileUrl,
+      originalFileName: originalFileName,
+      contentType: uploadContentType,
     };
 
-    console.log("[PROVI] 웹소켓 발행(Publish) 페이로드 명세:", chatMessageDto);
+    console.log("파일 메시지 전송 payload:", payload);
 
     stompClient.publish({
       destination: `/app/teamproject/${currentChatProjectId}/chat/send`,
-      body: JSON.stringify(chatMessageDto),
+      body: JSON.stringify(payload),
     });
 
-    // 프리뷰 초기화 및 전송 컴포넌트 락 해제
     clearSelectedFile();
 
-    // 파일 모아보기 패널이 현재 열려있다면 목록 비동기 새로고침 연동
-    const chatFilesPanel = document.getElementById("chatFilesPanel");
-    if (chatFilesPanel && chatFilesPanel.classList.contains("open")) {
-      await loadChatFiles(currentChatProjectId);
+    if (typeof loadChatRoomsSilently === "function") {
+      await loadChatRoomsSilently();
     }
-
   } catch (e) {
-    console.error("[PROVI ERROR] 파일 업로드 제어 장해 발생:", e);
-    alert(`파일 전송에 실패했습니다: ${e.message}`);
+    console.error("파일 업로드 실패:", e);
+    alert(`파일 업로드 실패: ${e.message}`);
   }
 }
 
