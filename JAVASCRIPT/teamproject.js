@@ -1611,15 +1611,16 @@ async function uploadChatFileAndSend() {
 
     console.log("presignRes:", presignRes);
 
-    const uploadUrl = presignRes.uploadUrl;                  // S3 업로드용 주소
-    const fileUrl = presignRes.fileUrl;                      // DB 저장 및 다운로드용 최종 경로
-    const originalFileName = presignRes.originalFileName || selectedChatFile.name; // 실제 파일명
-    const uploadContentType = presignRes.fileType || contentType; // 백엔드가 지정한 정확한 타입 규격
-    const contentDisposition = presignRes.disposition || "";     // S3 다운로드 헤더 속성
+    const uploadUrl = presignRes.fileUrl;
+    const originalFileName = presignRes.originalFileName || selectedChatFile.name;
+    const uploadContentType = presignRes.fileType || contentType;
+    const contentDisposition = presignRes.disposition || "";
 
     if (!uploadUrl) {
       throw new Error("S3 업로드용 presigned URL이 응답에 없습니다.");
     }
+
+    const fileUrl = uploadUrl.split("?")[0];
 
     if (!fileUrl) {
       throw new Error("DB에 저장할 fileUrl이 응답에 없습니다.");
@@ -1657,11 +1658,12 @@ async function uploadChatFileAndSend() {
     const payload = {
       projectId: currentChatProjectId,
       senderNickname: getNickname(),
-      content: `[파일 공유] ${originalFileName}`, // 채팅방 말풍선에 가시성을 높여줄 요약 문구
+      content: `[파일 공유] ${originalFileName}`,
       messageType: isImage ? "IMAGE" : "FILE",
       fileUrl: fileUrl,
       originalFileName: originalFileName,
-      contentType: uploadContentType,
+      fileType: uploadContentType,
+      disposition: contentDisposition,
     };
 
     console.log("파일 메시지 전송 payload:", payload);
