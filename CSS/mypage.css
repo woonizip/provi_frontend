@@ -1,520 +1,465 @@
-html,
-body {
-  height: 100%;
-}
+/* mypage.css */
 
-/* ==========================================================================
-   🌌 1. [교정 완료]: 오리지널 시안 및 타 페이지와 100% 일치하는 심해 네이비 셋업
-   ========================================================================== */
+/* ============================================================
+   1. 글로벌 디자인 시스템 및 테마 스펙 통합
+   ============================================================ */
+@import url('https://fonts.googleapis.com/css2?family=Pretendard:wght@400;500;600;700;800&display=swap');
+
 :root {
-  /* 💡 stack.css와 result.css의 코어 색상 및 그라디언트 메커니즘 완전 일체화 */
-  --bg-core: #030712;
-  /* 오리지널 딥 블랙 기본 배경축 */
   --bg-color: #030712;
-  /* */
-  --text-main: rgba(243, 244, 246, 0.95);
-  /* */
-  --text-muted: #9ca3af;
-  /* */
-
-  /* 글래스모피즘 스킨 스펙트럼 */
-  --glass-bg: rgba(15, 23, 42, 0.45);
-  /* */
-  --glass-border: rgba(255, 255, 255, 0.08);
-  /* */
-  --card-inner-bg: rgba(255, 255, 255, 0.02);
-  /* */
-
-  --pill-bg: rgba(59, 130, 246, 0.15);
-  /* */
-  --pill-text: #60a5fa;
-  /* */
-  --badge-bg: rgba(255, 255, 255, 0.04);
-  /* */
-  --shadow-core: rgba(0, 0, 0, 0.6);
-  /* */
-
-  /* 💡 stack.css 특유의 고광택 안개 아우라 색상 추출 동킹 */
-  --stk-radial-1: rgba(99, 102, 241, 0.15);
-  /* */
-  --stk-radial-2: rgba(6, 182, 212, 0.12);
-  /* */
+  --text-main: #f3f4f6;
+  --text-sub: #9ca3af;
+  --text-muted: #6b7280;
+  --card-bg: rgba(15, 23, 42, 0.45);
+  --card-border: rgba(255, 255, 255, 0.08);
+  --primary-color: #6366f1;
+  --primary-glow: rgba(99, 102, 241, 0.15);
+  --input-bg: rgba(255, 255, 255, 0.03);
+  --cyan-point: #06b6d4;
 }
 
-/* ==========================================================================
-   ☀️ 2. 글로벌 라이트모드 연동 테마 변수 (Core Light Mode Specification)
-   ========================================================================== */
 [data-theme="light"] {
-  --bg-core: #f1f5f9;
-  /* */
-  --bg-color: #f1f5f9;
-  /* */
+  --bg-color: #f8fafc;
   --text-main: #0f172a;
-  /* 차콜 네이비 블랙 */
-  --text-muted: #475569;
-  /* 가독성이 교정된 슬레이트 그레이 서브 카피 */
-  --glass-bg: #ffffff;
-  /* 화사한 화이트 투명 글래스 텍스처 */
-  --glass-border: rgba(15, 23, 42, 0.08);
-  /* 화이트 샌드 미세 테두리 가드 */
-  --card-inner-bg: #f8fafc;
-  /* 컴포넌트 내부 배경 화이트 스킨화 */
-  --pill-bg: rgba(79, 70, 229, 0.08);
-  /* */
-  --pill-text: #4f46e5;
-  /* 엣지 라인을 잡아주는 선명한 잉크 블루 */
-  --badge-bg: rgba(15, 23, 42, 0.04);
-  /* */
-  --shadow-core: rgba(15, 23, 42, 0.05);
-
-  /* 라이트 모드용 아우라 스위칭 */
-  --stk-radial-1: rgba(99, 102, 241, 0.05);
-  /* */
-  --stk-radial-2: rgba(6, 182, 212, 0.04);
-  /* */
+  --text-sub: #475569;
+  --text-muted: #94a3b8;
+  --card-bg: rgba(255, 255, 255, 0.8);
+  --card-border: rgba(15, 23, 42, 0.06);
+  --primary-glow: rgba(99, 102, 241, 0.06);
+  --input-bg: rgba(15, 23, 42, 0.02);
+  --cyan-point: #0891b2;
 }
 
 * {
   box-sizing: border-box;
+  margin: 0;
+  padding: 0;
 }
 
 body {
-  margin: 0;
-  font-family: "Pretendard", system-ui, sans-serif;
+  font-family: 'Pretendard', system-ui, -apple-system, sans-serif;
   color: var(--text-main);
-
-  /* 💡 [배경 튜닝 고정]: body 전체에 오리지널 특유의 양방향 안개 그라디언트 고해상도 이식 */
-  background-color: var(--bg-core) !important;
-  background-image:
-    radial-gradient(circle at 10% 15%, var(--stk-radial-1) 0%, transparent 40%),
-    radial-gradient(circle at 85% 60%, var(--stk-radial-2) 0%, transparent 45%);
-  background-attachment: fixed;
-
-  overflow-y: auto;
-  overflow-x: hidden;
-  transition: background-color 0.3s, color 0.3s;
+  background-color: var(--bg-color);
+  -webkit-font-smoothing: antialiased;
 }
 
-/* 사이드바 연동 공간 배치 가이드라인 정렬 */
-.page {
-  min-height: 100vh;
-  padding: 26px 28px 42px;
+/* 사이드바 여백 마진 보정 레이아웃 */
+.home_content {
   margin-left: 78px;
   width: calc(100% - 78px);
-  position: relative;
-  z-index: 1;
-  transition: margin-left 0.4s cubic-bezier(0.25, 0.8, 0.25, 1), width 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+  padding: 40px 40px 80px;
+  box-sizing: border-box;
+  transition: all 0.3s ease;
 }
 
-.sidebar.active~.page,
-.sidebar.open~.page {
-  margin-left: 240px;
-  width: calc(100% - 240px);
+.sidebar.open~.home_content,
+.sidebar.active~.home_content {
+  margin-left: 250px;
+  width: calc(100% - 250px);
 }
 
-.container {
-  max-width: 1400px;
+.mypage-wrapper {
+  max-width: 1200px;
   margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
 }
 
-.glass {
-  background: var(--glass-bg);
-  border: 1px solid var(--glass-border);
-  box-shadow: 0 14px 36px var(--shadow-core);
-  border-radius: 20px;
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  transition: background 0.3s, border-color 0.3s, box-shadow 0.3s;
+/* ============================================================
+   2. 프로필 히어로 카드 (.profile-card)
+   ============================================================ */
+.profile-card {
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  border-radius: 24px;
+  padding: 32px;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  box-shadow: 0 15px 35px rgba(0, 0, 0, 0.15);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 24px;
 }
 
-.topbar {
-  margin-bottom: 16px;
+.profile-info {
+  display: flex;
+  align-items: center;
+  gap: 20px;
 }
 
-.hello-card {
-  display: grid;
-  grid-template-columns: 1fr 320px;
-  gap: 16px;
-  padding: 24px;
+.profile-avatar i {
+  font-size: 4.5rem;
+  color: var(--primary-color);
 }
 
-.hello-title {
+.profile-text {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.nickname-row {
   display: flex;
   align-items: center;
   gap: 10px;
 }
 
-.hello-dot {
-  width: 18px;
-  height: 18px;
-  border-radius: 6px;
-  background: #3b82f6;
-  box-shadow: 0 10px 30px rgba(59, 130, 246, 0.25);
+.nickname-row h2 {
+  font-size: 1.8rem;
+  font-weight: 800;
+  color: var(--text-main);
+  letter-spacing: -0.02em;
 }
 
-.text {
-  margin: 0;
-  font-size: 28px;
+.btn-edit {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  font-size: 1.3rem;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px;
+  border-radius: 6px;
+  transition: all 0.2s;
+}
+
+.btn-edit:hover {
+  color: var(--cyan-point);
+  background: rgba(6, 182, 212, 0.1);
+}
+
+.user-role-badge {
+  display: inline-block;
+  font-size: 0.85rem;
+  font-weight: 700;
+  padding: 4px 12px;
+  background: rgba(99, 102, 241, 0.1);
+  border: 1px solid rgba(99, 102, 241, 0.25);
+  border-radius: 8px;
+  color: #818cf8;
+  align-self: flex-start;
+}
+
+.account-actions {
+  display: flex;
+  gap: 12px;
+}
+
+/* ============================================================
+   3. 맞춤 기술 스택 및 로드맵 구역 (.dashboard-section)
+   ============================================================ */
+.dashboard-section {
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  border-radius: 24px;
+  padding: 32px;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
+}
+
+.is-hidden {
+  display: none !important;
+}
+
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+  border-bottom: 1px solid var(--card-border);
+  padding-bottom: 16px;
+}
+
+.section-header h3 {
+  font-size: 1.3rem;
   font-weight: 800;
-  letter-spacing: -0.5px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
   color: var(--text-main);
 }
 
-.text-glow {
+.section-header h3 i {
+  color: #f59e0b;
+}
+
+.step-pill {
+  font-size: 0.8rem;
+  font-weight: 700;
+  background: var(--cyan-point);
+  color: white;
+  padding: 6px 14px;
+  border-radius: 20px;
+  box-shadow: 0 4px 12px rgba(6, 182, 212, 0.25);
+}
+
+/* 기술 스택 칩 배치 링 */
+.tag-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 28px;
+}
+
+.tag-row .tag {
+  font-size: 0.8rem;
+  font-weight: 600;
+  padding: 6px 14px;
+  border-radius: 8px;
+  background: rgba(6, 182, 212, 0.06);
+  border: 1px solid rgba(6, 182, 212, 0.2);
+  color: var(--cyan-point);
+}
+
+/* 로드맵 박스 (원형 게이지 + 리스트 정렬 스플릿) */
+.roadmap-box {
+  display: grid;
+  grid-template-columns: 320px 1fr;
+  gap: 40px;
+  align-items: start;
+}
+
+.progress-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.01);
+  border: 1px solid var(--card-border);
+  padding: 32px;
+  border-radius: 20px;
+  text-align: center;
+}
+
+.progress-ring-wrap {
   position: relative;
-  display: inline-block;
-  padding-bottom: 4px;
-}
-
-.hello-sub {
-  margin: 10px 0 14px;
-  font-size: 14px;
-  color: var(--text-muted);
-  line-height: 1.5;
-}
-
-.hero-line {
+  width: 140px;
+  height: 140px;
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  flex-wrap: wrap;
+  justify-content: center;
+  margin-bottom: 20px;
 }
 
-.role-block {
-  min-width: 240px;
+.ring {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  transition: background 0.4s ease;
 }
 
-.role-label {
-  font-size: 12px;
-  font-weight: 700;
+.progress-ring-wrap::after {
+  content: "";
+  position: absolute;
+  width: 116px;
+  height: 116px;
+  background: #0f1322;
+  border-radius: 50%;
+  z-index: 1;
+}
+
+[data-theme="light"] .progress-ring-wrap::after {
+  background: #ffffff;
+}
+
+.ring-value {
+  position: relative;
+  z-index: 2;
+  font-size: 1.8rem;
+  font-weight: 800;
+  background: linear-gradient(135deg, #6366f1, #06b6d4);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.progress-text .label {
+  font-size: 0.8rem;
   color: var(--text-muted);
   margin-bottom: 4px;
 }
 
-.role-value {
-  font-size: 22px;
-  font-weight: 800;
-  color: var(--pill-text);
-  letter-spacing: -0.2px;
-}
-
-.hero-actions {
-  display: flex;
-  gap: 10px;
-  flex-wrap: wrap;
-}
-
-.tag-row {
-  margin-top: 12px;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-
-.tag {
-  padding: 6px 12px;
-  border-radius: 999px;
-  border: 1px solid var(--glass-border);
-  background: var(--card-inner-bg);
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--text-main);
-}
-
-.hello-right {
-  display: grid;
-  gap: 10px;
-  align-content: start;
-}
-
-.mini-stat {
-  border-radius: 16px;
-  border: 1px solid var(--glass-border);
-  background: var(--card-inner-bg);
-  padding: 12px;
-}
-
-.mini-stat-title {
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--text-muted);
-}
-
-.mini-stat-value {
-  margin-top: 6px;
-  font-size: 18px;
-  font-weight: 800;
-}
-
-.btn-primary,
-.btn-ghost,
-.chip-btn {
-  border-radius: 12px;
-  padding: 11px 18px;
+.progress-text h4 {
+  font-size: 1.05rem;
   font-weight: 700;
-  cursor: pointer;
-  border: 1px solid var(--glass-border);
-  transition: all 0.2s ease;
-}
-
-.btn-primary {
-  background: linear-gradient(135deg, #3b82f6, #2563eb);
-  color: #fff;
-  border-color: transparent;
-  box-shadow: 0 8px 24px rgba(37, 99, 235, 0.2);
-}
-
-.btn-primary:hover {
-  transform: translateY(-1px);
-  filter: brightness(1.08);
-}
-
-.btn-ghost {
-  background: var(--card-inner-bg);
   color: var(--text-main);
 }
 
-.btn-ghost:hover {
-  transform: translateY(-1px);
-  background: rgba(148, 163, 184, 0.15);
-}
-
-.chip-btn {
-  padding: 6px 12px;
-  border-radius: 999px;
-  background: var(--card-inner-bg);
-  color: var(--text-main);
-  font-size: 12px;
-}
-
-.layout {
-  display: grid;
-  grid-template-columns: 1fr 360px;
-  gap: 16px;
-  align-items: start;
-}
-
-.main-col {
-  display: grid;
-  gap: 16px;
-}
-
-.right-col {
-  position: sticky;
-  top: 16px;
-  align-self: start;
-  display: grid;
-  gap: 16px;
-}
-
-.card,
-.widget {
-  padding: 24px;
-}
-
-.card-head,
-.widget-head {
+/* 우측 가변 로드맵 리스트 슬롯 */
+.roadmap-list {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  flex-wrap: wrap;
-  margin-bottom: 16px;
-}
-
-.card-title {
-  margin: 0;
-  font-size: 17px;
-  font-weight: 800;
-}
-
-.widget-title {
-  margin: 0;
-  font-size: 14px;
-  font-weight: 800;
-}
-
-.pill {
-  padding: 6px 12px;
-  border-radius: 999px;
-  background: var(--pill-bg);
-  border: 1px solid var(--glass-border);
-  color: var(--pill-text);
-  font-size: 12px;
-  font-weight: 700;
-}
-
-/* ==========================================================================
-   🧠 3. DYNAMIC ROADMAP 아키텍처 (가변 및 서브 태스크박스 핏 정렬)
-   ========================================================================== */
-.roadmap {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 12px;
-  width: 100%;
+  flex-direction: column;
+  gap: 16px;
 }
 
 .step {
-  border-radius: 18px;
-  border: 1px solid var(--glass-border);
-  background: var(--card-inner-bg);
-  padding: 18px;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  min-height: 200px;
+  background: rgba(255, 255, 255, 0.01);
+  border: 1px solid var(--card-border);
+  border-radius: 16px;
+  padding: 24px;
+  transition: all 0.2s ease;
+}
+
+.step.primary {
+  border-color: rgba(99, 102, 241, 0.4);
+  background: rgba(99, 102, 241, 0.02);
+  box-shadow: 0 4px 20px rgba(99, 102, 241, 0.04);
 }
 
 .step-head {
   display: flex;
-  align-items: center;
   justify-content: space-between;
-  gap: 10px;
-  margin-bottom: 10px;
+  align-items: center;
+  margin-bottom: 12px;
 }
 
 .step-title {
-  font-size: 14px;
-  font-weight: 800;
-  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--text-main);
 }
 
 .step-badge {
-  font-size: 11px;
+  font-size: 0.75rem;
   font-weight: 700;
   padding: 4px 10px;
-  border-radius: 999px;
-  background: var(--pill-bg);
-  color: var(--pill-text);
-  flex-shrink: 0;
+  border-radius: 6px;
+  background: var(--card-border);
+  color: var(--text-sub);
 }
 
-.step-desc {
-  margin: 0 0 12px;
-  font-size: 13px;
-  color: var(--text-muted);
-  line-height: 1.5;
-}
-
-/* 🔓 result.js에서 스플리팅되어 들어온 내부 다중 태스크 보드 정렬 */
-.sub-task-box {
-  border-radius: 12px;
-  transition: background 0.3s;
+.step.primary .step-badge {
+  background: rgba(99, 102, 241, 0.15);
+  color: var(--primary-color);
 }
 
 .step-tags {
   display: flex;
-  flex-wrap: wrap;
   gap: 6px;
-  margin-bottom: 12px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+
+.step-tags .tag {
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 4px;
+  background: var(--card-border);
+  color: var(--text-muted);
 }
 
 .step-actions {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
-  margin-top: auto;
-  /* 개별 세부 분할 미션의 줄 수가 달라도 하단 라인은 일직선 고정 */
+  gap: 20px;
+  border-top: 1px solid var(--card-border);
+  padding-top: 14px;
 }
 
-.progress {
+.step-actions .progress {
   flex: 1;
-  height: 8px;
-  border-radius: 999px;
-  background: rgba(148, 163, 184, 0.12);
+  height: 6px;
+  background: var(--card-border);
+  border-radius: 10px;
   overflow: hidden;
 }
 
-.progress>span {
+.step-actions .progress span {
   display: block;
   height: 100%;
-  width: 0%;
-  background: linear-gradient(90deg, #3b82f6, #a855f7);
-  transition: width 0.3s ease;
+  background: linear-gradient(90deg, #6366f1, #06b6d4);
+  border-radius: 10px;
+  transition: width 0.4s ease;
 }
 
-.step.primary {
-  border-color: rgba(59, 130, 246, 0.4);
-  box-shadow: 0 10px 25px rgba(59, 130, 246, 0.04);
+/* ============================================================
+   4. 팀 프로젝트 현황 그리드 (.project-grid)
+   ============================================================ */
+.count-badge {
+  font-size: 0.85rem;
+  font-weight: 700;
+  background: var(--card-border);
+  color: var(--text-sub);
+  padding: 4px 12px;
+  border-radius: 8px;
 }
 
-/* ==========================================================================
-   📦 4. 기타 프로젝트 카드 및 컴포넌트 하이딩 레이어
-   ========================================================================== */
 .project-grid {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 12px;
+  grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+  gap: 20px;
 }
 
 .pcard {
-  border-radius: 18px;
-  border: 1px solid var(--glass-border);
-  background: var(--card-inner-bg);
-  padding: 16px;
+  background: rgba(255, 255, 255, 0.01);
+  border: 1px solid var(--card-border);
+  border-radius: 16px;
+  padding: 24px;
   display: flex;
   flex-direction: column;
   gap: 12px;
-  min-height: 170px;
+  transition: all 0.2s;
+}
+
+.pcard:hover {
+  transform: translateY(-4px);
+  border-color: rgba(6, 182, 212, 0.3);
 }
 
 .pcard-title {
-  margin: 0;
-  font-size: 14px;
-  font-weight: 800;
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--text-main);
 }
 
 .pcard-desc {
-  margin: 0;
-  font-size: 13px;
-  color: var(--text-muted);
+  font-size: 0.9rem;
+  color: var(--text-sub);
   line-height: 1.5;
-  flex: 1;
+  min-height: 42px;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 
-.badges {
+.pcard .badges {
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
 }
 
-.badge {
-  padding: 5px 10px;
-  border-radius: 999px;
-  border: 1px solid var(--glass-border);
-  background: var(--badge-bg);
-  font-size: 11px;
-  font-weight: 700;
+.pcard .badge {
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 3px 8px;
+  border-radius: 6px;
+  background: var(--card-border);
+  color: var(--text-sub);
 }
 
-.badge.status {
-  background: rgba(59, 130, 246, 0.1);
-  color: #3b82f6;
-}
-
-.badge.role {
-  background: rgba(34, 197, 94, 0.1);
-  color: #16a34a;
-}
-
-.badge.need {
-  background: rgba(168, 85, 247, 0.1);
-  color: #9333ea;
+.pcard .badge.status {
+  background: rgba(16, 185, 129, 0.1);
+  color: #10b981;
 }
 
 .pcard-foot {
   display: flex;
-  align-items: center;
   justify-content: space-between;
-  gap: 10px;
-  border-top: 1px solid var(--glass-border);
+  align-items: center;
+  border-top: 1px solid var(--card-border);
   padding-top: 12px;
+  margin-top: auto;
 }
 
-.meta {
-  font-size: 12px;
+.pcard-foot .meta {
+  font-size: 0.78rem;
   color: var(--text-muted);
 }
 
@@ -523,291 +468,216 @@ body {
   gap: 6px;
 }
 
-.action-btn {
-  padding: 7px 14px;
-  border-radius: 10px;
-  border: 1px solid var(--glass-border);
+.pbtns .action-btn {
+  padding: 6px 12px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  border-radius: 6px;
   cursor: pointer;
-  background: var(--card-inner-bg);
-  color: var(--text-main);
-  font-size: 12px;
-  font-weight: 700;
+  border: none;
 }
 
-.action-btn:hover {
-  background: rgba(255, 255, 255, 0.08);
+.pbtns .action-btn.primary {
+  background: var(--primary-color);
+  color: white;
 }
 
-.timeline {
+/* ============================================================
+   5. [AI 추천 보완 기능] 실시간 인텔리전스 레이더 역량 바 스타일
+   ============================================================ */
+.skill-metrics-grid {
   display: grid;
-  gap: 10px;
-}
-
-.titem {
-  display: grid;
-  grid-template-columns: 90px 1fr;
-  gap: 12px;
-  padding: 14px;
-  border-radius: 16px;
-  border: 1px solid var(--glass-border);
-  background: var(--card-inner-bg);
-}
-
-.tdate {
-  font-size: 12px;
-  font-weight: 700;
-  color: var(--pill-text);
-}
-
-.ttext {
-  font-size: 13px;
-  color: var(--text-main);
-}
-
-.ring-wrap {
-  display: grid;
-  grid-template-columns: 140px 1fr;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
   gap: 16px;
-  align-items: center;
-}
-
-.ring {
-  width: 140px;
-  height: 140px;
-  border-radius: 50%;
-  display: grid;
-  place-items: center;
-  border: 1px solid var(--glass-border);
-}
-
-.ring-inner {
-  width: 108px;
-  height: 108px;
-  border-radius: 50%;
-  background: var(--glass-bg);
-  border: 1px solid var(--glass-border);
-  display: grid;
-  place-items: center;
-  text-align: center;
-}
-
-.ring-value {
-  font-size: 22px;
-  font-weight: 800;
-}
-
-.ring-sub {
-  font-size: 11px;
-  color: var(--text-muted);
-  margin-top: -2px;
-}
-
-.ring-meta {
-  display: grid;
-  gap: 8px;
-}
-
-.ring-meta-row {
-  display: flex;
-  justify-content: space-between;
-  gap: 10px;
-}
-
-.muted {
-  color: var(--text-muted);
-  font-size: 12px;
-}
-
-.strong {
-  font-weight: 700;
-  font-size: 12px;
-}
-
-.bars {
   margin-top: 12px;
-  display: grid;
-  gap: 10px;
 }
 
-.bar {
-  display: grid;
-  gap: 6px;
+.metric-bar-item {
+  background: rgba(255, 255, 255, 0.01);
+  border: 1px solid var(--card-border);
+  padding: 16px;
+  border-radius: 12px;
 }
 
-.bar-top {
+.metric-info {
   display: flex;
   justify-content: space-between;
-  font-size: 12px;
+  font-size: 0.85rem;
   font-weight: 600;
+  margin-bottom: 8px;
 }
 
-.bar-line {
-  height: 8px;
-  border-radius: 999px;
-  background: rgba(148, 163, 184, 0.12);
+.metric-line {
+  height: 6px;
+  background: var(--card-border);
+  border-radius: 10px;
   overflow: hidden;
 }
 
-.bar-line>span {
+.metric-line span {
   display: block;
   height: 100%;
-  width: 0%;
-  background: #3b82f6;
-  transition: width 0.3s ease;
+  background: linear-gradient(90deg, #6366f1, #06b6d4);
+  border-radius: 10px;
+  transition: width 0.5s ease;
 }
 
-.checklist {
-  display: grid;
-  gap: 10px;
-}
-
-.chk {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-  padding: 12px;
-  border-radius: 14px;
-  border: 1px solid var(--glass-border);
-  background: var(--card-inner-bg);
+/* ============================================================
+   6. 버튼, 공용 모달 및 미디어 쿼리 가드
+   ============================================================ */
+.btn {
+  padding: 12px 24px;
+  border-radius: 10px;
+  font-size: 0.95rem;
+  font-weight: 700;
   cursor: pointer;
-}
-
-.chk-left {
-  display: flex;
+  border: none;
+  display: inline-flex;
   align-items: center;
-  gap: 10px;
+  justify-content: center;
+  transition: all 0.2s;
 }
 
-.chk-text {
-  font-size: 13px;
+.btn-primary {
+  background: linear-gradient(135deg, #4f46e5, #06b6d4);
+  color: #ffffff;
+  box-shadow: 0 4px 15px rgba(79, 70, 229, 0.25);
 }
 
-.chk-badge {
-  font-size: 11px;
-  font-weight: 700;
-  padding: 4px 8px;
-  border-radius: 999px;
-  background: var(--pill-bg);
-  color: var(--pill-text);
+.btn-primary:hover {
+  filter: brightness(1.1);
 }
 
-.note {
-  padding: 14px;
-  border-radius: 16px;
-  border: 1px solid var(--glass-border);
-  background: var(--card-inner-bg);
+.btn-ghost {
+  background: transparent;
+  border: 1px solid var(--card-border);
+  color: var(--text-sub);
 }
 
-.note-title {
-  font-size: 13px;
-  font-weight: 700;
-  margin: 0 0 6px;
-}
-
-.hint {
-  margin-top: 10px;
-  font-size: 12px;
-  color: var(--text-muted);
-}
-
-.empty {
-  padding: 24px;
-  border-radius: 18px;
-  border: 1px dashed var(--glass-border);
-  background: var(--card-inner-bg);
-  text-align: center;
-}
-
-.empty-title {
-  font-weight: 700;
-  margin-bottom: 4px;
-}
-
-.empty-desc {
-  color: var(--text-muted);
-  font-size: 13px;
-}
-
-/* 추천 조사 전 엠티 컨테이너 제어 */
-.quiz-empty-state {
-  display: grid;
-  place-items: center;
-  text-align: center;
-  padding: 60px 24px;
-}
-
-.quiz-empty-icon {
-  width: 64px;
-  height: 64px;
-  border-radius: 20px;
-  display: grid;
-  place-items: center;
-  margin-bottom: 18px;
-  font-size: 28px;
-  font-weight: 800;
-  color: #fff;
-  background: linear-gradient(135deg, #3b82f6, #a855f7);
-}
-
-.quiz-empty-title {
-  font-size: 22px;
-  font-weight: 800;
-}
-
-.quiz-empty-desc {
-  margin: 12px 0 22px;
-  max-width: 500px;
-  font-size: 14px;
-  color: var(--text-muted);
-}
-
-.is-hidden {
-  display: none !important;
-}
-
-.tabs {
-  display: flex;
-  gap: 8px;
-}
-
-.tab {
-  background: var(--card-inner-bg);
-  border: 1px solid var(--glass-border);
+.btn-ghost:hover {
+  background: var(--card-border);
   color: var(--text-main);
-  padding: 6px 12px;
-  border-radius: 8px;
-  cursor: pointer;
-  font-weight: 600;
-  font-size: 12px;
 }
 
-.tab.active {
-  background: var(--pill-bg);
-  color: var(--pill-text);
-  border-color: rgba(59, 130, 246, 0.4);
+.btn-danger {
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.2);
+  color: #ef4444;
 }
 
-.sidebar {
+.btn-danger:hover {
+  background: #ef4444;
+  color: white;
+}
+
+.empty-state {
+  text-align: center;
+  padding: 48px 24px;
+  background: rgba(255, 255, 255, 0.01);
+  border: 2px dashed var(--card-border);
+  border-radius: 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+}
+
+.empty-state i {
+  font-size: 3rem;
+  color: var(--text-muted);
+}
+
+.empty-state p {
+  font-size: 0.95rem;
+  color: var(--text-sub);
+  line-height: 1.6;
+}
+
+/* 모달 백드롭 셋업 */
+.modal-backdrop {
   position: fixed;
   top: 0;
   left: 0;
-  height: 100vh;
-  z-index: 2000;
+  right: 0;
+  bottom: 0;
+  background: rgba(3, 7, 18, 0.85);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999 !important;
 }
 
-@media (max-width: 1180px) {
-  .layout {
+.modal-backdrop.open {
+  display: flex;
+}
+
+.modal {
+  background: #0b0f19;
+  border: 1px solid var(--card-border);
+  width: min(460px, calc(100vw - 32px));
+  border-radius: 24px;
+  padding: 28px;
+  box-shadow: 0 25px 50px rgba(0, 0, 0, 0.4);
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+[data-theme="light"] .modal {
+  background: #ffffff;
+}
+
+.modal h3 {
+  font-size: 1.3rem;
+  font-weight: 800;
+  color: var(--text-main);
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.field label {
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--text-sub);
+}
+
+input[type="text"] {
+  width: 100%;
+  padding: 12px;
+  background: var(--input-bg);
+  border: 1px solid var(--card-border);
+  color: var(--text-main);
+  border-radius: 10px;
+  font-size: 0.95rem;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+input[type="text"]:focus {
+  border-color: var(--primary-color);
+}
+
+@media (max-width: 960px) {
+  .roadmap-box {
     grid-template-columns: 1fr;
   }
 
-  .right-col {
-    position: static;
+  .profile-card {
+    flex-direction: column;
+    align-items: flex-start;
   }
 
-  .hello-card,
-  .project-grid,
-  .roadmap {
-    grid-template-columns: 1fr;
+  .account-actions {
+    width: 100%;
+  }
+
+  .account-actions button {
+    flex: 1;
   }
 }
