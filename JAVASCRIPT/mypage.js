@@ -1,6 +1,5 @@
 /* mypage.js */
 
-// 1. API 엔드포인트 규격 정의 (Spring Boot 컨트롤러 매핑 주소)
 const API_ENDPOINTS = {
   USER_INFO: "/api/mypage/user",               // 회원 정보 조회 및 수정
   QUIZ_RESULT: "/api/mypage/quiz-result",       // AI 추천 결과 조회 및 저장
@@ -32,7 +31,20 @@ const ringValue = el("ringValue");
 const dashboardContent = el("dashboardContent");
 const quizEmptyState = el("quizEmptyState");
 
-// 기존 공통 비동기 Fetch 유틸리티 활용 (토큰 인증 포함)
+function readJSON(key, fallback) {
+  try {
+    const raw = sessionStorage.getItem(key) || localStorage.getItem(key);
+    return raw ? JSON.parse(raw) : fallback;
+  } catch {
+    return fallback;
+  }
+}
+
+function writeJSON(key, val) {
+  localStorage.setItem(key, JSON.stringify(val));
+  sessionStorage.setItem(key, JSON.stringify(val));
+}
+
 async function authFetch(url, options = {}) {
   const token = sessionStorage.getItem("token");
   const headers = {
@@ -87,9 +99,10 @@ function getNickname() {
   return (sessionStorage.getItem("nickname") || "").trim();
 }
 
-// 💡 백엔드 DTO 바인딩 매핑 (결과 추출)
+// 💡 1번 보완: 직군 코드 도출 조건 정교화 (quizResult Payload 역추적)
 function getQuizRoleRaw(quiz, payload) {
   if (quiz && quiz.role) return quiz.role;
+  if (quiz && quiz.quizResult && quiz.quizResult.role) return quiz.quizResult.role;
   if (payload && Array.isArray(payload.answers)) {
     const targetRoleAns = payload.answers.find(a => a.id === "targetRole");
     const webAreaAns = payload.answers.find(a => a.id === "web_area");
@@ -103,9 +116,18 @@ function getQuizRoleRaw(quiz, payload) {
   return "";
 }
 
-// 💡 가변형 AI 추천 5단계 데이터 파싱 가동
+function normalizeDevRole(roleRaw) {
+  const r = String(roleRaw || "").trim();
+  return r.length > 0 ? r : "";
+}
+
 function parseAILoadmapData(quizResult) {
-  const rawRoadmap = quizResult && Array.isArray(quizResult.roadmap) ? quizResult.roadmap : [];
+  // 중첩 구조 파싱 가드 추가
+  let rawRoadmap = [];
+  if (quizResult) {
+    if (Array.isArray(quizResult.roadmap)) rawRoadmap = quizResult.roadmap;
+    else if (quizResult.quizResult && Array.isArray(quizResult.quizResult.roadmap)) rawRoadmap = quizResult.quizResult.roadmap;
+  }
   
   if (rawRoadmap.length === 0) {
     return [
@@ -145,18 +167,15 @@ function setRing(percent) {
   }
 }
 
-// 💡 5번: 백엔드 통합 실시간 로드맵 렌더링 및 동기화
 function renderRoadmap(quizResult, backendProgress) {
   const steps = parseAILoadmapData(quizResult);
-  
-  // 백엔드 DB 서버에 기록이 없다면 기본값 객체 빌드
   const stepProgress = backendProgress || {};
+  
   steps.forEach((s, idx) => {
     if (stepProgress[s.id] == null) stepProgress[s.id] = idx === 0 ? 10 : 0;
   });
 
   const ordered = steps.map(s => s.id);
-  // 가장 첫 번째 진도율이 100% 미만인 상태 카드를 타겟으로 잡음
   let currentStepId = steps.find(s => (stepProgress[s.id] ?? 0) < 100)?.id || steps[steps.length - 1].id;
   const currentIdx = ordered.indexOf(currentStepId);
   const nextStep = steps[currentIdx + 1] || null;
@@ -202,7 +221,6 @@ function renderRoadmap(quizResult, backendProgress) {
 
   renderLiveMetrics(devRoleText.textContent || "", avg);
 
-  // 진도 추가 핸들러 ➡️ 백엔드 연동 DB 영구 누적 API 호출 (`PUT`)
   roadmapEl.querySelectorAll('button[data-action="complete"]').forEach((btn) => {
     btn.addEventListener("click", async () => {
       const stepId = btn.getAttribute("data-step");
@@ -210,13 +228,10 @@ function renderRoadmap(quizResult, backendProgress) {
       const targetPct = Math.min(100, currentPct + 10);
 
       try {
-        // 백엔드 API 서버 전송
         await authFetch(API_ENDPOINTS.LEARNING_PROGRESS, {
           method: "PUT",
           body: JSON.stringify({ stepId, progress: targetPct })
         });
-        
-        // 새로고침 없이 비동기 실시간 전체 대시보드 리로드
         await renderAll();
       } catch (err) {
         console.error("진도 반영 실패:", err);
@@ -266,7 +281,8 @@ function renderHeader(user, quiz, payload) {
   const devRole = normalizeDevRole(rawRole);
   if (devRoleText) devRoleText.textContent = devRole || "분석 대기 중";
 
-  const target = quiz || payload;
+  // 중첩 풀링 적용
+  const target = (quiz && quiz.quizResult) ? quiz.quizResult : (quiz || payload);
   const stacks = target && Array.isArray(target.stacks) ? target.stacks : [];
   
   tagRow.innerHTML = "";
@@ -287,36 +303,40 @@ function renderHeader(user, quiz, payload) {
   }
 }
 
-// 💡 4번: 참여 중인 팀 프로젝트 현황 백엔드 API 연동
+// 💡 3번 보완: 참여중 프로젝트 데이터 추출 알고리즘 전면 교정 (userName / nickname 완전 래핑)
 async function renderJoinedProjects() {
   const nickname = getNickname();
   let joined = [];
 
   try {
-    // 백엔드 컨트롤러에서 리얼타임 데이터 소스 로드
     const data = await authFetch(API_ENDPOINTS.JOINED_PROJECTS, { method: "GET" });
     joined = Array.isArray(data) ? data : (data?.content || data?.list || []);
   } catch (err) {
-    console.warn("백엔드 프로젝트 데이터 수신 실패, 로컬 스위칭 가동:", err);
-    // 백엔드 점검 시 락킹 방지 가드용 로컬 캐시 스위치 보완
+    console.warn("백엔드 프로젝트 데이터 수신 실패, 오프라인 모드 스왑:", err);
     const raw = readJSON(STORAGE_KEYS.PROJECTS, []);
-    joined = raw.filter(p => {
-      const leader = String(p.leaderName || p.leader || "").trim() === nickname;
-      const member = Array.isArray(p.members) && p.members.some(m => String(m.userName || m.nickname || "").trim() === nickname);
-      return leader || member;
-    });
+    joined = raw;
   }
 
-  if (projectCountEl) projectCountEl.textContent = String(joined.length);
+  // 내 참여 조건 필터 매칭 튜닝
+  const myFiltered = joined.filter(p => {
+    const isLeader = String(p.leaderName || p.leader || "").trim() === nickname;
+    const isMember = Array.isArray(p.members) && p.members.some(m => {
+      const targetName = String(m.userName || m.nickname || m.name || "").trim();
+      return targetName === nickname;
+    });
+    return isLeader || isMember;
+  });
+
+  if (projectCountEl) projectCountEl.textContent = String(myFiltered.length);
   joinedProjectsEl.innerHTML = "";
 
-  if (joined.length === 0) {
+  if (myFiltered.length === 0) {
     if (joinedEmpty) joinedEmpty.style.display = "flex";
     return;
   }
   if (joinedEmpty) joinedEmpty.style.display = "none";
 
-  joined.forEach(p => {
+  myFiltered.forEach(p => {
     const card = document.createElement("div");
     card.className = "pcard";
     
@@ -324,11 +344,13 @@ async function renderJoinedProjects() {
     if (catText === "AI_DATA") catText = "AI/데이터";
     if (catText === "SEC") catText = "보안";
 
+    const checkLeader = String(p.leaderName || p.leader || "").trim() === nickname;
+
     card.innerHTML = `
       <h3 class="pcard-title">${escapeHtml(p.title || p.name)}</h3>
       <p class="pcard-desc">${escapeHtml(p.content || p.description || "설명이 없는 프로젝트입니다.")}</p>
       <div class="badges">
-        <span class="badge status">소속: ${escapeHtml(p.leaderName === nickname ? "팀장" : "팀원")}</span>
+        <span class="badge status">소속: ${escapeHtml(checkLeader ? "팀장" : "팀원")}</span>
         <span class="badge role">${escapeHtml(catText)}</span>
       </div>
       <div class="pcard-foot">
@@ -356,7 +378,15 @@ function renderDashboardState() {
   if (quizEmptyState) quizEmptyState.classList.add("is-hidden");
 }
 
-// 💡 메인 오케스트레이션 비동기 래퍼 (백엔드 통합 상태 로드)
+function ensureInitialState() {
+  const user = readJSON(STORAGE_KEYS.USER, null);
+  if (!user) {
+    const nickname = getNickname() || "Team Member";
+    writeJSON(STORAGE_KEYS.USER, { name: nickname, job: "정회원", role: "USER" });
+  }
+}
+
+// 💡 2번 보완: 비동기 결합 파싱 예외 최적화 처리
 async function renderAll() {
   let user = null;
   let quiz = null;
@@ -364,7 +394,6 @@ async function renderAll() {
   let progress = null;
 
   try {
-    // 백엔드에서 사용자 계정 정보, AI 추천 목록, 학습 진행도를 멀티 스레드로 병렬 패치
     const [userRes, quizRes, progressRes] = await Promise.all([
       authFetch(API_ENDPOINTS.USER_INFO, { method: "GET" }).catch(() => null),
       authFetch(API_ENDPOINTS.QUIZ_RESULT, { method: "GET" }).catch(() => null),
@@ -372,16 +401,17 @@ async function renderAll() {
     ]);
 
     user = userRes;
-    quiz = quizRes?.quizResult;
-    payload = quizRes?.quizResultPayload;
+    quiz = quizRes;
     progress = progressRes;
   } catch (e) {
-    console.warn("백엔드 통신 오류, 오프라인 모컬 세션 모드 수왑 가동:", e);
-    user = readJSON(STORAGE_KEYS.USER, null);
-    quiz = readJSON(STORAGE_KEYS.QUIZ_RESULT, null);
-    payload = readJSON(STORAGE_KEYS.QUIZ_PAYLOAD, null);
-    progress = readJSON(STORAGE_KEYS.LEARNING, {}).stepProgress;
+    console.warn("백엔드 통신 해제 상태, 로컬 캐시 우선 취합 가동.");
   }
+
+  // 백엔드가 비어있다면 로컬 스토리지 역추적 복구 실행
+  if (!user) user = readJSON(STORAGE_KEYS.USER, null);
+  if (!quiz) quiz = readJSON(STORAGE_KEYS.QUIZ_RESULT, null);
+  if (!payload) payload = readJSON(STORAGE_KEYS.QUIZ_PAYLOAD, null);
+  if (!progress) progress = readJSON(STORAGE_KEYS.LEARNING, {}).stepProgress;
 
   const rawRole = getQuizRoleRaw(quiz, payload);
   if (!String(rawRole).trim().length) {
@@ -396,50 +426,7 @@ async function renderAll() {
   await renderJoinedProjects();
 }
 
-// ============================================================
-// 💡 2번: 계정 변경/팝업 이벤트 제어 및 백엔드 업데이트 구역
-// ============================================================
 function bindPopupEvents() {
-  const nickModal = el("nicknameModal");
-  const btnEdit = el("btnEditNickname");
-  const btnCancel = el("btnCancelNickname");
-  const btnSave = el("btnSaveNickname");
-  const inputNick = el("newNickname");
-
-  btnEdit?.addEventListener("click", () => {
-    const name = sessionStorage.getItem("nickname") || "개발자";
-    if (inputNick) inputNick.value = name;
-    nickModal?.classList.add("open");
-  });
-
-  btnCancel?.addEventListener("click", () => {
-    nickModal?.classList.remove("open");
-  });
-
-  btnSave?.addEventListener("click", async () => {
-    const updatedName = inputNick.value.trim();
-    if (!updatedName) {
-      alert("변경할 닉네임을 한 글자 이상 입력해 주세요.");
-      return;
-    }
-
-    try {
-      // 1. 백엔드 DB 서버에 변경된 닉네임 전송 반영 (`POST` or `PUT`)
-      await authFetch(API_ENDPOINTS.USER_INFO, {
-        method: "POST",
-        body: JSON.stringify({ name: updatedName })
-      });
-
-      sessionStorage.setItem("nickname", updatedName);
-      alert("🎉 닉네임 정보가 백엔드 데이터베이스에 정상 동기화되었습니다.");
-      nickModal?.classList.remove("open");
-      location.reload(); 
-    } catch (err) {
-      alert("닉네임 업데이트 중 서버 통신 에러가 발생했습니다.");
-    }
-  });
-
-  // 2번 서브: 회원 탈퇴 API 전송 연동
   el("btnLeave")?.addEventListener("click", async () => {
     if (confirm("PROVI 계정을 완전히 삭제하시겠습니까?\n서버 DB에 보관되어 있던 모든 추천 이력과 프로젝트 소속 기록이 파기됩니다.")) {
       try {
@@ -463,6 +450,11 @@ function bindPopupEvents() {
   const activeTheme = localStorage.getItem("theme") || "dark";
   document.documentElement.setAttribute("data-theme", activeTheme);
   
+  // 💡 선제적 로딩 닉네임 유실 가드 링
+  const initialNick = getNickname();
+  if (sbName && initialNick) sbName.textContent = `${initialNick}님`;
+
+  ensureInitialState();
   bindPopupEvents();
   renderAll();
 })();
