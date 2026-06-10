@@ -1149,3 +1149,100 @@ select:focus {
   color: var(--text-muted);
   font-size: 1.1rem;
 }
+
+/* 전역 select 태그 하위의 option 배경색 및 글자색 강제 동기화 */
+select option {
+  background-color: #0b0f19 !important;
+  /* 모달/인풋 배경에 맞춘 짙은 네이비 톤 고정 */
+  color: #f3f4f6 !important;
+  /* 글자색을 명확한 흰색에 가까운 회색으로 고정 */
+}
+
+/* 라이트 모드 상태일 때의 반전 방어 코드 */
+[data-theme="light"] select option {
+  background-color: #ffffff !important;
+  /* 라이트모드에선 깨끗한 흰색 배경 */
+  color: #0f172a !important;
+  /* 짙은 다크 네이비 글자색 적용 */
+}
+
+/* 모바일 및 일부 크로미움 브라우저 가독성 보완 */
+select:focus option {
+  background-color: #0b0f19;
+  color: #f3f4f6;
+}
+
+[data-theme="light"] select:focus option {
+  background-color: #ffffff;
+  color: #0f172a;
+}
+
+/* 1. 추천 리스트 전체를 감싸는 서제스트 박스 우아하게 마감 */
+#tagSuggestList {
+  background: rgba(11, 15, 25, 0.95) !important;
+  /* 모달 내부 톤과 부합하는 묵직한 딥블루 고정 */
+  border: 1px solid var(--card-border) !important;
+  border-radius: 14px !important;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.5), 0 0 15px rgba(99, 102, 241, 0.1) !important;
+  /* 인디고 은은한 네온 광채 */
+  padding: 8px 0 !important;
+  margin-top: 6px !important;
+  max-height: 220px !important;
+  overflow-y: auto !important;
+  z-index: 10000 !important;
+  /* 모달 위로 확실하게 적재 */
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+/* 2. 자동완성 추천 항목 개별 리스트 아이템 스타일 지정 */
+#tagSuggestList li,
+#tagSuggestList .suggest-item,
+#tagSuggestList div {
+  padding: 10px 16px !important;
+  color: var(--text-main) !important;
+  /* 밝은 회백색 글자 */
+  font-size: 0.9rem !important;
+  font-weight: 500 !important;
+  cursor: pointer !important;
+  transition: all 0.2s ease !important;
+  list-style: none !important;
+  text-align: left !important;
+}
+
+/* 3. 키보드로 내리거나 마우스를 올렸을 때(Hover) 하이라이트 효과 */
+#tagSuggestList li:hover,
+#tagSuggestList .suggest-item:hover,
+#tagSuggestList li.active {
+  background: rgba(99, 102, 241, 0.15) !important;
+  /* 포인트 인디고 컬러 가볍게 이식 */
+  color: #ffffff !important;
+  padding-left: 20px !important;
+  /* 살짝 오른쪽으로 밀리는 부드러운 애니메이션 인터랙션 */
+}
+
+/* 4. 데이터가 없거나 비어있을 때 안내 문구 스타일 */
+#tagSuggestList .no-suggest {
+  color: var(--text-muted) !important;
+  font-size: 0.85rem !important;
+  text-align: center !important;
+  padding: 16px 0 !important;
+  cursor: default !important;
+}
+
+/* 5. 라이트 모드 전환 시 시인성 완벽 방어 */
+[data-theme="light"] #tagSuggestList {
+  background: rgba(255, 255, 255, 0.98) !important;
+  border: 1px solid rgba(15, 23, 42, 0.08) !important;
+  box-shadow: 0 12px 30px rgba(15, 23, 42, 0.1) !important;
+}
+
+[data-theme="light"] #tagSuggestList li,
+[data-theme="light"] #tagSuggestList .suggest-item {
+  color: var(--text-main) !important;
+}
+
+[data-theme="light"] #tagSuggestList li:hover {
+  background: rgba(99, 102, 241, 0.08) !important;
+  color: var(--primary-color) !important;
+}

@@ -681,3 +681,30 @@ input[type="text"]:focus {
     flex: 1;
   }
 }
+
+/* 전역 select 태그 하위의 option 배경색 및 글자색 강제 동기화 */
+select option {
+  background-color: #0b0f19 !important;
+  /* 모달/인풋 배경에 맞춘 짙은 네이비 톤 고정 */
+  color: #f3f4f6 !important;
+  /* 글자색을 명확한 흰색에 가까운 회색으로 고정 */
+}
+
+/* 라이트 모드 상태일 때의 반전 방어 코드 */
+[data-theme="light"] select option {
+  background-color: #ffffff !important;
+  /* 라이트모드에선 깨끗한 흰색 배경 */
+  color: #0f172a !important;
+  /* 짙은 다크 네이비 글자색 적용 */
+}
+
+/* 모바일 및 일부 크로미움 브라우저 가독성 보완 */
+select:focus option {
+  background-color: #0b0f19;
+  color: #f3f4f6;
+}
+
+[data-theme="light"] select:focus option {
+  background-color: #ffffff;
+  color: #0f172a;
+}
