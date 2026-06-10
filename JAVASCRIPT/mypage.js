@@ -303,29 +303,20 @@ function renderHeader(user, quiz, payload) {
   }
 }
 
-// 💡 3번 보완: 참여중 프로젝트 데이터 추출 알고리즘 전면 교정 (userName / nickname 완전 래핑)
+
 async function renderJoinedProjects() {
-  const nickname = getNickname();
   let joined = [];
 
   try {
     const data = await authFetch(API_ENDPOINTS.JOINED_PROJECTS, { method: "GET" });
+    // 백엔드 응답 구조(배열 wrapper 분기 처리)
     joined = Array.isArray(data) ? data : (data?.content || data?.list || []);
   } catch (err) {
     console.warn("백엔드 프로젝트 데이터 수신 실패, 오프라인 모드 스왑:", err);
-    const raw = readJSON(STORAGE_KEYS.PROJECTS, []);
-    joined = raw;
+    joined = readJSON(STORAGE_KEYS.PROJECTS, []);
   }
 
-  // 내 참여 조건 필터 매칭 튜닝
-  const myFiltered = joined.filter(p => {
-    const isLeader = String(p.leaderName || p.leader || "").trim() === nickname;
-    const isMember = Array.isArray(p.members) && p.members.some(m => {
-      const targetName = String(m.userName || m.nickname || m.name || "").trim();
-      return targetName === nickname;
-    });
-    return isLeader || isMember;
-  });
+  const myFiltered = joined.filter(p => p && (p.id || p.title));
 
   if (projectCountEl) projectCountEl.textContent = String(myFiltered.length);
   joinedProjectsEl.innerHTML = "";
@@ -340,17 +331,25 @@ async function renderJoinedProjects() {
     const card = document.createElement("div");
     card.className = "pcard";
     
+    // 카테고리 텍스트 포맷팅
     let catText = p.category || "웹";
+    if (catText.toUpperCase() === "WEB") catText = "웹";
     if (catText === "AI_DATA") catText = "AI/데이터";
     if (catText === "SEC") catText = "보안";
 
-    const checkLeader = String(p.leaderName || p.leader || "").trim() === nickname;
+    // 백엔드에서 내려준 authority ("팀원" 또는 "팀장")를 그대로 바인딩하되, 없을 경우 기본값 세팅
+    const myAuthority = p.authority || "팀원";
+    
+    // 총 참여 인원 수 (숫자 데이터 안전하게 문자열 변환 및 가드)
+    const memberCount = p.members != null ? p.members : 1;
 
     card.innerHTML = `
-      <h3 class="pcard-title">${escapeHtml(p.title || p.name)}</h3>
-      <p class="pcard-desc">${escapeHtml(p.content || p.description || "설명이 없는 프로젝트입니다.")}</p>
+      <h3 class="pcard-title">${escapeHtml(p.title)}</h3>
+      <p class="pcard-desc" style="color: var(--text-muted); font-size: 13px;">
+        <i class='bx bx-user'></i> 현재 <span style="color: var(--cyan-point); font-weight: 700;">${memberCount}명</span>의 팀원이 함께 참여하고 있습니다.
+      </p>
       <div class="badges">
-        <span class="badge status">소속: ${escapeHtml(checkLeader ? "팀장" : "팀원")}</span>
+        <span class="badge status">소속: ${escapeHtml(myAuthority)}</span>
         <span class="badge role">${escapeHtml(catText)}</span>
       </div>
       <div class="pcard-foot">
